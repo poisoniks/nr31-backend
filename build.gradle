@@ -1,6 +1,10 @@
 plugins {
     id 'java'
+    id 'application'
 }
+
+mainClassName = 'org.nr31.backend.Main'
+
 
 group = 'org.nr31'
 version = '1.0-SNAPSHOT'
