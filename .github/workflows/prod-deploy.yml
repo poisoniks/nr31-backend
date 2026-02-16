@@ -64,15 +64,6 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           port: 22
           script: |
-            cd /opt/nr31-site
-            
-            # To update docker-compose.yml from this repo if exists
-            # git pull origin main 
-            
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            docker compose pull
-            
-            docker compose up -d
-            
-            docker image prune -f
+            cd /opt/nr31
+            docker compose pull backend
+            docker compose up -d --no-deps backend
