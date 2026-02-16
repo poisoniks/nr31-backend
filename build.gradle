@@ -5,6 +5,13 @@ plugins {
 
 mainClassName = 'org.nr31.backend.Main'
 
+jar {
+    manifest {
+        attributes(
+            'Main-Class': mainClassName
+        )
+    }
+}
 
 group = 'org.nr31'
 version = '1.0-SNAPSHOT'
