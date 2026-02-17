@@ -12,10 +12,10 @@ COPY src src
 RUN ./gradlew build -x test --no-daemon
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
-RUN addgroup -S nr31 && adduser -S nr31 -G nr31
+RUN addgroup --system nr31 && adduser --system --ingroup nr31 nr31
 USER nr31:nr31
 
 COPY --from=builder /app/build/libs/*.jar app.jar
