@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nr31db
+    username: postgres
+    password: password
+
+logging:
+  level:
+    org.springframework.web: INFO
+    org.nr31.backend: DEBUG

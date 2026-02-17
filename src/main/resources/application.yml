@@ -1,0 +1,28 @@
+spring:
+  profiles:
+    active: prod
+  application:
+    name: nr31-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  security:
+    user:
+      name: user
+      password: password
+
+logging:
+  level:
+    org.springframework.web: INFO
+    org.nr31.backend: INFO
+

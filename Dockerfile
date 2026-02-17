@@ -15,6 +15,9 @@ RUN ./gradlew build -x test --no-daemon
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
+ARG PROFILE=prod
+ENV SPRING_PROFILES_ACTIVE=${PROFILE}
+
 RUN addgroup --system nr31 && adduser --system --ingroup nr31 nr31
 USER nr31:nr31
 
