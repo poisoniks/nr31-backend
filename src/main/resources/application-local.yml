@@ -8,3 +8,7 @@ logging:
   level:
     org.springframework.web: INFO
     org.nr31.backend: DEBUG
+
+jwt:
+  secret: sEsXIiICXqeaAiZ+45aWoZhHMXf2hj2dpq0CZQfIGPo=
+  expiration: 600000
