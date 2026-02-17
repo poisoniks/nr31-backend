@@ -12,6 +12,7 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    environment: prod
     permissions:
       contents: read
       packages: write
@@ -53,6 +54,7 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
+    environment: prod
     if: github.ref == 'refs/heads/main'
 
     steps:
