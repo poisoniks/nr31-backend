@@ -1,4 +1,4 @@
-package org.nr31.backend.controller;
+package org.nr31.backend.controller.v1;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

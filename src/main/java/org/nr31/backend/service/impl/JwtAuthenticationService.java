@@ -2,13 +2,11 @@ package org.nr31.backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.nr31.backend.dto.AuthRequest;
-import org.nr31.backend.dto.AuthResponse;
+import org.nr31.backend.dto.AuthCredentialsDTO;
 import org.nr31.backend.model.RefreshToken;
 import org.nr31.backend.security.JwtUtil;
 import org.nr31.backend.service.AuthenticationService;
 import org.nr31.backend.service.RefreshTokenService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,35 +19,28 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class JwtAuthenticationService implements AuthenticationService {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private CustomUserDetailsService userDetailsService;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private RefreshTokenService refreshTokenService;
+    private final AuthenticationManager authenticationManager;
+    private final CustomUserDetailsService userDetailsService;
+    private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
-    public AuthResponse authenticate(AuthRequest requestForm) {
+    public AuthCredentialsDTO authenticate(String username, String password) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(requestForm.getUsername(), requestForm.getPassword()));
+                new UsernamePasswordAuthenticationToken(username, password));
 
         UserDetails userDetails;
         try {
-            userDetails = userDetailsService.loadUserByUsername(requestForm.getUsername());
+            userDetails = userDetailsService.loadUserByUsername(username);
         } catch (UsernameNotFoundException e) {
-            log.debug("User not found during authentication: {}", requestForm.getUsername());
-            throw new BadCredentialsException("No such user: " + requestForm.getUsername(), e);
+            log.debug("User not found during authentication: {}", username);
+            throw new BadCredentialsException("No such user: " + username, e);
         }
 
         String jwt = jwtUtil.generateToken(userDetails);
 
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUsername());
 
-        return new AuthResponse(jwt, refreshToken.getToken());
+        return new AuthCredentialsDTO(jwt, refreshToken.getToken());
     }
 }

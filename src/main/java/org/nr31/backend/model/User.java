@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.builder.ToStringExclude;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -28,9 +29,11 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)
     private String username;
 
     @Column(name = "password_hash")
+    @ToStringExclude
     private String password;
 
     @ManyToMany(fetch = FetchType.EAGER)

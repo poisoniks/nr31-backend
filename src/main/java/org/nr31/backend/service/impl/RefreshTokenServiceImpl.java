@@ -2,7 +2,6 @@ package org.nr31.backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
 
-import org.nr31.backend.dto.AuthResponse;
 import org.nr31.backend.exception.TokenRefreshException;
 import org.nr31.backend.model.RefreshToken;
 import org.nr31.backend.repository.RefreshTokenRepository;
@@ -33,7 +32,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public RefreshToken createRefreshToken(String username) {
         RefreshToken refreshToken = new RefreshToken();
 
-        refreshToken.setUser(userRepository.findByUsername(username).get());
+        refreshToken.setUser(userRepository.findByUsername(username)
+                .orElseThrow(() -> new TokenRefreshException("User not found during refresh token creation")));
         refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
         refreshToken.setToken(UUID.randomUUID().toString());
 
@@ -57,14 +57,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     @Override
-    public AuthResponse refreshUserToken(String refreshToken) {
+    public String refreshUserToken(String refreshToken) {
         return refreshTokenRepository.findByToken(refreshToken)
                 .filter(this::isRefreshTokenValid)
                 .map(RefreshToken::getUser)
-                .map(user -> {
-                    String token = jwtUtil.generateToken(userDetailsService.loadUserByUsername(user.getUsername()));
-                    return new AuthResponse(token, refreshToken);
-                })
+                .map(user -> jwtUtil.generateToken(userDetailsService.loadUserByUsername(user.getUsername())))
                 .orElseThrow(() -> new TokenRefreshException("Refresh token is expired or not found"));
     }
 }

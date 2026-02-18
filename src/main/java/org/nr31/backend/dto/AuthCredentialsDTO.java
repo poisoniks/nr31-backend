@@ -1,14 +1,15 @@
 package org.nr31.backend.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RefreshTokenRequest {
-    @NotBlank(message = "Refresh token is required")
+public class AuthCredentialsDTO {
+    private String accessToken;
     private String refreshToken;
 }

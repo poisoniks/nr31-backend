@@ -1,8 +1,7 @@
 package org.nr31.backend.service;
 
-import org.nr31.backend.dto.AuthRequest;
-import org.nr31.backend.dto.AuthResponse;
+import org.nr31.backend.dto.AuthCredentialsDTO;
 
 public interface AuthenticationService {
-    AuthResponse authenticate(AuthRequest requestForm);
+    AuthCredentialsDTO authenticate(String username, String password);
 }
