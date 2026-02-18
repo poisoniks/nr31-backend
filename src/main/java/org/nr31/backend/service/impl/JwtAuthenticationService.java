@@ -4,8 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.nr31.backend.dto.AuthRequest;
 import org.nr31.backend.dto.AuthResponse;
+import org.nr31.backend.model.RefreshToken;
 import org.nr31.backend.security.JwtUtil;
 import org.nr31.backend.service.AuthenticationService;
+import org.nr31.backend.service.RefreshTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,6 +30,9 @@ public class JwtAuthenticationService implements AuthenticationService {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private RefreshTokenService refreshTokenService;
+
     @Override
     public AuthResponse authenticate(AuthRequest requestForm) {
         authenticationManager.authenticate(
@@ -35,7 +40,7 @@ public class JwtAuthenticationService implements AuthenticationService {
 
         UserDetails userDetails;
         try {
-             userDetails = userDetailsService.loadUserByUsername(requestForm.getUsername());
+            userDetails = userDetailsService.loadUserByUsername(requestForm.getUsername());
         } catch (UsernameNotFoundException e) {
             log.debug("User not found during authentication: {}", requestForm.getUsername());
             throw new BadCredentialsException("No such user: " + requestForm.getUsername(), e);
@@ -43,6 +48,8 @@ public class JwtAuthenticationService implements AuthenticationService {
 
         String jwt = jwtUtil.generateToken(userDetails);
 
-        return new AuthResponse(jwt);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUsername());
+
+        return new AuthResponse(jwt, refreshToken.getToken());
     }
 }

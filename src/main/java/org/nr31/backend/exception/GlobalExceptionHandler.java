@@ -63,6 +63,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(message, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(TokenRefreshException.class)
+    public ResponseEntity<Object> handleTokenRefreshException(TokenRefreshException e) {
+        log.debug("Refresh token is invalid or expired", e);
+        return buildErrorResponse("Invalid refresh token", HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGlobalException(Exception e) {
         log.error("Unknown exception", e);
