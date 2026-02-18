@@ -1,18 +1,20 @@
 package org.nr31.backend.exception;
 
+import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
+import org.nr31.backend.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Slf4j
 @ControllerAdvice
@@ -42,6 +44,25 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(e.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<Object> handleAuthorizationDeniedException(AuthorizationDeniedException e) {
+        log.debug("Access denied: {}", e.getMessage());
+        return buildErrorResponse("Access denied", HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<Object> handleJwtException(JwtException e) {
+        log.debug("Invalid or expired token", e);
+        return buildErrorResponse("Authorization token is invalid or expired", HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Object> handleNoResourceFoundException(NoResourceFoundException e) {
+        String message = "Resource " + e.getResourcePath() + " is not found";
+        log.debug(message, e);
+        return buildErrorResponse(message, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGlobalException(Exception e) {
         log.error("Unknown exception", e);
@@ -49,9 +70,7 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<Object> buildErrorResponse(String message, HttpStatus status) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("message", message);
-        return new ResponseEntity<>(body, status);
+        ErrorResponse errorResponse = new ErrorResponse(message, LocalDateTime.now());
+        return new ResponseEntity<>(errorResponse, status);
     }
 }
