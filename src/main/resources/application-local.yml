@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nr31db
+    username: postgres
+    password: password
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        generate_statistics: true
+
+logging:
+  level:
+    org.springframework.web: INFO
+    org.nr31.backend: DEBUG
+    org.hibernate.orm.results: DEBUG
+    org.hibernate.stat: DEBUG
+
+jwt:
+  secret: sEsXIiICXqeaAiZ+45aWoZhHMXf2hj2dpq0CZQfIGPo=
+  expiration: 600000
+  refresh:
+    expiration: 604800000
