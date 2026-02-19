@@ -10,6 +10,19 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     open-in-view: false
+    properties:
+      hibernate:
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          factory_class: org.hibernate.cache.jcache.internal.JCacheRegionFactory
+        javax:
+          cache:
+            provider: com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterAccess=1h
 
   flyway:
     enabled: true
