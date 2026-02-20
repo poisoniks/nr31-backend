@@ -4,6 +4,7 @@ import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.nr31.backend.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
@@ -71,6 +72,14 @@ public class GlobalExceptionHandler {
     @ResponseStatus(code = HttpStatus.BAD_REQUEST)
     public ErrorResponse handleNoResourceFoundException(NoResourceFoundException e) {
         String message = "Resource " + e.getResourcePath() + " is not found";
+        log.debug(message, e);
+        return new ErrorResponse(message, LocalDateTime.now());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        String message = "Invalid request body";
         log.debug(message, e);
         return new ErrorResponse(message, LocalDateTime.now());
     }
