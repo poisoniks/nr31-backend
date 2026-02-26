@@ -9,6 +9,7 @@ import org.nr31.backend.service.CalendarService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -63,6 +64,7 @@ public class CalendarController {
             @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content)
     })
     @PostMapping(produces = "application/json", consumes = "application/json")
+    @PreAuthorize("hasAuthority('event:write')")
     public ResponseEntity<CalendarEventDTO> createEvent(@RequestBody CreateEventRequest request) {
         CalendarEventDTO created = calendarService.createEvent(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -75,6 +77,7 @@ public class CalendarController {
             @ApiResponse(responseCode = "400", description = "Invalid request body or path parameter", content = @Content)
     })
     @PutMapping(value = "/{id}", produces = "application/json", consumes = "application/json")
+    @PreAuthorize("hasAuthority('event:write')")
     public ResponseEntity<CalendarEventDTO> updateEvent(
             @PathVariable Long id,
             @RequestBody UpdateEventRequest request) {
@@ -89,6 +92,7 @@ public class CalendarController {
             @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content)
     })
     @DeleteMapping(value = "/{id}", produces = "application/json")
+    @PreAuthorize("hasAuthority('event:write')")
     public ResponseEntity<Void> deleteEvent(
             @PathVariable Long id,
             @RequestParam CalendarActionMode mode,
