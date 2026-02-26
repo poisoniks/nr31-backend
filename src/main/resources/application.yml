@@ -42,3 +42,14 @@ jwt:
   expiration: ${JWT_EXPIRATION}
   refresh:
     expiration: ${JWT_REFRESH_EXPIRATION}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+  openapi:
+    info:
+      title: Nr.31 FKR API
+      version: 1.0.0
+      description: This is the backend for Nr.31 FKR site.

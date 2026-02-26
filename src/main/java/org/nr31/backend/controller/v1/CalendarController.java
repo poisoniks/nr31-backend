@@ -24,14 +24,28 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/v1/calendar/events")
 @RequiredArgsConstructor
+@Tag(name = "Calendar", description = "Endpoints for calendar events management")
 public class CalendarController {
 
     private final CalendarService calendarService;
 
-    @GetMapping
+    @Operation(summary = "Get calendar events", description = "Retrieves a list of calendar events for a specific date range")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved events", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = CalendarEventDTO.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid date range parameters", content = @Content)
+    })
+    @GetMapping(produces = "application/json")
     public ResponseEntity<List<CalendarEventDTO>> getEvents(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
@@ -43,13 +57,24 @@ public class CalendarController {
         return ResponseEntity.ok(events);
     }
 
-    @PostMapping
+    @Operation(summary = "Create calendar event", description = "Creates a new calendar event")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Successfully created event", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CalendarEventDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content)
+    })
+    @PostMapping(produces = "application/json", consumes = "application/json")
     public ResponseEntity<CalendarEventDTO> createEvent(@RequestBody CreateEventRequest request) {
         CalendarEventDTO created = calendarService.createEvent(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @PutMapping("/{id}")
+    @Operation(summary = "Update calendar event", description = "Updates an existing calendar event by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully updated event", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CalendarEventDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid request body or path parameter", content = @Content)
+    })
+    @PutMapping(value = "/{id}", produces = "application/json", consumes = "application/json")
     public ResponseEntity<CalendarEventDTO> updateEvent(
             @PathVariable Long id,
             @RequestBody UpdateEventRequest request) {
@@ -57,7 +82,13 @@ public class CalendarController {
         return ResponseEntity.ok(updated);
     }
 
-    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete calendar event", description = "Deletes a calendar event by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Successfully deleted event"),
+            @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content)
+    })
+    @DeleteMapping(value = "/{id}", produces = "application/json")
     public ResponseEntity<Void> deleteEvent(
             @PathVariable Long id,
             @RequestParam CalendarActionMode mode,
