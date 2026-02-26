@@ -47,8 +47,35 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'com.h2database:h2'
+
+    testImplementation 'io.cucumber:cucumber-java:7.34.2'
+    testImplementation 'io.cucumber:cucumber-spring:7.34.2'
+    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.34.2'
+    testImplementation 'org.junit.platform:junit-platform-suite-engine:6.0.3'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+    filter {
+        excludeTestsMatching "org.nr31.backend.cucumber.CucumberTestRunner"
+    }
+}
+
+tasks.register('cucumber', Test) {
+    description = 'Runs Cucumber tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching "org.nr31.backend.cucumber.CucumberTestRunner"
+    }
+    
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        exceptionFormat "full"
+        showExceptions true
+        showCauses true
+        showStackTraces true
+    }
 }
