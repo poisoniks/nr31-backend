@@ -110,6 +110,20 @@ public class GlobalExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(CalendarException.UserError.class)
+    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleUserCalendarException(CalendarException e) {
+        log.debug("User calendar exception", e);
+        return new ErrorResponse(e.getMessage(), LocalDateTime.now());
+    }
+
+    @ExceptionHandler(CalendarException.ServerError.class)
+    @ResponseStatus(code = HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleServerCalendarException(CalendarException e) {
+        log.error("Server calendar exception", e);
+        return new ErrorResponse("Unable to process the calendar request", LocalDateTime.now());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(code = HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGlobalException(Exception e) {
