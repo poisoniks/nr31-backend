@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 
@@ -49,12 +50,15 @@ public class CalendarController {
     @GetMapping(produces = "application/json")
     public ResponseEntity<List<CalendarEventDTO>> getEvents(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) String timezone) {
 
-        Instant fromInstant = from.atStartOfDay().toInstant(ZoneOffset.UTC);
-        Instant toInstant = to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        ZoneId targetZone = timezone != null ? ZoneId.of(timezone) : ZoneOffset.UTC;
 
-        List<CalendarEventDTO> events = calendarService.getEvents(fromInstant, toInstant);
+        Instant fromInstant = from.atStartOfDay(targetZone).toInstant();
+        Instant toInstant = to.plusDays(1).atStartOfDay(targetZone).toInstant();
+
+        List<CalendarEventDTO> events = calendarService.getEvents(fromInstant, toInstant, targetZone);
         return ResponseEntity.ok(events);
     }
 

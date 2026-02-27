@@ -31,13 +31,13 @@ public class UpdateEventRequest {
     private Map<String, String> description;
 
     @Schema(description = "Start time of the event in ISO-8601 format", example = "2026-10-27T10:00:00Z")
-    private String start;
+    private OffsetDateTime start;
 
     @Schema(description = "End time of the event in ISO-8601 format", example = "2026-10-27T12:00:00Z")
-    private String end;
+    private OffsetDateTime end;
 
     @Schema(description = "Original start time of the event, required for updating single instances of recurring events", example = "2023-10-27T10:00:00Z")
-    private String originalStart;
+    private OffsetDateTime originalStart;
 
     @Schema(description = "Identifier of the event type", example = "1")
     @Positive

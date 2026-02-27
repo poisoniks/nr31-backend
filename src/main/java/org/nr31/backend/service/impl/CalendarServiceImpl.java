@@ -52,7 +52,7 @@ public class CalendarServiceImpl implements CalendarService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CalendarEventDTO> getEvents(Instant from, Instant to) {
+    public List<CalendarEventDTO> getEvents(Instant from, Instant to, ZoneId targetZone) {
         List<CalendarEvent> allEvents = calendarEventRepository.findEventsInWindowOrRecurring(from, to);
         List<Long> recursiveEventsIds = allEvents.stream()
                 .filter(e -> e.getRrule() != null)
@@ -62,7 +62,8 @@ public class CalendarServiceImpl implements CalendarService {
         Map<Long, List<CalendarEventException>> exceptionsByEventId = new HashMap<>();
         if (!recursiveEventsIds.isEmpty()) {
             List<CalendarEventException> exceptions = calendarEventExceptionRepository
-                    .findExceptionsForEventsInWindow(recursiveEventsIds, from.minus(Duration.ofDays(365)), to.plus(Duration.ofDays(365)));
+                    .findExceptionsForEventsInWindow(recursiveEventsIds, from.minus(Duration.ofDays(365)),
+                            to.plus(Duration.ofDays(365)));
             exceptionsByEventId = exceptions.stream()
                     .collect(Collectors.groupingBy(ex -> ex.getOriginalEvent().getId()));
         }
@@ -72,11 +73,12 @@ public class CalendarServiceImpl implements CalendarService {
         for (CalendarEvent event : allEvents) {
             if (event.getRrule() == null || event.getRrule().isEmpty()) {
                 if (event.getStart().isBefore(to) && event.getEnd().isAfter(from)) {
-                    result.add(convertToDTO(event, event.getStart(), event.getEnd(), false));
+                    result.add(convertToDTO(event, event.getStart(), event.getEnd(), false, targetZone));
                 }
             } else {
-                List<CalendarEventException> exceptions = exceptionsByEventId.getOrDefault(event.getId(), Collections.emptyList());
-                processRecursiveEvent(from, to, event, exceptions, result);
+                List<CalendarEventException> exceptions = exceptionsByEventId.getOrDefault(event.getId(),
+                        Collections.emptyList());
+                processRecursiveEvent(from, to, event, exceptions, result, targetZone);
             }
         }
 
@@ -84,7 +86,7 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     private void processRecursiveEvent(Instant windowStart, Instant windowEnd, CalendarEvent event,
-                                       List<CalendarEventException> exceptions, List<CalendarEventDTO> result) {
+            List<CalendarEventException> exceptions, List<CalendarEventDTO> result, ZoneId targetZone) {
         try {
             RecurrenceRule rule = new RecurrenceRule(event.getRrule());
             DateTime seed = new DateTime(event.getStart().toEpochMilli());
@@ -114,7 +116,7 @@ public class CalendarServiceImpl implements CalendarService {
                         Instant newEnd = ex.getNewEnd() != null ? ex.getNewEnd() : newStart.plus(duration);
 
                         if (newStart.isBefore(windowEnd) && newEnd.isAfter(windowStart)) {
-                            result.add(convertToDTOWithException(event, ex, newStart, newEnd, true));
+                            result.add(convertToDTOWithException(event, ex, newStart, newEnd, true, targetZone));
                         }
                     }
                 } else {
@@ -123,7 +125,7 @@ public class CalendarServiceImpl implements CalendarService {
                     Instant instanceEnd = instanceStart.plus(duration);
 
                     if (instanceStart.isBefore(windowEnd) && instanceEnd.isAfter(windowStart)) {
-                        result.add(convertToDTO(event, instanceStart, instanceEnd, true));
+                        result.add(convertToDTO(event, instanceStart, instanceEnd, true, targetZone));
                     }
                 }
             }
@@ -146,13 +148,15 @@ public class CalendarServiceImpl implements CalendarService {
             units = unitTypeRepository.findAllById(request.getParticipatingUnits());
         }
 
+        String timezoneStr = request.getStart() != null ? request.getStart().getOffset().getId() : "Z";
+
         CalendarEvent event = CalendarEvent.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .start(Instant.parse(request.getStart()))
-                .end(Instant.parse(request.getEnd()))
+                .start(request.getStart() != null ? request.getStart().toInstant() : null)
+                .end(request.getEnd() != null ? request.getEnd().toInstant() : null)
                 .type(type)
-                .timezone(ZoneId.of(request.getTimezone()).getId())
+                .timezone(timezoneStr)
                 .serverName(request.getServerName())
                 .participatingUnits(units)
                 .rrule(rruleString)
@@ -160,7 +164,7 @@ public class CalendarServiceImpl implements CalendarService {
                 .build();
 
         event = calendarEventRepository.save(event);
-        return convertToDTO(event, event.getStart(), event.getEnd(), rruleString != null);
+        return convertToDTO(event, event.getStart(), event.getEnd(), rruleString != null, ZoneId.of(timezoneStr));
     }
 
     @Override
@@ -169,21 +173,24 @@ public class CalendarServiceImpl implements CalendarService {
         CalendarEvent originalEvent = calendarEventRepository.findById(id)
                 .orElseThrow(() -> new CalendarException.UserError("Event not found"));
 
-        Instant requestStart = Instant.parse(request.getStart());
-        Instant requestEnd = Instant.parse(request.getEnd());
+        Instant requestStart = request.getStart() != null ? request.getStart().toInstant() : null;
+        Instant requestEnd = request.getEnd() != null ? request.getEnd().toInstant() : null;
 
         EventType type = request.getType() != null ? eventTypeRepository.findById(request.getType())
                 .orElseThrow(() -> new CalendarException.UserError("Event type not found"))
                 : originalEvent.getType();
 
-        List<UnitType> unitTypes = request.getParticipatingUnits() != null ?
-                unitTypeRepository.findAllById(request.getParticipatingUnits()) :
-                originalEvent.getParticipatingUnits();
+        List<UnitType> unitTypes = request.getParticipatingUnits() != null
+                ? unitTypeRepository.findAllById(request.getParticipatingUnits())
+                : originalEvent.getParticipatingUnits();
 
         switch (request.getMode()) {
             case SINGLE -> {
-                Instant targetInstanceStart = Instant.parse(request.getOriginalStart());
-                return updateSingleEvent(request, originalEvent, targetInstanceStart, requestEnd, type, unitTypes);
+                Instant targetInstanceStart = request.getOriginalStart() != null
+                        ? request.getOriginalStart().toInstant()
+                        : null;
+                return updateSingleEvent(request, originalEvent, targetInstanceStart, requestStart, requestEnd, type,
+                        unitTypes);
             }
             case ALL -> {
                 return updateAllEvents(request, originalEvent, requestStart, requestEnd, type);
@@ -195,7 +202,8 @@ public class CalendarServiceImpl implements CalendarService {
         }
     }
 
-    private CalendarEventDTO updateFutureEvents(UpdateEventRequest request, CalendarEvent originalEvent, Instant splitDate, Long typeId) {
+    private CalendarEventDTO updateFutureEvents(UpdateEventRequest request, CalendarEvent originalEvent,
+            Instant splitDate, Long typeId) {
         if (originalEvent.getRrule() != null) {
             Instant untilTimestamp = splitDate.minusSeconds(1);
             stopEventAt(originalEvent, new DateTime(untilTimestamp.toEpochMilli()));
@@ -235,7 +243,8 @@ public class CalendarServiceImpl implements CalendarService {
         }
     }
 
-    private CalendarEventDTO updateAllEvents(UpdateEventRequest request, CalendarEvent originalEvent, Instant requestStart, Instant requestEnd, EventType type) {
+    private CalendarEventDTO updateAllEvents(UpdateEventRequest request, CalendarEvent originalEvent,
+            Instant requestStart, Instant requestEnd, EventType type) {
         originalEvent.setTitle(request.getTitle());
         originalEvent.setDescription(request.getDescription());
         originalEvent.setStart(requestStart);
@@ -255,10 +264,11 @@ public class CalendarServiceImpl implements CalendarService {
         calendarEventExceptionRepository.deleteByOriginalEvent(originalEvent);
 
         return convertToDTO(originalEvent, originalEvent.getStart(), originalEvent.getEnd(),
-                originalEvent.getRrule() != null);
+                originalEvent.getRrule() != null, ZoneId.of(originalEvent.getTimezone()));
     }
 
-    private CalendarEventDTO updateSingleEvent(UpdateEventRequest request, CalendarEvent originalEvent, Instant newStart, Instant newEnd, EventType type, List<UnitType> unitTypes) {
+    private CalendarEventDTO updateSingleEvent(UpdateEventRequest request, CalendarEvent originalEvent,
+            Instant exceptionDate, Instant newStart, Instant newEnd, EventType type, List<UnitType> unitTypes) {
         if (originalEvent.getRrule() == null || originalEvent.getRrule().isEmpty()) {
             originalEvent.setTitle(request.getTitle());
             originalEvent.setDescription(request.getDescription());
@@ -267,15 +277,13 @@ public class CalendarServiceImpl implements CalendarService {
             originalEvent.setType(type);
             originalEvent.setParticipatingUnits(unitTypes);
             calendarEventRepository.save(originalEvent);
-            return convertToDTO(originalEvent, newStart, newEnd, false);
+            return convertToDTO(originalEvent, newStart, newEnd, false, ZoneId.of(originalEvent.getTimezone()));
         } else {
-            Instant targetInstanceDate = Instant.parse(request.getOriginalStart());
-
             CalendarEventException ex = calendarEventExceptionRepository
-                    .findByOriginalEventAndExceptionDate(originalEvent, targetInstanceDate)
+                    .findByOriginalEventAndExceptionDate(originalEvent, exceptionDate)
                     .orElseGet(() -> CalendarEventException.builder()
                             .originalEvent(originalEvent)
-                            .exceptionDate(targetInstanceDate)
+                            .exceptionDate(exceptionDate)
                             .build());
 
             ex.setCancelled(false);
@@ -287,7 +295,8 @@ public class CalendarServiceImpl implements CalendarService {
             ex.setNewServerName(request.getServerName());
 
             calendarEventExceptionRepository.save(ex);
-            return convertToDTOWithException(originalEvent, ex, newStart, newEnd, true);
+            return convertToDTOWithException(originalEvent, ex, newStart, newEnd, true,
+                    ZoneId.of(originalEvent.getTimezone()));
         }
     }
 
@@ -316,7 +325,8 @@ public class CalendarServiceImpl implements CalendarService {
                 calendarEventRepository.delete(originalEvent);
             }
             case FUTURE -> {
-                if (exceptionDate == null) throw new CalendarException.UserError("Date required");
+                if (exceptionDate == null)
+                    throw new CalendarException.UserError("Date required");
                 stopEventAt(originalEvent, new DateTime(exceptionDate.minusSeconds(1).toEpochMilli()));
             }
             default -> throw new CalendarException.UserError("Invalid mode");
@@ -369,14 +379,14 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     private CalendarEventDTO convertToDTO(CalendarEvent event, Instant actualStart, Instant actualEnd,
-                                          boolean isRecurring) {
+            boolean isRecurring, ZoneId targetZone) {
         CalendarEventDTO dto = new CalendarEventDTO();
         dto.setId(event.getId().toString());
         dto.setSeriesId(event.getSeriesId());
         dto.setTitle(event.getTitle());
         dto.setDescription(event.getDescription());
-        dto.setStart(actualStart.toString());
-        dto.setEnd(actualEnd.toString());
+        dto.setStart(java.time.OffsetDateTime.ofInstant(actualStart, targetZone));
+        dto.setEnd(java.time.OffsetDateTime.ofInstant(actualEnd, targetZone));
         dto.setType(event.getType());
         dto.setCustomIcon(event.getType().getCustomIcon());
         dto.setServerName(event.getServerName());
@@ -386,14 +396,14 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     private CalendarEventDTO convertToDTOWithException(CalendarEvent event, CalendarEventException ex,
-                                                       Instant start, Instant end, boolean isRecurring) {
+            Instant start, Instant end, boolean isRecurring, ZoneId targetZone) {
         CalendarEventDTO dto = new CalendarEventDTO();
         dto.setId(event.getId().toString());
         dto.setSeriesId(event.getSeriesId());
         dto.setTitle(ex.getNewTitle() != null ? ex.getNewTitle() : event.getTitle());
         dto.setDescription(ex.getNewDescription() != null ? ex.getNewDescription() : event.getDescription());
-        dto.setStart(start.toString());
-        dto.setEnd(end.toString());
+        dto.setStart(java.time.OffsetDateTime.ofInstant(start, targetZone));
+        dto.setEnd(java.time.OffsetDateTime.ofInstant(end, targetZone));
         dto.setType(ex.getNewType() != null ? ex.getNewType() : event.getType());
         dto.setServerName(ex.getNewServerName() != null ? ex.getNewServerName() : event.getServerName());
         dto.setParticipatingUnits(event.getParticipatingUnits());

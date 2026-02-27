@@ -28,10 +28,10 @@ public class CreateEventRequest {
     private Map<String, String> description;
 
     @Schema(description = "Start time of the event in ISO-8601 format", example = "2026-10-27T10:00:00Z")
-    private String start;
+    private OffsetDateTime start;
 
     @Schema(description = "End time of the event in ISO-8601 format", example = "2026-10-27T12:00:00Z")
-    private String end;
+    private OffsetDateTime end;
 
     @Schema(description = "Identifier of the event type", example = "1")
     @Positive
@@ -46,7 +46,4 @@ public class CreateEventRequest {
 
     @Schema(description = "Recurrence rules for the event")
     private Recurrence recurrence;
-
-    @Schema(description = "Timezone of the event", example = "Europe/Kyiv")
-    private String timezone;
 }

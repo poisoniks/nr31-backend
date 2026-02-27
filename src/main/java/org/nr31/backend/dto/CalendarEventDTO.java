@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.nr31.backend.model.EventType;
 import org.nr31.backend.model.UnitType;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -29,10 +30,10 @@ public class CalendarEventDTO {
     private Map<String, String> description;
 
     @Schema(description = "Start time of the event in ISO-8601 format", example = "2026-10-27T10:00:00Z")
-    private String start;
+    private OffsetDateTime start;
 
     @Schema(description = "End time of the event in ISO-8601 format", example = "2026-10-27T12:00:00Z")
-    private String end;
+    private OffsetDateTime end;
 
     @Schema(description = "Type of the event")
     private EventType type;
