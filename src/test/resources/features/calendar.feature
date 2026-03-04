@@ -325,3 +325,22 @@ Feature: Calendar Events Management
       | 2026-11-09          | Global Synchronization - Phase 2   | 2026-11-09T16:00:00+02:00       | EU-Central      | Present |
       | 2026-11-11          | Global Synchronization - Phase 2   | 2026-11-11T16:00:00+02:00       | EU-Central      | Present |
       | 2026-11-13          | Global Synchronization - Phase 2   | 2026-11-13T16:00:00+02:00       | EU-Central      | Present |
+
+  Scenario: Retrieve nearest event to a public user
+    Given I log in with user "admin" and password "testpass"
+    When I create an event with the following details:
+      | title.en   | First Event          |
+      | start      | 2026-05-10T10:00:00Z |
+      | end        | 2026-05-10T11:00:00Z |
+      | type       | 1                    |
+      | serverName | Public Server        |
+    And I create an event with the following details:
+      | title.en   | Second Event         |
+      | start      | 2026-05-12T10:00:00Z |
+      | end        | 2026-05-12T11:00:00Z |
+      | type       | 1                    |
+      | serverName | Public Server        |
+    And I log out
+    When I retrieve the nearest event to "2026-05-10T12:00:00Z"
+    Then the response status code should be 200
+    And the response body should contain "title.en" with value "Second Event"

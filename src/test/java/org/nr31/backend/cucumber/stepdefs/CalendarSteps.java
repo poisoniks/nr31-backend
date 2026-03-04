@@ -82,6 +82,11 @@ public class CalendarSteps {
         contextHelper.addValue("jwt_token", token);
     }
 
+    @Given("I log out")
+    public void i_log_out() {
+        contextHelper.addValue("jwt_token", null);
+    }
+
     @When("I create an event with the following details:")
     public void i_create_an_event_with_the_following_details(DataTable dataTable) throws Exception {
         String body = dataTableToJson(dataTable);
@@ -242,6 +247,12 @@ public class CalendarSteps {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
         assertEquals(expectedTime, root.get("start").asText());
+    }
+
+    @When("I retrieve the nearest event to {string}")
+    public void i_retrieve_the_nearest_event(String date) throws Exception {
+        HttpResponse<String> res = makeApiCall("GET", "/api/v1/calendar/events/nearest?date=" + date, "");
+        contextHelper.addValue("response", res);
     }
 
     private String dataTableToJson(DataTable dataTable) throws Exception {

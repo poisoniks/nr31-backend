@@ -7,12 +7,14 @@ import org.nr31.backend.dto.UpdateEventRequest;
 
 import java.time.Instant;
 import java.util.List;
-
+import java.util.Optional;
 import java.time.ZoneId;
 
 public interface CalendarService {
 
     List<CalendarEventDTO> getEvents(Instant from, Instant to, ZoneId targetZone);
+
+    Optional<CalendarEventDTO> getNearestEvent(Instant targetDate, ZoneId targetZone);
 
     CalendarEventDTO createEvent(CreateEventRequest request);
 

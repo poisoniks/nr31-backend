@@ -22,9 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -60,6 +62,24 @@ public class CalendarController {
 
         List<CalendarEventDTO> events = calendarService.getEvents(fromInstant, toInstant, targetZone);
         return ResponseEntity.ok(events);
+    }
+
+    @Operation(summary = "Get nearest event", description = "Retrieves the nearest calendar event to a provided date")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved nearest event", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CalendarEventDTO.class))),
+            @ApiResponse(responseCode = "404", description = "No event found")
+    })
+    @GetMapping(value = "/nearest", produces = "application/json")
+    public ResponseEntity<CalendarEventDTO> getNearestEvent(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime date,
+            @RequestParam(required = false) String timezone) {
+
+        ZoneId targetZone = timezone != null ? ZoneId.of(timezone) : date.getOffset();
+        Optional<CalendarEventDTO> nearest = calendarService.getNearestEvent(date.toInstant(),
+                targetZone);
+
+        return nearest.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @Operation(summary = "Create calendar event", description = "Creates a new calendar event")

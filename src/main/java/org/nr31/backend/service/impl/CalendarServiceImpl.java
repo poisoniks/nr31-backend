@@ -86,6 +86,40 @@ public class CalendarServiceImpl implements CalendarService {
         return result;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<CalendarEventDTO> getNearestEvent(Instant targetDate, ZoneId targetZone) {
+        Instant to = targetDate.plus(Duration.ofDays(30));
+
+        List<CalendarEventDTO> events = getEvents(targetDate, to, targetZone);
+
+        CalendarEventDTO nearest = null;
+        long minDistance = Long.MAX_VALUE;
+
+        for (CalendarEventDTO event : events) {
+            Instant start = event.getStart().toInstant();
+            Instant end = event.getEnd().toInstant();
+
+            if (end.isBefore(targetDate)) {
+                continue;
+            }
+
+            long distance;
+            if (!start.isAfter(targetDate)) {
+                distance = 0;
+            } else {
+                distance = Duration.between(targetDate, start).toMillis();
+            }
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearest = event;
+            }
+        }
+
+        return Optional.ofNullable(nearest);
+    }
+
     private void processRecursiveEvent(Instant windowStart, Instant windowEnd, CalendarEvent event,
             List<CalendarEventException> exceptions, List<CalendarEventDTO> result, ZoneId targetZone) {
         try {
@@ -117,7 +151,7 @@ public class CalendarServiceImpl implements CalendarService {
                         Instant newEnd = ex.getNewEnd() != null ? ex.getNewEnd() : newStart.plus(duration);
 
                         if (newStart.isBefore(windowEnd) && newEnd.isAfter(windowStart)) {
-                            result.add(convertToDTOWithException(event, ex, newStart, newEnd, true, targetZone));
+                            result.add(convertToDTOWithException(event, ex, newStart, newEnd, targetZone));
                         }
                     }
                 } else {
@@ -296,7 +330,7 @@ public class CalendarServiceImpl implements CalendarService {
             ex.setNewServerName(request.getServerName());
 
             calendarEventExceptionRepository.save(ex);
-            return convertToDTOWithException(originalEvent, ex, newStart, newEnd, true,
+            return convertToDTOWithException(originalEvent, ex, newStart, newEnd,
                     ZoneId.of(originalEvent.getTimezone()));
         }
     }
@@ -400,7 +434,7 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     private CalendarEventDTO convertToDTOWithException(CalendarEvent event, CalendarEventException ex,
-            Instant start, Instant end, boolean isRecurring, ZoneId targetZone) {
+                                                       Instant start, Instant end, ZoneId targetZone) {
         CalendarEventDTO dto = new CalendarEventDTO();
         dto.setId(event.getId().toString());
         dto.setSeriesId(event.getSeriesId());
@@ -414,7 +448,7 @@ public class CalendarServiceImpl implements CalendarService {
             Hibernate.initialize(event.getParticipatingUnits());
             dto.setParticipatingUnits(event.getParticipatingUnits());
         }
-        dto.setRecurring(isRecurring);
+        dto.setRecurring(true);
         return dto;
     }
 }
