@@ -64,7 +64,7 @@ public class CalendarController {
         return ResponseEntity.ok(events);
     }
 
-    @Operation(summary = "Get nearest event", description = "Retrieves the nearest calendar event to a provided date")
+    @Operation(summary = "Get nearest event", description = "Retrieves the nearest calendar event to a provided datetime")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved nearest event", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CalendarEventDTO.class))),
             @ApiResponse(responseCode = "404", description = "No event found")

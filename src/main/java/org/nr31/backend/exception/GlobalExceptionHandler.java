@@ -11,6 +11,7 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -102,6 +103,21 @@ public class GlobalExceptionHandler {
         });
 
         log.debug("Validation failed: {}", errors);
+
+        return ValidationErrorResponse.builder()
+                .message("Request validation failed")
+                .details(errors)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    public ValidationErrorResponse handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        Map<String, String> errors = new HashMap<>();
+        errors.put(e.getName(), "Invalid format");
+
+        log.debug("Type mismatch failed: {}", errors);
 
         return ValidationErrorResponse.builder()
                 .message("Request validation failed")
