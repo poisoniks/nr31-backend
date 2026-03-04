@@ -24,6 +24,10 @@ import org.nr31.backend.repository.CalendarEventRepository;
 import org.nr31.backend.repository.EventTypeRepository;
 import org.nr31.backend.repository.UnitTypeRepository;
 import org.nr31.backend.service.CalendarService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +35,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,8 +56,13 @@ public class CalendarServiceImpl implements CalendarService {
     private final EventTypeRepository eventTypeRepository;
     private final UnitTypeRepository unitTypeRepository;
 
+    @Lazy
+    @Autowired
+    private CalendarService self;
+
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "calendarEvents", key = "{#from.toEpochMilli(), #to.toEpochMilli(), #targetZone.id}")
     public List<CalendarEventDTO> getEvents(Instant from, Instant to, ZoneId targetZone) {
         List<CalendarEvent> allEvents = calendarEventRepository.findEventsInWindowOrRecurring(from, to);
         List<Long> recursiveEventsIds = allEvents.stream()
@@ -89,9 +99,12 @@ public class CalendarServiceImpl implements CalendarService {
     @Override
     @Transactional(readOnly = true)
     public Optional<CalendarEventDTO> getNearestEvent(Instant targetDate, ZoneId targetZone) {
-        Instant to = targetDate.plus(Duration.ofDays(30));
+        ZonedDateTime targetZdt = targetDate.atZone(targetZone);
+        Instant windowStart = targetZdt.truncatedTo(ChronoUnit.DAYS).toInstant();
 
-        List<CalendarEventDTO> events = getEvents(targetDate, to, targetZone);
+        Instant windowEnd = windowStart.plus(Duration.ofDays(31));
+
+        List<CalendarEventDTO> events = self.getEvents(windowStart, windowEnd, targetZone);
 
         CalendarEventDTO nearest = null;
         long minDistance = Long.MAX_VALUE;
@@ -172,6 +185,7 @@ public class CalendarServiceImpl implements CalendarService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "calendarEvents", allEntries = true)
     public CalendarEventDTO createEvent(CreateEventRequest request) {
         String rruleString = buildRRuleString(request.getRecurrence());
 
@@ -204,6 +218,7 @@ public class CalendarServiceImpl implements CalendarService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "calendarEvents", allEntries = true)
     public CalendarEventDTO updateEvent(Long id, UpdateEventRequest request) {
         CalendarEvent originalEvent = calendarEventRepository.findById(id)
                 .orElseThrow(() -> new CalendarException.UserError("Event not found"));
@@ -337,6 +352,7 @@ public class CalendarServiceImpl implements CalendarService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "calendarEvents", allEntries = true)
     public void deleteEvent(Long id, CalendarActionMode mode, Instant exceptionDate) {
         CalendarEvent originalEvent = calendarEventRepository.findById(id)
                 .orElseThrow(() -> new CalendarException.UserError("Event not found"));
