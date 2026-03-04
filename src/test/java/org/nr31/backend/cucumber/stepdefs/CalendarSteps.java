@@ -2,6 +2,7 @@ package org.nr31.backend.cucumber.stepdefs;
 
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -22,7 +23,10 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,7 +34,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 
 public class CalendarSteps {
 
@@ -343,16 +346,12 @@ public class CalendarSteps {
         if (text == null)
             return null;
         String resolved = text;
-        if (resolved.contains("{eventId}")) {
-            String eventId = contextHelper.getValue("eventId");
-            if (eventId != null) {
-                resolved = resolved.replace("{eventId}", eventId);
-            }
-        }
-        if (resolved.contains("{seriesId}")) {
-            String seriesId = contextHelper.getValue("seriesId");
-            if (seriesId != null) {
-                resolved = resolved.replace("{seriesId}", seriesId);
+        Matcher m = Pattern.compile("\\{([^}]+)}").matcher(text);
+        while (m.find()) {
+            String key = m.group(1);
+            Object value = contextHelper.getValue(key);
+            if (value != null) {
+                resolved = resolved.replace("{" + key + "}", value.toString());
             }
         }
         return resolved;
@@ -376,5 +375,61 @@ public class CalendarSteps {
         }
 
         return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    @And("I save the created event {string} as {string}")
+    public void iSaveTheCreatedEventAs(String field, String varName) throws Exception {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        JsonNode root = objectMapper.readTree(response.body());
+        contextHelper.addValue(varName, root.get(field).asText());
+    }
+
+    @And("I save the created event {string} for the Wednesday instance \\({word}\\) as {string}")
+    public void iSaveTheCreatedEventForTheWednesdayInstanceAs(String field, String date,
+            String varName) throws Exception {
+        iSaveTheCreatedEventAs(field, varName);
+    }
+
+    @And("I save the created event {string} for the Friday instance \\({word}\\) as {string}")
+    public void iSaveTheCreatedEventForTheFridayInstanceAs(String field, String date, String varName)
+            throws Exception {
+        iSaveTheCreatedEventAs(field, varName);
+    }
+
+    @And("I save the created event {string} for the next Monday instance \\({word}\\) as {string}")
+    public void iSaveTheCreatedEventForTheNextMondayInstanceAs(String field, String date,
+            String varName) throws Exception {
+        iSaveTheCreatedEventAs(field, varName);
+    }
+
+    @And("the response list should contain exactly the following state for the series:")
+    public void theResponseListShouldContainExactlyTheFollowingStateForTheSeries(
+            io.cucumber.datatable.DataTable dataTable) throws Exception {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        JsonNode root = objectMapper.readTree(response.body());
+
+        List<Map<String, String>> expectedPresentList = dataTable.asMaps().stream()
+                .filter(row -> "Present".equals(row.get("Status")))
+                .toList();
+
+        assertEquals(expectedPresentList.size(), root.size(),
+                "The number of events in response does not match the 'Present' expected events.");
+
+        for (Map<String, String> expectedRow : expectedPresentList) {
+            boolean found = false;
+            for (JsonNode node : root) {
+                String title = node.get("title").get("en").asText();
+                String start = node.get("start").asText();
+                String server = node.get("serverName").asText();
+
+                if (title.equals(expectedRow.get("Expected Title")) &&
+                        start.equals(expectedRow.get("Expected Start Time (Kyiv Time)")) &&
+                        server.equals(expectedRow.get("Expected Server"))) {
+                    found = true;
+                    break;
+                }
+            }
+            assertTrue(found, "Could not find an event matching: " + expectedRow);
+        }
     }
 }

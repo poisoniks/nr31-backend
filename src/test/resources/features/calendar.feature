@@ -290,3 +290,90 @@ Feature: Calendar Events Management
       | timezone | Europe/Kyiv |
     Then the response status code should be 200
     And the event start time should be adjusted to local time in the response
+
+  Scenario: Create a recurring series in JST, modify a single instance in EST, delete another in IST, alter future instances in AEDT, and verify in EET
+    Given I log in with user "admin" and password "testpass"
+
+    # Step 1: Create the base recurring series (Mon, Wed, Fri) submitting times in Japan Standard Time (UTC+09:00)
+    # 2026-11-03T00:00:00+09:00 is equivalent to 2026-11-02T15:00:00Z (UTC)
+    When I send a POST request to "/api/v1/calendar/events" with the following body:
+      """
+      {
+        "title": { "en": "Global Synchronization" },
+        "start": "2026-11-03T00:00:00+09:00",
+        "end": "2026-11-03T01:00:00+09:00",
+        "type": 1,
+        "serverName": "US-East-1",
+        "recurrence": {
+          "frequency": "WEEKLY",
+          "interval": 1,
+          "count": 12,
+          "byDay": ["MO", "WE", "FR"]
+        }
+      }
+      """
+    Then the response status code should be 201
+    And I save the created event "seriesId" as "globalSyncSeries"
+    And I save the created event "id" for the Wednesday instance (2026-11-04) as "wedInstanceId"
+    And I save the created event "id" for the Friday instance (2026-11-06) as "friInstanceId"
+    And I save the created event "id" for the next Monday instance (2026-11-09) as "nextMonInstanceId"
+
+    # Step 2: Update a SINGLE instance (Exception: Move Wednesday session 2 hours later) submitting in Eastern Standard Time (UTC-05:00)
+    # Original start 15:00 UTC is 10:00 EST. New start 17:00 UTC is 12:00 EST.
+    When I send a PUT request to "/api/v1/calendar/events/{wedInstanceId}" with the following body:
+      """
+      {
+        "mode": "SINGLE",
+        "title": { "en": "Global Synchronization - Delayed" },
+        "start": "2026-11-04T12:00:00-05:00",
+        "end": "2026-11-04T13:00:00-05:00",
+        "originalStart": "2026-11-04T10:00:00-05:00",
+        "type": 1,
+        "serverName": "US-East-1"
+      }
+      """
+    Then the response status code should be 200
+
+    # Step 3: Delete a SINGLE instance (Exception: Cancel Friday session) submitting the exception date in India Standard Time (UTC+05:30)
+    # Original start 15:00 UTC is 20:30 IST.
+    When I send a DELETE request to "/api/v1/calendar/events/{friInstanceId}" with parameters:
+      | mode          | SINGLE               |
+      | exceptionDate | 2026-11-06T20:30:00+05:30 |
+    Then the response status code should be 204
+
+    # Step 4: Update FUTURE instances (Split series: Move all events from next Monday to a new server and time) submitting in Australian Eastern Daylight Time (UTC+11:00)
+    # Original start 15:00 UTC (Nov 09) is 02:00 AEDT (Nov 10). New start 14:00 UTC (Nov 09) is 01:00 AEDT (Nov 10).
+    When I send a PUT request to "/api/v1/calendar/events/{nextMonInstanceId}" with the following body:
+      """
+      {
+        "mode": "FUTURE",
+        "title": { "en": "Global Synchronization - Phase 2" },
+        "start": "2026-11-10T01:00:00+11:00",
+        "end": "2026-11-10T02:00:00+11:00",
+        "originalStart": "2026-11-10T02:00:00+11:00",
+        "type": 1,
+        "serverName": "EU-Central",
+        "recurrence": {
+          "frequency": "WEEKLY",
+          "interval": 1,
+          "count": 9,
+          "byDay": ["MO", "WE", "FR"]
+        }
+      }
+      """
+    Then the response status code should be 200
+
+    # Step 5: Verify the complex state by retrieving data in Eastern European Time (Kyiv, UTC+02:00 in November)
+    When I send a GET request to "/api/v1/calendar/events" with parameters:
+      | from     | 2026-11-01  |
+      | to       | 2026-11-15  |
+      | timezone | Europe/Kyiv |
+    Then the response status code should be 200
+    And the response list should contain exactly the following state for the series:
+      | Original Date (UTC) | Expected Title                     | Expected Start Time (Kyiv Time) | Expected Server | Status  |
+      | 2026-11-02          | Global Synchronization             | 2026-11-02T17:00:00+02:00       | US-East-1       | Present |
+      | 2026-11-04          | Global Synchronization - Delayed   | 2026-11-04T19:00:00+02:00       | US-East-1       | Present |
+      | 2026-11-06          | N/A                                | N/A                             | N/A             | Deleted |
+      | 2026-11-09          | Global Synchronization - Phase 2   | 2026-11-09T16:00:00+02:00       | EU-Central      | Present |
+      | 2026-11-11          | Global Synchronization - Phase 2   | 2026-11-11T16:00:00+02:00       | EU-Central      | Present |
+      | 2026-11-13          | Global Synchronization - Phase 2   | 2026-11-13T16:00:00+02:00       | EU-Central      | Present |
