@@ -23,6 +23,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -81,33 +82,25 @@ public class CalendarSteps {
         contextHelper.addValue("jwt_token", token);
     }
 
-    @When("I send a POST request to {string} with the following body:")
-    public void i_send_a_post_request_to_with_the_following_body(String url, String body) throws Exception {
-        HttpResponse<String> response = makeApiCall("POST", url, body);
+    @When("I create an event with the following details:")
+    public void i_create_an_event_with_the_following_details(DataTable dataTable) throws Exception {
+        String body = dataTableToJson(dataTable);
+        HttpResponse<String> response = makeApiCall("POST", "/api/v1/calendar/events", body);
         contextHelper.addValue("response", response);
     }
 
-    @Given("I save the created event ID as {string}")
-    public void i_save_the_created_event_id_as(String key) throws Exception {
-        HttpResponse<String> response = contextHelper.getValue("response");
-        JsonNode root = objectMapper.readTree(response.body());
-        assertTrue(root.has("id"));
-        String id = root.get("id").asText();
-        contextHelper.addValue(key, id);
+    @When("I update the event {string} with the following details:")
+    public void i_update_the_event_with_the_following_details(String eventIdRef, DataTable dataTable) throws Exception {
+        String eventId = resolveVariables(eventIdRef);
+        String body = dataTableToJson(dataTable);
+        HttpResponse<String> response = makeApiCall("PUT", "/api/v1/calendar/events/" + eventId, body);
+        contextHelper.addValue("response", response);
     }
 
     @Then("the response status code should be {int}")
     public void the_response_status_code_should_be(Integer expectedStatusCode) {
         HttpResponse<String> response = contextHelper.getValue("response");
         assertEquals(expectedStatusCode, response.statusCode(), "Body was: " + response.body());
-    }
-
-    @Then("the response body should contain the created event ID")
-    public void the_response_body_should_contain_the_created_event_id() throws Exception {
-        HttpResponse<String> response = contextHelper.getValue("response");
-        JsonNode root = objectMapper.readTree(response.body());
-        assertTrue(root.has("id"));
-        assertNotNull(root.get("id").asText());
     }
 
     @Then("the response body should contain {string} with value {string}")
@@ -131,17 +124,29 @@ public class CalendarSteps {
         assertTrue(root.get(fieldName).asBoolean());
     }
 
-    @When("I send a GET request to {string} with parameters:")
-    public void i_send_a_get_request_to_with_parameters(String url, DataTable dataTable) throws Exception {
+    @When("I retrieve events with the following parameters:")
+    public void i_retrieve_events_with_the_following_parameters(DataTable dataTable) throws Exception {
         Map<String, String> params = dataTable.asMap(String.class, String.class);
         String queryString = params.entrySet().stream()
                 .map(e -> URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8) + "="
                         + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
                 .collect(Collectors.joining("&"));
 
-        String fullUrl = url + (url.contains("?") ? "&" : "?") + queryString;
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/calendar/events?" + queryString, null);
+        contextHelper.addValue("response", response);
+    }
 
-        HttpResponse<String> response = makeApiCall("GET", fullUrl, null);
+    @When("I delete the event {string} with parameters:")
+    public void i_delete_the_event_with_parameters(String eventIdRef, DataTable dataTable) throws Exception {
+        String eventId = resolveVariables(eventIdRef);
+        Map<String, String> params = dataTable.asMap(String.class, String.class);
+        String queryString = params.entrySet().stream()
+                .map(e -> URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8) + "="
+                        + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
+                .collect(Collectors.joining("&"));
+
+        HttpResponse<String> response = makeApiCall("DELETE", "/api/v1/calendar/events/" + eventId + "?" + queryString,
+                null);
         contextHelper.addValue("response", response);
     }
 
@@ -163,26 +168,6 @@ public class CalendarSteps {
         }
     }
 
-    @When("I send a PUT request to {string} with the following body:")
-    public void i_send_a_put_request_to_with_the_following_body(String url, String body) throws Exception {
-        HttpResponse<String> response = makeApiCall("PUT", url, body);
-        contextHelper.addValue("response", response);
-    }
-
-    @When("I send a DELETE request to {string} with parameters:")
-    public void i_send_a_delete_request_to_with_parameters(String url, DataTable dataTable) throws Exception {
-        Map<String, String> params = dataTable.asMap(String.class, String.class);
-        String queryString = params.entrySet().stream()
-                .map(e -> URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8) + "="
-                        + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
-                .collect(Collectors.joining("&"));
-
-        String fullUrl = url + (url.contains("?") ? "&" : "?") + queryString;
-
-        HttpResponse<String> response = makeApiCall("DELETE", fullUrl, null);
-        contextHelper.addValue("response", response);
-    }
-
     @Then("I should not be able to retrieve event {string}")
     public void i_should_not_be_able_to_retrieve_event(String idStr) throws Exception {
         String expectedId = resolveVariables(idStr);
@@ -201,74 +186,6 @@ public class CalendarSteps {
         i_should_not_be_able_to_retrieve_event(idStr);
     }
 
-    @Given("I have created a recurring event series starting {string} with ID {string}")
-    public void i_have_created_a_recurring_event_series_starting_with_id(String expectedStartTime, String idVarName)
-            throws Exception {
-        String body = String.format("""
-                {
-                  "title": { "en": "Future Update Base Series" },
-                  "start": "%s",
-                  "end": "%s",
-                  "type": 1,
-                  "serverName": "Main Server",
-                  "recurrence": { "frequency": "DAILY", "interval": 1, "count": 20 }
-                }""", expectedStartTime, expectedStartTime.replace("10:00:00Z", "10:30:00Z"));
-
-        HttpResponse<String> response = makeApiCall("POST", "/api/v1/calendar/events", body);
-        assertEquals(201, response.statusCode());
-
-        JsonNode root = objectMapper.readTree(response.body());
-        String eventId = root.get("id").asText();
-        contextHelper.addValue(idVarName, eventId);
-    }
-
-    @Given("I have created a recurring event series with title {string} and ID {string}")
-    public void i_have_created_a_recurring_event_series_with_title_and_id(String title, String idVarName)
-            throws Exception {
-        String body = String.format("""
-                {
-                  "title": { "en": "%s" },
-                  "start": "2026-10-27T10:00:00Z",
-                  "end": "2026-10-27T12:00:00Z",
-                  "type": 1,
-                  "serverName": "Main Server",
-                  "recurrence": { "frequency": "DAILY", "interval": 1, "count": 5 }
-                }""", title);
-
-        HttpResponse<String> response = makeApiCall("POST", "/api/v1/calendar/events", body);
-        assertEquals(201, response.statusCode());
-
-        JsonNode root = objectMapper.readTree(response.body());
-        String eventId = root.get("id").asText();
-        contextHelper.addValue(idVarName, eventId);
-    }
-
-    @Then("the response body should contain {string}")
-    public void the_response_body_should_contain(String fieldName) throws Exception {
-        HttpResponse<String> response = contextHelper.getValue("response");
-        JsonNode root = objectMapper.readTree(response.body());
-        assertTrue(root.has(fieldName), "Response does not contain " + fieldName + "\nBody: " + response.body());
-    }
-
-    @Given("I have created a recurring event series with ID {string}")
-    public void i_have_created_a_recurring_event_series_with_id(String idVarName) throws Exception {
-        i_have_created_a_recurring_event_series_with_title_and_id("Generic Series", idVarName);
-    }
-
-    @Then("subsequent GET requests for any date in the series should show title {string}")
-    public void subsequent_get_requests_for_any_date_in_the_series_should_show_title(String expectedTitle)
-            throws Exception {
-        HttpResponse<String> response = makeApiCall("GET",
-                "/api/v1/calendar/events?from=2026-10-27&to=2026-10-31&timezone=UTC", null);
-        assertEquals(200, response.statusCode());
-
-        JsonNode root = objectMapper.readTree(response.body());
-        assertTrue(root.isArray());
-        for (JsonNode node : root) {
-            assertEquals(expectedTitle, node.get("title").get("en").asText());
-        }
-    }
-
     @Then("events in series {string} after {string} should not exist")
     public void events_in_series_after_should_not_exist(String seriesIdRef, String afterDate) throws Exception {
         String seriesId = resolveVariables(seriesIdRef);
@@ -283,21 +200,6 @@ public class CalendarSteps {
             String actSeriesId = actId.split("_")[0];
             assertNotEquals(seriesId, actSeriesId, "Found event that should have been deleted: " + actId);
         }
-    }
-
-    @Given("an event exists at {string}")
-    public void an_event_exists_at(String startTime) throws Exception {
-        String body = String.format("""
-                {
-                  "title": { "en": "Timezone check event" },
-                  "start": "%s",
-                  "end": "%s",
-                  "type": 1,
-                  "serverName": "Main Server"
-                }""", startTime, startTime.replace("10:00:00Z", "11:00:00Z"));
-
-        HttpResponse<String> response = makeApiCall("POST", "/api/v1/calendar/events", body);
-        assertEquals(201, response.statusCode());
     }
 
     @Then("the event start time should be adjusted to local time in the response")
@@ -342,6 +244,37 @@ public class CalendarSteps {
         assertEquals(expectedTime, root.get("start").asText());
     }
 
+    private String dataTableToJson(DataTable dataTable) throws Exception {
+        ObjectNode root = objectMapper.createObjectNode();
+        Map<String, String> map = dataTable.asMap(String.class, String.class);
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            String[] parts = entry.getKey().split("\\.");
+            ObjectNode current = root;
+            for (int i = 0; i < parts.length - 1; i++) {
+                if (!current.has(parts[i])) {
+                    current.set(parts[i], objectMapper.createObjectNode());
+                }
+                current = (ObjectNode) current.get(parts[i]);
+            }
+            String key = parts[parts.length - 1];
+            String value = entry.getValue();
+
+            if (value == null || value.equals("null")) {
+                current.set(key, objectMapper.nullNode());
+            } else if ((value.startsWith("[") && value.endsWith("]"))
+                    || (value.startsWith("{") && value.endsWith("}"))) {
+                current.set(key, objectMapper.readTree(value));
+            } else if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
+                current.put(key, Boolean.parseBoolean(value));
+            } else if (value.matches("-?\\d+")) {
+                current.put(key, Integer.parseInt(value));
+            } else {
+                current.put(key, value);
+            }
+        }
+        return root.toString();
+    }
+
     private String resolveVariables(String text) {
         if (text == null)
             return null;
@@ -377,29 +310,32 @@ public class CalendarSteps {
         return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
+    @Then("the response body should contain {string}")
+    public void the_response_body_should_contain(String fieldName) throws Exception {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        JsonNode root = objectMapper.readTree(response.body());
+        assertTrue(root.has(fieldName), "Response does not contain " + fieldName + "\nBody: " + response.body());
+    }
+
+    @Then("subsequent GET requests for any date in the series should show title {string}")
+    public void subsequent_get_requests_for_any_date_in_the_series_should_show_title(String expectedTitle)
+            throws Exception {
+        HttpResponse<String> response = makeApiCall("GET",
+                "/api/v1/calendar/events?from=2026-10-27&to=2026-10-31&timezone=UTC", null);
+        assertEquals(200, response.statusCode());
+
+        JsonNode root = objectMapper.readTree(response.body());
+        assertTrue(root.isArray());
+        for (JsonNode node : root) {
+            assertEquals(expectedTitle, node.get("title").get("en").asText());
+        }
+    }
+
     @And("I save the created event {string} as {string}")
     public void iSaveTheCreatedEventAs(String field, String varName) throws Exception {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
         contextHelper.addValue(varName, root.get(field).asText());
-    }
-
-    @And("I save the created event {string} for the Wednesday instance \\({word}\\) as {string}")
-    public void iSaveTheCreatedEventForTheWednesdayInstanceAs(String field, String date,
-            String varName) throws Exception {
-        iSaveTheCreatedEventAs(field, varName);
-    }
-
-    @And("I save the created event {string} for the Friday instance \\({word}\\) as {string}")
-    public void iSaveTheCreatedEventForTheFridayInstanceAs(String field, String date, String varName)
-            throws Exception {
-        iSaveTheCreatedEventAs(field, varName);
-    }
-
-    @And("I save the created event {string} for the next Monday instance \\({word}\\) as {string}")
-    public void iSaveTheCreatedEventForTheNextMondayInstanceAs(String field, String date,
-            String varName) throws Exception {
-        iSaveTheCreatedEventAs(field, varName);
     }
 
     @And("the response list should contain exactly the following state for the series:")

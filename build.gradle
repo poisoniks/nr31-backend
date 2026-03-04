@@ -65,6 +65,7 @@ tasks.named('test') {
 tasks.register('cucumber', Test) {
     description = 'Runs Cucumber tests.'
     group = 'verification'
+    outputs.upToDateWhen { false }
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     environment "DOCKER_HOST", "npipe:////./pipe/docker_engine"
