@@ -46,7 +46,8 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
-    testRuntimeOnly 'com.h2database:h2'
+    testImplementation 'org.testcontainers:testcontainers:2.0.3'
+    testImplementation 'org.testcontainers:postgresql:1.21.4'
 
     testImplementation 'io.cucumber:cucumber-java:7.34.2'
     testImplementation 'io.cucumber:cucumber-spring:7.34.2'
@@ -66,6 +67,7 @@ tasks.register('cucumber', Test) {
     group = 'verification'
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
+    environment "DOCKER_HOST", "npipe:////./pipe/docker_engine"
     useJUnitPlatform()
     filter {
         includeTestsMatching "org.nr31.backend.cucumber.CucumberTestRunner"

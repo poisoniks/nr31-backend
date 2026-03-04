@@ -8,6 +8,7 @@ import org.dmfs.rfc5545.recur.InvalidRecurrenceRuleException;
 import org.dmfs.rfc5545.recur.RecurrenceRule;
 import org.dmfs.rfc5545.recur.RecurrenceRuleIterator;
 import org.dmfs.rfc5545.recur.Freq;
+import org.hibernate.Hibernate;
 import org.nr31.backend.dto.CalendarActionMode;
 import org.nr31.backend.dto.CalendarEventDTO;
 import org.nr31.backend.dto.CreateEventRequest;
@@ -390,7 +391,10 @@ public class CalendarServiceImpl implements CalendarService {
         dto.setType(event.getType());
         dto.setCustomIcon(event.getType().getCustomIcon());
         dto.setServerName(event.getServerName());
-        dto.setParticipatingUnits(event.getParticipatingUnits());
+        if (event.getParticipatingUnits() != null) {
+            Hibernate.initialize(event.getParticipatingUnits());
+            dto.setParticipatingUnits(event.getParticipatingUnits());
+        }
         dto.setRecurring(isRecurring);
         return dto;
     }
@@ -406,7 +410,10 @@ public class CalendarServiceImpl implements CalendarService {
         dto.setEnd(java.time.OffsetDateTime.ofInstant(end, targetZone));
         dto.setType(ex.getNewType() != null ? ex.getNewType() : event.getType());
         dto.setServerName(ex.getNewServerName() != null ? ex.getNewServerName() : event.getServerName());
-        dto.setParticipatingUnits(event.getParticipatingUnits());
+        if (event.getParticipatingUnits() != null) {
+            Hibernate.initialize(event.getParticipatingUnits());
+            dto.setParticipatingUnits(event.getParticipatingUnits());
+        }
         dto.setRecurring(isRecurring);
         return dto;
     }

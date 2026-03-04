@@ -2,6 +2,7 @@ package org.nr31.backend.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -40,6 +41,7 @@ public class UpdateEventRequest {
     private OffsetDateTime originalStart;
 
     @Schema(description = "Identifier of the event type", example = "1")
+    @NotNull
     @Positive
     private Long type;
 
