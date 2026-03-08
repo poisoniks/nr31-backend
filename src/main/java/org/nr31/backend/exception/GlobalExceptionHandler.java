@@ -10,6 +10,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -131,6 +132,31 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleUserCalendarException(CalendarException e) {
         log.debug("User calendar exception", e);
         return new ErrorResponse(e.getMessage(), LocalDateTime.now());
+    }
+
+    @ExceptionHandler(ElementNotFoundException.class)
+    @ResponseStatus(code = HttpStatus.NOT_FOUND)
+    public ErrorResponse handleElementNotFoundException(ElementNotFoundException e) {
+        log.debug("Element not found exception", e);
+        return new ErrorResponse("Requested entity is not found", LocalDateTime.now());
+    }
+
+    @ExceptionHandler(AppConfigException.class)
+    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleAppConfigException(AppConfigException e) {
+        log.debug("App config exception", e);
+        return new ErrorResponse(e.getMessage(), LocalDateTime.now());
+    }
+
+    @ExceptionHandler(AppConfigValidationException.class)
+    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    public ValidationErrorResponse handleAppConfigValidationException(AppConfigValidationException e) {
+        log.debug("AppConfig validation exception", e);
+        return ValidationErrorResponse.builder()
+                .message("App config validation failed")
+                .details(e.getErrors())
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 
     @ExceptionHandler(CalendarException.ServerError.class)
