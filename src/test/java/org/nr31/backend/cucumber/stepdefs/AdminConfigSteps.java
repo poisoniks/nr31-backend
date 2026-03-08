@@ -3,37 +3,12 @@ package org.nr31.backend.cucumber.stepdefs;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.When;
-import org.nr31.backend.cucumber.ScenarioContextHelper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class AdminConfigSteps {
-
-    @LocalServerPort
-    private int port;
-
-    @Autowired
-    private ScenarioContextHelper contextHelper;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_1_1)
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
+public class AdminConfigSteps extends CommonStepDefs {
 
     @When("I retrieve the config {string}")
     public void i_retrieve_the_config(String configName) throws Exception {
@@ -80,54 +55,4 @@ public class AdminConfigSteps {
         assertEquals(expectedValue, root.get("configValue").asText());
     }
 
-    private String dataTableToJson(DataTable dataTable) throws Exception {
-        ObjectNode root = objectMapper.createObjectNode();
-        Map<String, String> map = dataTable.asMap(String.class, String.class);
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            String[] parts = entry.getKey().split("\\.");
-            ObjectNode current = root;
-            for (int i = 0; i < parts.length - 1; i++) {
-                if (!current.has(parts[i])) {
-                    current.set(parts[i], objectMapper.createObjectNode());
-                }
-                current = (ObjectNode) current.get(parts[i]);
-            }
-            String key = parts[parts.length - 1];
-            String value = entry.getValue();
-
-            if (value == null || value.equals("null")) {
-                current.set(key, objectMapper.nullNode());
-            } else if ((value.startsWith("[") && value.endsWith("]"))
-                    || (value.startsWith("{") && value.endsWith("}"))) {
-                current.set(key, objectMapper.readTree(value));
-                current.put(key, value);
-            } else if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
-                current.put(key, Boolean.parseBoolean(value));
-            } else if (value.matches("-?\\d+")) {
-                current.put(key, Integer.parseInt(value));
-            } else {
-                current.put(key, value);
-            }
-        }
-        return root.toString();
-    }
-
-    private HttpResponse<String> makeApiCall(String method, String url, String body) throws Exception {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + port + url))
-                .header("Content-Type", "application/json");
-
-        String token = contextHelper.getValue("jwt_token");
-        if (token != null) {
-            builder.header("Authorization", "Bearer " + token);
-        }
-
-        if (body != null && !body.isEmpty()) {
-            builder.method(method, HttpRequest.BodyPublishers.ofString(body));
-        } else {
-            builder.method(method, HttpRequest.BodyPublishers.noBody());
-        }
-
-        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-    }
 }
