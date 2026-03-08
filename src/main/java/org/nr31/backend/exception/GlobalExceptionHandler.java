@@ -127,6 +127,13 @@ public class GlobalExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
+        log.debug("Http method not supported exception", e);
+        return new ErrorResponse(String.format("Request method '%s' is not supported", e.getMethod()), LocalDateTime.now());
+    }
+
     @ExceptionHandler(CalendarException.UserError.class)
     @ResponseStatus(code = HttpStatus.BAD_REQUEST)
     public ErrorResponse handleUserCalendarException(CalendarException e) {
