@@ -38,3 +38,6 @@ VALUES ('test_config_2', CAST('{"en": "Test Config 2"}' AS JSON), CAST('{"timeou
 
 INSERT INTO app_config (config_key, description, config_value, config_schema) 
 VALUES ('test_config_3', CAST('{"en": "Test Config 3"}' AS JSON), CAST('{"retries": 3}' AS JSON), CAST('{"type": "object", "properties": {"retries": {"type": "integer"}}, "required": ["retries"]}' AS JSON));
+
+INSERT INTO app_config (config_key, description, config_value, config_schema) 
+VALUES ('disabled_endpoints', CAST('{"en": "Disabled endpoints"}' AS JSON), CAST('["one","two"]' AS JSON), CAST('{"type": "array","items": {"type": "string","minLength": 1}}' AS JSON));

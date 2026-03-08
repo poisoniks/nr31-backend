@@ -46,3 +46,25 @@ Feature: App Config Management
     Given I log in with user "admin" and password "testpass"
     When I retrieve the config "unknown_config_nonexistent"
     Then the response status code should be 404
+
+  Scenario: Prevent updates with missing required configValue field
+    Given I log in with user "admin" and password "testpass"
+    When I update the config "test_config_1" with the following payload:
+      | name            | test_config_1 |
+      | description.en  | Missing       |
+    Then the response status code should be 400
+
+  Scenario: Update application config missing name returns 404 Not Found
+    Given I log in with user "admin" and password "testpass"
+    When I update the config "unknown_config_nonexistent" with the following payload:
+      | name            | unknown_config_nonexistent |
+      | configValue     | {"enabled": true}          |
+    Then the response status code should be 404
+
+  Scenario: Tricky scenario - Reject updates with mismatched JSON inner types based on strict DB schema
+    Given I log in with user "admin" and password "testpass"
+    When I update the config "disabled_endpoints" with the following payload:
+      | name            | disabled_endpoints |
+      | configValue     | [1, 2, 3]          |
+    Then the response status code should be 400
+    And the response body should contain "details"
