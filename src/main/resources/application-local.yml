@@ -8,6 +8,8 @@ spring:
     properties:
       hibernate:
         generate_statistics: true
+  flyway:
+    locations: classpath:db/migration,classpath:db/migration-local
 
 logging:
   level:
