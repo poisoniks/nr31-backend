@@ -173,6 +173,13 @@ public class GlobalExceptionHandler {
         return new ErrorResponse("Unable to process the calendar request", LocalDateTime.now());
     }
 
+    @ExceptionHandler(FeatureDisabledException.class)
+    @ResponseStatus(code = HttpStatus.NOT_FOUND)
+    public ErrorResponse handleFeatureDisabledException(FeatureDisabledException e) {
+        log.debug("Feature disabled: {}", e.getMessage());
+        return new ErrorResponse("Requested endpoint is disabled", LocalDateTime.now());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(code = HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGlobalException(Exception e) {

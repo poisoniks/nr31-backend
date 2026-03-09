@@ -1,6 +1,7 @@
 package org.nr31.backend.controller.v1;
 
 import lombok.RequiredArgsConstructor;
+import org.nr31.backend.annotation.FeatureSwitch;
 import org.nr31.backend.dto.CalendarActionMode;
 import org.nr31.backend.dto.CalendarEventDTO;
 import org.nr31.backend.dto.CreateEventRequest;
@@ -44,6 +45,7 @@ public class CalendarController {
 
     private final CalendarService calendarService;
 
+    @FeatureSwitch("calendar_feature")
     @Operation(summary = "Get calendar events", description = "Retrieves a list of calendar events for a specific date range")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved events", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = CalendarEventDTO.class)))),
