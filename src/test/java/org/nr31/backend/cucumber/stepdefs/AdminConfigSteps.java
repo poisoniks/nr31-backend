@@ -5,6 +5,10 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.When;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.http.HttpResponse;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,6 +23,18 @@ public class AdminConfigSteps extends CommonStepDefs {
     @When("I retrieve all configs")
     public void i_retrieve_all_configs() throws Exception {
         HttpResponse<String> response = makeApiCall("GET", "/api/v1/admin/config", null);
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I retrieve all configs with the following parameters:")
+    public void i_retrieve_all_configs_with_the_following_parameters(DataTable dataTable) throws Exception {
+        Map<String, String> params = dataTable.asMap(String.class, String.class);
+        String queryString = params.entrySet().stream()
+                .map(e -> URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8) + "="
+                        + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
+                .collect(Collectors.joining("&"));
+
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/admin/config?" + queryString, null);
         contextHelper.addValue("response", response);
     }
 

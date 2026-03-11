@@ -68,3 +68,24 @@ Feature: App Config Management
       | configValue     | [1, 2, 3]          |
     Then the response status code should be 400
     And the response body should contain "details"
+
+  Scenario: Check pagination attributes in response from get all configs
+    Given I log in with user "admin" and password "testpass"
+    When I retrieve all configs
+    Then the response status code should be 200
+    And the response body should contain "page.size" with value "20"
+    And the response body should contain "page.number" with value "0"
+    And the response body should contain "page.totalElements" with value "5"
+    And the response body should contain "page.totalPages" with value "1"
+
+  Scenario: Check pagination attributes in response from get all configs with query parameters
+    Given I log in with user "admin" and password "testpass"
+    When I retrieve all configs with the following parameters:
+      | page | 0             |
+      | size | 10            |
+      | sort | configKey,asc |
+    Then the response status code should be 200
+    And the response body should contain "page.size" with value "10"
+    And the response body should contain "page.number" with value "0"
+    And the response body should contain "page.totalElements" with value "5"
+    And the response body should contain "page.totalPages" with value "1"
