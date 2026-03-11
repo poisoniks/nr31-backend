@@ -3,8 +3,6 @@ INSERT INTO users (username, password_hash) VALUES ('admin', '$2a$12$llGEJmpM5l3
 
 INSERT INTO user_roles (user_id, role_id) SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'admin' AND r.name = 'SUPER_ADMIN' ON CONFLICT (user_id, role_id) DO NOTHING;
 
-INSERT INTO app_config (config_key, description, config_value, config_schema) VALUES ('disabled_endpoints', CAST('{"en": "Type 1"}' AS JSON), CAST('["one","two"]' AS JSON), CAST('{"type": "array","items": {"type": "string","minLength": 1}}' AS JSON)) ON CONFLICT (config_key) DO NOTHING;
-
 INSERT INTO event_types (name) SELECT CAST('{"en": "Flagspawn"}' AS JSONB) WHERE NOT EXISTS (SELECT 1 FROM event_types WHERE name->>'en' = 'Flagspawn');
 INSERT INTO event_types (name) SELECT CAST('{"en": "Line battle"}' AS JSONB) WHERE NOT EXISTS (SELECT 1 FROM event_types WHERE name->>'en' = 'Line battle');
 INSERT INTO event_types (name) SELECT CAST('{"en": "Clan war"}' AS JSONB) WHERE NOT EXISTS (SELECT 1 FROM event_types WHERE name->>'en' = 'Clan war');

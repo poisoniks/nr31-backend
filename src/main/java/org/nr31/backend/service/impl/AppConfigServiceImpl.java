@@ -16,6 +16,8 @@ import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.model.AppConfig;
 import org.nr31.backend.repository.AppConfigRepository;
 import org.nr31.backend.service.AppConfigService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,6 +50,7 @@ public class AppConfigServiceImpl implements AppConfigService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "appConfig", key = "#name")
     public AppConfigDto getConfig(String name) {
         AppConfig appConfig = appConfigRepository.findByConfigKey(name)
                 .orElseThrow(() -> new ElementNotFoundException(String.format("AppConfig '%s' is not found ", name)));
@@ -62,6 +65,7 @@ public class AppConfigServiceImpl implements AppConfigService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "appConfig", key = "#appConfigDto.name")
     public AppConfigDto updateConfig(String name, AppConfigDto appConfigDto) {
         AppConfig appConfig = appConfigRepository.findByConfigKey(name)
                 .orElseThrow(() -> new ElementNotFoundException(String.format("AppConfig '%s' is not found ", name)));
