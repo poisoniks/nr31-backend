@@ -1,11 +1,13 @@
 package org.nr31.backend.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.nr31.backend.validation.ValidLocalizedString;
 
 import java.util.Map;
 
@@ -16,9 +18,11 @@ import java.util.Map;
 @Schema(description = "DTO for application configuration")
 public class AppConfigDto {
 
+    @NotBlank
     @Schema(description = "Name of the property")
     private String name;
 
+    @ValidLocalizedString
     @Schema(description = "Description of the configuration (localized)", example = "{\"en\": \"description\", \"uk\": \"опис\"}")
     private Map<String, String> description;
 

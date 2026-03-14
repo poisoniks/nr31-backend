@@ -20,6 +20,7 @@ import java.util.Map;
 @Schema(description = "Request representation for updating an existing calendar event")
 public class UpdateEventRequest {
 
+    @NotNull
     @Schema(description = "Action mode specifying how to apply updates to recurring events", example = "SINGLE")
     private CalendarActionMode mode;
 
@@ -31,6 +32,7 @@ public class UpdateEventRequest {
     @ValidLocalizedString
     private Map<String, String> description;
 
+    @NotNull
     @Schema(description = "Start time of the event in ISO-8601 format", example = "2026-10-27T10:00:00Z")
     private OffsetDateTime start;
 
