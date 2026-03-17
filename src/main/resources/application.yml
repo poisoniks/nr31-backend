@@ -54,3 +54,7 @@ springdoc:
       title: Nr.31 FKR API
       version: 1.0.0
       description: This is the backend for Nr.31 FKR site.
+
+app:
+  discord:
+    bot-token: ${DISCORD_BOT_TOKEN}

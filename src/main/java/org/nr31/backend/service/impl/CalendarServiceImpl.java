@@ -12,9 +12,12 @@ import org.hibernate.Hibernate;
 import org.nr31.backend.dto.CalendarActionMode;
 import org.nr31.backend.dto.CalendarEventDTO;
 import org.nr31.backend.dto.CreateEventRequest;
+import org.nr31.backend.dto.DiscordSyncEventDTO;
+import org.nr31.backend.dto.DiscordSyncExceptionDTO;
 import org.nr31.backend.dto.Recurrence;
 import org.nr31.backend.dto.UpdateEventRequest;
 import org.nr31.backend.exception.CalendarException;
+import org.nr31.backend.integration.discord.EventSource;
 import org.nr31.backend.model.CalendarEvent;
 import org.nr31.backend.model.CalendarEventException;
 import org.nr31.backend.model.EventType;
@@ -22,6 +25,7 @@ import org.nr31.backend.model.UnitType;
 import org.nr31.backend.repository.CalendarEventExceptionRepository;
 import org.nr31.backend.repository.CalendarEventRepository;
 import org.nr31.backend.repository.EventTypeRepository;
+import org.nr31.backend.repository.SupportedLocaleRepository;
 import org.nr31.backend.repository.UnitTypeRepository;
 import org.nr31.backend.service.CalendarService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +58,7 @@ public class CalendarServiceImpl implements CalendarService {
     private final CalendarEventRepository calendarEventRepository;
     private final CalendarEventExceptionRepository calendarEventExceptionRepository;
     private final EventTypeRepository eventTypeRepository;
+    private final SupportedLocaleRepository supportedLocaleRepository;
     private final UnitTypeRepository unitTypeRepository;
 
     @Lazy
@@ -295,20 +300,23 @@ public class CalendarServiceImpl implements CalendarService {
 
     private CalendarEventDTO updateAllEvents(UpdateEventRequest request, CalendarEvent originalEvent,
             Instant requestStart, Instant requestEnd, EventType type) {
-        originalEvent.setTitle(request.getTitle());
-        originalEvent.setDescription(request.getDescription());
-        originalEvent.setStart(requestStart);
-        originalEvent.setEnd(requestEnd);
+        if (originalEvent.getSource() != EventSource.DISCORD) {
+            originalEvent.setTitle(request.getTitle());
+            originalEvent.setDescription(request.getDescription());
+            originalEvent.setStart(requestStart);
+            originalEvent.setEnd(requestEnd);
+
+            if (request.getRecurrence() != null) {
+                originalEvent.setRrule(buildRRuleString(request.getRecurrence()));
+                originalEvent.setSeriesId(UUID.randomUUID().toString());
+            } else {
+                originalEvent.setRrule(null);
+                originalEvent.setSeriesId(null);
+            }
+        }
+        
         originalEvent.setType(type);
         originalEvent.setServerName(request.getServerName());
-
-        if (request.getRecurrence() != null) {
-            originalEvent.setRrule(buildRRuleString(request.getRecurrence()));
-            originalEvent.setSeriesId(UUID.randomUUID().toString());
-        } else {
-            originalEvent.setRrule(null);
-            originalEvent.setSeriesId(null);
-        }
 
         originalEvent = calendarEventRepository.save(originalEvent);
         calendarEventExceptionRepository.deleteByOriginalEvent(originalEvent);
@@ -320,10 +328,12 @@ public class CalendarServiceImpl implements CalendarService {
     private CalendarEventDTO updateSingleEvent(UpdateEventRequest request, CalendarEvent originalEvent,
             Instant exceptionDate, Instant newStart, Instant newEnd, EventType type, List<UnitType> unitTypes) {
         if (originalEvent.getRrule() == null || originalEvent.getRrule().isEmpty()) {
-            originalEvent.setTitle(request.getTitle());
-            originalEvent.setDescription(request.getDescription());
-            originalEvent.setStart(newStart);
-            originalEvent.setEnd(newEnd);
+            if (originalEvent.getSource() != EventSource.DISCORD) {
+                originalEvent.setTitle(request.getTitle());
+                originalEvent.setDescription(request.getDescription());
+                originalEvent.setStart(newStart);
+                originalEvent.setEnd(newEnd);
+            }
             originalEvent.setType(type);
             originalEvent.setParticipatingUnits(unitTypes);
             calendarEventRepository.save(originalEvent);
@@ -337,10 +347,12 @@ public class CalendarServiceImpl implements CalendarService {
                             .build());
 
             ex.setCancelled(false);
-            ex.setNewTitle(request.getTitle());
-            ex.setNewDescription(request.getDescription());
-            ex.setNewStart(newStart);
-            ex.setNewEnd(newEnd);
+            if (originalEvent.getSource() != EventSource.DISCORD) {
+                ex.setNewTitle(request.getTitle());
+                ex.setNewDescription(request.getDescription());
+                ex.setNewStart(newStart);
+                ex.setNewEnd(newEnd);
+            }
             ex.setNewType(type);
             ex.setNewServerName(request.getServerName());
 
@@ -439,13 +451,14 @@ public class CalendarServiceImpl implements CalendarService {
         dto.setStart(java.time.OffsetDateTime.ofInstant(actualStart, targetZone));
         dto.setEnd(java.time.OffsetDateTime.ofInstant(actualEnd, targetZone));
         dto.setType(event.getType());
-        dto.setCustomIcon(event.getType().getCustomIcon());
         dto.setServerName(event.getServerName());
         if (event.getParticipatingUnits() != null) {
             Hibernate.initialize(event.getParticipatingUnits());
             dto.setParticipatingUnits(event.getParticipatingUnits());
         }
         dto.setRecurring(isRecurring);
+        dto.setSource(event.getSource());
+        dto.setDiscordId(event.getDiscordId());
         return dto;
     }
 
@@ -465,6 +478,91 @@ public class CalendarServiceImpl implements CalendarService {
             dto.setParticipatingUnits(event.getParticipatingUnits());
         }
         dto.setRecurring(true);
+        dto.setSource(event.getSource());
+        dto.setDiscordId(event.getDiscordId());
         return dto;
+    }
+
+    @Override
+    @Transactional
+    public void syncDiscordEvent(DiscordSyncEventDTO dto) {
+        CalendarEvent event = calendarEventRepository.findByDiscordId(dto.getDiscordId())
+                .orElseGet(() -> {
+                    CalendarEvent newEvent = new CalendarEvent();
+                    newEvent.setDiscordId(dto.getDiscordId());
+                    newEvent.setSource(org.nr31.backend.integration.discord.EventSource.DISCORD);
+                    newEvent.setSeriesId(UUID.randomUUID().toString());
+                    //TODO resolve dynamically
+                    eventTypeRepository.findById(1L).ifPresent(newEvent::setType);
+                    return newEvent;
+                });
+
+        Map<String, String> names = new HashMap<>();
+        Map<String, String> descriptions = new HashMap<>();
+        
+        supportedLocaleRepository.findAll().forEach(locale -> {
+            names.put(locale.getCode(), dto.getName());
+            if (dto.getDescription() != null && !dto.getDescription().isEmpty()) {
+                descriptions.put(locale.getCode(), dto.getDescription());
+            }
+        });
+
+        event.setTitle(names);
+        event.setDescription(descriptions);
+        event.setStart(dto.getStart());
+        event.setEnd(dto.getEnd() != null ? dto.getEnd() : dto.getStart().plus(Duration.ofHours(1)));
+        
+        event.setServerName(dto.getServerName() != null ? dto.getServerName() : "Discord");
+        event.setRrule(dto.getRrule());
+
+        final CalendarEvent savedEvent = calendarEventRepository.save(event);
+
+        if (dto.getExceptions() != null && !dto.getExceptions().isEmpty()) {
+            for (DiscordSyncExceptionDTO exDto : dto.getExceptions()) {
+                CalendarEventException exception = calendarEventExceptionRepository
+                        .findByDiscordExceptionId(exDto.getExceptionId())
+                        .orElseGet(() -> {
+                            CalendarEventException ex = new CalendarEventException();
+                            ex.setDiscordExceptionId(exDto.getExceptionId());
+                            ex.setOriginalEvent(savedEvent);
+                            return ex;
+                        });
+
+                exception.setOriginalEvent(savedEvent);
+                exception.setCancelled(exDto.isCancelled());
+                exception.setExceptionDate(exDto.getExceptionDate());
+                exception.setNewStart(exDto.getNewStart());
+                exception.setNewEnd(exDto.getNewEnd());
+
+                calendarEventExceptionRepository.save(exception);
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void removeOrphanedDiscordEvents(List<String> activeDiscordIds) {
+        Instant now = Instant.now();
+        List<CalendarEvent> allFutureDiscordEvents = calendarEventRepository.findBySourceAndEndAfter(
+                org.nr31.backend.integration.discord.EventSource.DISCORD, now);
+
+        for (CalendarEvent event : allFutureDiscordEvents) {
+            if (event.getDiscordId() != null && !activeDiscordIds.contains(event.getDiscordId())) {
+                calendarEventExceptionRepository.deleteByOriginalEvent(event);
+                calendarEventRepository.delete(event);
+                log.info("Removed orphaned Discord event: {}", event.getTitle());
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteDiscordEvent(String discordId) {
+        calendarEventRepository.findByDiscordId(discordId)
+                .ifPresent(event -> {
+                    calendarEventExceptionRepository.deleteByOriginalEvent(event);
+                    calendarEventRepository.delete(event);
+                    log.info("Deleted Discord event via API: {}", event.getTitle());
+                });
     }
 }

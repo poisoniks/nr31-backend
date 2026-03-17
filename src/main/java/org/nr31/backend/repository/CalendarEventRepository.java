@@ -1,5 +1,6 @@
 package org.nr31.backend.repository;
 
+import org.nr31.backend.integration.discord.EventSource;
 import org.nr31.backend.model.CalendarEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Long> {
@@ -23,4 +25,8 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Lo
             @Param("windowEnd") Instant windowEnd);
 
     List<CalendarEvent> findBySeriesId(String seriesId);
+
+    Optional<CalendarEvent> findByDiscordId(String discordId);
+
+    List<CalendarEvent> findBySourceAndEndAfter(EventSource source, Instant cutoff);
 }

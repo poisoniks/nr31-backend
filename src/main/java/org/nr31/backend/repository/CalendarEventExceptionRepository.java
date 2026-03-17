@@ -30,4 +30,6 @@ public interface CalendarEventExceptionRepository extends JpaRepository<Calendar
         List<CalendarEventException> findByOriginalEvent(CalendarEvent originalEvent);
 
         void deleteByOriginalEvent(CalendarEvent originalEvent);
+
+    Optional<CalendarEventException> findByDiscordExceptionId(String discordExceptionId);
 }

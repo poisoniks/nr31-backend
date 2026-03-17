@@ -14,3 +14,7 @@ jwt:
   expiration: 600000
   refresh:
     expiration: 604800000
+
+app:
+  discord:
+    bot-token:

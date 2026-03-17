@@ -57,4 +57,7 @@ public class CalendarEventException {
 
     @Column(name = "new_server_name")
     private String newServerName;
+
+    @Column(name = "discord_exception_id", unique = true)
+    private String discordExceptionId;
 }

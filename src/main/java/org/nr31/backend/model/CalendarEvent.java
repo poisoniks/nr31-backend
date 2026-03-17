@@ -2,6 +2,8 @@ package org.nr31.backend.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,6 +19,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import org.nr31.backend.integration.discord.EventSource;
 
 import java.time.Instant;
 import java.util.List;
@@ -67,4 +71,12 @@ public class CalendarEvent {
 
     @Column(name = "rrule")
     private String rrule;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source")
+    private EventSource source = EventSource.SITE;
+
+    @Column(name = "discord_id", unique = true)
+    private String discordId;
 }

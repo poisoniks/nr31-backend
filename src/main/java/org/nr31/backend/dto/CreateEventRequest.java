@@ -28,6 +28,7 @@ public class CreateEventRequest {
     @ValidLocalizedString
     private Map<String, String> description;
 
+    @NotNull
     @Schema(description = "Start time of the event in ISO-8601 format", example = "2026-10-27T10:00:00Z")
     private OffsetDateTime start;
 

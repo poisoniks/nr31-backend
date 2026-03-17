@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.nr31.backend.integration.discord.EventSource;
 import org.nr31.backend.model.EventType;
 import org.nr31.backend.model.UnitType;
 
@@ -38,9 +39,6 @@ public class CalendarEventDTO {
     @Schema(description = "Type of the event")
     private EventType type;
 
-    @Schema(description = "Custom icon for the event", example = "/group")
-    private String customIcon;
-
     @Schema(description = "Name of the server where the event takes place", example = "Main Server")
     private String serverName;
 
@@ -49,4 +47,10 @@ public class CalendarEventDTO {
 
     @Schema(description = "Indicates whether the event is recurring", example = "false")
     private boolean isRecurring;
+
+    @Schema(description = "Source of the event (SITE or DISCORD)", example = "SITE")
+    private EventSource source;
+
+    @Schema(description = "Discord Scheduled Event ID if the event is synced from Discord")
+    private String discordId;
 }

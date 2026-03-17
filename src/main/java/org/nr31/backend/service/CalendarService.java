@@ -3,6 +3,7 @@ package org.nr31.backend.service;
 import org.nr31.backend.dto.CalendarActionMode;
 import org.nr31.backend.dto.CalendarEventDTO;
 import org.nr31.backend.dto.CreateEventRequest;
+import org.nr31.backend.dto.DiscordSyncEventDTO;
 import org.nr31.backend.dto.UpdateEventRequest;
 
 import java.time.Instant;
@@ -21,4 +22,10 @@ public interface CalendarService {
     CalendarEventDTO updateEvent(Long id, UpdateEventRequest request);
 
     void deleteEvent(Long id, CalendarActionMode mode, Instant exceptionDate);
+
+    void syncDiscordEvent(DiscordSyncEventDTO dto);
+
+    void removeOrphanedDiscordEvents(List<String> activeDiscordIds);
+
+    void deleteDiscordEvent(String discordId);
 }
