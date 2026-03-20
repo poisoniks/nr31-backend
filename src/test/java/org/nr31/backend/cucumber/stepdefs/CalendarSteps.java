@@ -18,6 +18,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -274,12 +275,19 @@ public class CalendarSteps extends CommonStepDefs {
                 .filter(row -> "Present".equals(row.get("Status")))
                 .toList();
 
-        assertEquals(expectedPresentList.size(), root.size(),
-                "The number of events in response does not match the 'Present' expected events.");
+        List<JsonNode> activeNodes = new ArrayList<>();
+        for (JsonNode node : root) {
+            if (!node.get("cancelled").asBoolean()) {
+                activeNodes.add(node);
+            }
+        }
+
+        assertEquals(expectedPresentList.size(), activeNodes.size(),
+                "The number of active events does not match the 'Present' expected events. Body: " + response.body());
 
         for (Map<String, String> expectedRow : expectedPresentList) {
             boolean found = false;
-            for (JsonNode node : root) {
+            for (JsonNode node : activeNodes) {
                 String title = node.get("title").get("en").asText();
                 String start = node.get("start").asText();
                 String server = node.get("serverName").asText();

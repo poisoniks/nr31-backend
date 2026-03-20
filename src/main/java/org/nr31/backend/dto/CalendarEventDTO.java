@@ -37,13 +37,13 @@ public class CalendarEventDTO {
     private OffsetDateTime end;
 
     @Schema(description = "Type of the event")
-    private EventType type;
+    private EventTypeDTO type;
 
     @Schema(description = "Name of the server where the event takes place", example = "Main Server")
     private String serverName;
 
     @Schema(description = "List of units participating in the event")
-    private List<UnitType> participatingUnits;
+    private List<UnitTypeDTO> participatingUnits;
 
     @Schema(description = "Indicates whether the event is recurring", example = "false")
     private boolean isRecurring;

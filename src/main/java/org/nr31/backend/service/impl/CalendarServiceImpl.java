@@ -14,7 +14,9 @@ import org.nr31.backend.dto.CalendarEventDTO;
 import org.nr31.backend.dto.CreateEventRequest;
 import org.nr31.backend.dto.DiscordSyncEventDTO;
 import org.nr31.backend.dto.DiscordSyncExceptionDTO;
+import org.nr31.backend.dto.EventTypeDTO;
 import org.nr31.backend.dto.Recurrence;
+import org.nr31.backend.dto.UnitTypeDTO;
 import org.nr31.backend.dto.UpdateEventRequest;
 import org.nr31.backend.exception.CalendarException;
 import org.nr31.backend.integration.discord.EventSource;
@@ -448,12 +450,9 @@ public class CalendarServiceImpl implements CalendarService {
         dto.setDescription(event.getDescription());
         dto.setStart(java.time.OffsetDateTime.ofInstant(actualStart, targetZone));
         dto.setEnd(java.time.OffsetDateTime.ofInstant(actualEnd, targetZone));
-        dto.setType(event.getType());
+        dto.setType(mapToEventTypeDTO(event.getType()));
         dto.setServerName(event.getServerName());
-        if (event.getParticipatingUnits() != null) {
-            Hibernate.initialize(event.getParticipatingUnits());
-            dto.setParticipatingUnits(event.getParticipatingUnits());
-        }
+        dto.setParticipatingUnits(mapToUnitTypeDTOList(event.getParticipatingUnits()));
         dto.setRecurring(isRecurring);
         dto.setSource(event.getSource());
         dto.setDiscordId(event.getDiscordId());
@@ -470,17 +469,51 @@ public class CalendarServiceImpl implements CalendarService {
         dto.setDescription(ex.getNewDescription() != null ? ex.getNewDescription() : event.getDescription());
         dto.setStart(java.time.OffsetDateTime.ofInstant(start, targetZone));
         dto.setEnd(java.time.OffsetDateTime.ofInstant(end, targetZone));
-        dto.setType(ex.getNewType() != null ? ex.getNewType() : event.getType());
+        
+        EventType type = ex.getNewType() != null ? ex.getNewType() : event.getType();
+        dto.setType(mapToEventTypeDTO(type));
+        
         dto.setServerName(ex.getNewServerName() != null ? ex.getNewServerName() : event.getServerName());
-        if (event.getParticipatingUnits() != null) {
-            Hibernate.initialize(event.getParticipatingUnits());
-            dto.setParticipatingUnits(event.getParticipatingUnits());
-        }
+        dto.setParticipatingUnits(mapToUnitTypeDTOList(event.getParticipatingUnits()));
+        
         dto.setRecurring(true);
         dto.setSource(event.getSource());
         dto.setDiscordId(event.getDiscordId());
         dto.setCancelled(ex.isCancelled());
         return dto;
+    }
+
+    private EventTypeDTO mapToEventTypeDTO(EventType entity) {
+        if (entity == null) {
+            return null;
+        }
+        Hibernate.initialize(entity);
+        return EventTypeDTO.builder()
+                .id(entity.getId())
+                .name(new HashMap<>(entity.getName()))
+                .customIcon(entity.getCustomIcon())
+                .build();
+    }
+
+    private List<UnitTypeDTO> mapToUnitTypeDTOList(List<UnitType> entities) {
+        if (entities == null) {
+            return Collections.emptyList();
+        }
+        Hibernate.initialize(entities);
+        return entities.stream()
+                .map(this::mapToUnitTypeDTO)
+                .collect(Collectors.toList());
+    }
+
+    private UnitTypeDTO mapToUnitTypeDTO(UnitType entity) {
+        if (entity == null) {
+            return null;
+        }
+        return UnitTypeDTO.builder()
+                .id(entity.getId())
+                .name(new HashMap<>(entity.getName()))
+                .description(entity.getDescription() != null ? new HashMap<>(entity.getDescription()) : null)
+                .build();
     }
 
     @Override

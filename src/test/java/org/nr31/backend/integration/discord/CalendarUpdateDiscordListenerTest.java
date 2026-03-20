@@ -1,8 +1,10 @@
 package org.nr31.backend.integration.discord;
 
-import net.dv8tion.jda.api.entities.ScheduledEvent;
-import net.dv8tion.jda.api.events.guild.scheduledevent.ScheduledEventCreateEvent;
-import net.dv8tion.jda.api.events.guild.scheduledevent.ScheduledEventDeleteEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.events.RawGatewayEvent;
+import net.dv8tion.jda.api.utils.TimeUtil;
 import net.dv8tion.jda.api.utils.data.DataArray;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,48 +16,29 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.nr31.backend.dto.DiscordSyncEventDTO;
 import org.nr31.backend.dto.DiscordSyncExceptionDTO;
+import org.nr31.backend.service.AppConfigService;
 import org.nr31.backend.service.CalendarService;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.BY_WEEKDAY_KEY;
-import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.CALENDAR_CACHE_NAME;
-import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.EVENT_EXCEPTION_ID_KEY;
-import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.FREQUENCY_KEY;
-import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.GUILD_SCHEDULED_EVENT_EXCEPTIONS_KEY;
-import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.INTERVAL_KEY;
-import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.IS_CANCELED_KEY;
-import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.RAW_SCHEDULED_END_TIME_KEY;
-import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.RAW_SCHEDULED_START_TIME_KEY;
-import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.RECURRENCE_RULE_KEY;
 
 @ExtendWith(MockitoExtension.class)
 class CalendarUpdateDiscordListenerTest {
-
-    private static final String MOCK_EVENT_ID = "event123";
-    private static final String MOCK_EVENT_NAME = "Test Event";
-    private static final String MOCK_START_TIME = "2026-03-15T12:00:00Z";
-    private static final String MOCK_END_TIME = "2026-03-15T14:00:00Z";
-    private static final String MOCK_LOCATION = "Voice Channel";
-    private static final String MOCK_DESCRIPTION = "Fun times";
-    private static final String MOCK_EXCEPTION_ID = "ex123";
-    private static final String MOCK_EXCEPTION_TIME = "2026-03-20T18:00:00Z";
 
     @Mock
     private CalendarService calendarService;
@@ -63,9 +46,19 @@ class CalendarUpdateDiscordListenerTest {
     private CacheManager cacheManager;
     @Mock
     private TransactionTemplate transactionTemplate;
+    @Mock
+    private AppConfigService appConfigService;
+    @Mock
+    private ObjectMapper objectMapper;
+    @Mock
+    private JDA jda;
+    @Mock
+    private Guild guild;
+    @Mock
+    private Cache cache;
 
     @InjectMocks
-    private CalendarUpdateDiscordListener calendarUpdateDiscordListener;
+    private CalendarUpdateDiscordListener listener;
 
     @BeforeEach
     void setUp() {
@@ -74,182 +67,142 @@ class CalendarUpdateDiscordListenerTest {
             callback.accept(null);
             return null;
         }).when(transactionTemplate).executeWithoutResult(any());
+
+        lenient().when(cacheManager.getCache(CalendarUpdateDiscordListener.CALENDAR_CACHE_NAME)).thenReturn(cache);
     }
 
     @Test
-    void shouldSyncEventsOnApplicationStart() {
-        ScheduledEventCreateEvent event = mock(ScheduledEventCreateEvent.class);
-        ScheduledEvent discordEvent = mock(ScheduledEvent.class);
+    void shouldCorrectlyParseRawGatewayEvent() {
+        DataObject payload = DataObject.empty()
+                .put("id", "123")
+                .put("guild_id", "456")
+                .put("name", "Gateway Event")
+                .put("scheduled_start_time", "2026-03-20T10:00:00Z");
+
+        RawGatewayEvent rawEvent = mock(RawGatewayEvent.class);
+        when(rawEvent.getType()).thenReturn("GUILD_SCHEDULED_EVENT_CREATE");
+        when(rawEvent.getPayload()).thenReturn(payload);
+        when(rawEvent.getJDA()).thenReturn(jda);
+        when(jda.getGuildById("456")).thenReturn(guild);
+        when(guild.getName()).thenReturn("Test Server");
+
+        listener.onRawGateway(rawEvent);
+
+        ArgumentCaptor<DiscordSyncEventDTO> captor = ArgumentCaptor.forClass(DiscordSyncEventDTO.class);
+        verify(calendarService).syncDiscordEvent(captor.capture());
         
+        DiscordSyncEventDTO syncDto = captor.getValue();
+        assertEquals("123", syncDto.getDiscordId());
+        assertEquals("Gateway Event", syncDto.getName());
+        assertEquals("Test Server", syncDto.getServerName());
+    }
+
+    @Test
+    void shouldParseComplexRecurrenceRule() {
         DataObject rruleObj = DataObject.empty()
-                .put(FREQUENCY_KEY, 2)
-                .put(INTERVAL_KEY, 1)
-                .put(BY_WEEKDAY_KEY, DataArray.fromCollection(List.of(3)));
+                .put("frequency", 2) // WEEKLY
+                .put("interval", 2)
+                .put("by_weekday", DataArray.fromCollection(List.of(1, 3))); // TU, TH
 
-        DataObject rawData = DataObject.empty()
-                .put("d", DataObject.empty()
-                        .put(RECURRENCE_RULE_KEY, rruleObj));
+        DataObject payload = DataObject.empty()
+                .put("id", "123")
+                .put("name", "Recurring Event")
+                .put("scheduled_start_time", "2026-03-20T10:00:00Z")
+                .put("recurrence_rule", rruleObj);
 
-        when(event.getScheduledEvent()).thenReturn(discordEvent);
-        when(event.getRawData()).thenReturn(rawData);
-        when(discordEvent.getId()).thenReturn(MOCK_EVENT_ID);
-        when(discordEvent.getName()).thenReturn(MOCK_EVENT_NAME);
-        when(discordEvent.getStartTime()).thenReturn(OffsetDateTime.parse(MOCK_START_TIME));
-        lenient().when(discordEvent.getGuild()).thenReturn(mock(net.dv8tion.jda.api.entities.Guild.class));
-        lenient().when(discordEvent.getGuild().getName()).thenReturn("Test Server");
+        RawGatewayEvent rawEvent = mock(RawGatewayEvent.class);
+        when(rawEvent.getType()).thenReturn("GUILD_SCHEDULED_EVENT_UPDATE");
+        when(rawEvent.getPayload()).thenReturn(payload);
 
-        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
+        listener.onRawGateway(rawEvent);
 
         ArgumentCaptor<DiscordSyncEventDTO> captor = ArgumentCaptor.forClass(DiscordSyncEventDTO.class);
-        verify(calendarService, atLeastOnce()).syncDiscordEvent(captor.capture());
+        verify(calendarService).syncDiscordEvent(captor.capture());
         
-        DiscordSyncEventDTO saved = captor.getValue();
-        assertNotNull(saved.getRrule());
-        assertTrue(saved.getRrule().contains("FREQ=WEEKLY"));
-        assertTrue(saved.getRrule().contains("BYDAY=TH"));
+        String rrule = captor.getValue().getRrule();
+        assertNotNull(rrule);
+        assertTrue(rrule.contains("FREQ=WEEKLY"));
+        assertTrue(rrule.contains("INTERVAL=2"));
+        assertTrue(rrule.contains("BYDAY=TU,TH"));
     }
 
     @Test
-    void shouldRemoveOrphanedFutureEvents() {
-        ScheduledEventCreateEvent event = mock(ScheduledEventCreateEvent.class);
-        ScheduledEvent discordEvent = mock(ScheduledEvent.class);
-
-        DataObject rawData = DataObject.empty()
-                .put("d", DataObject.empty()
-                        .put(RECURRENCE_RULE_KEY, null));
-
-        when(event.getScheduledEvent()).thenReturn(discordEvent);
-        when(event.getRawData()).thenReturn(rawData);
-        when(discordEvent.getId()).thenReturn(MOCK_EVENT_ID);
-        when(discordEvent.getName()).thenReturn(MOCK_EVENT_NAME);
-        when(discordEvent.getStartTime()).thenReturn(OffsetDateTime.parse(MOCK_START_TIME));
-        lenient().when(discordEvent.getGuild()).thenReturn(mock(net.dv8tion.jda.api.entities.Guild.class));
-        lenient().when(discordEvent.getGuild().getName()).thenReturn("Test Server");
-
-        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
-
-        verify(calendarService, atLeastOnce()).syncDiscordEvent(any(DiscordSyncEventDTO.class));
-    }
-
-    @Test
-    void shouldHandleGenericScheduledEvents() {
-        ScheduledEventCreateEvent event = mock(ScheduledEventCreateEvent.class);
-        ScheduledEvent discordEvent = mock(ScheduledEvent.class);
-        
-        DataObject rawData = DataObject.empty()
-                .put("d", DataObject.empty()
-                        .put(RECURRENCE_RULE_KEY, null));
-
-        when(event.getScheduledEvent()).thenReturn(discordEvent);
-        when(event.getRawData()).thenReturn(rawData);
-        when(discordEvent.getId()).thenReturn(MOCK_EVENT_ID);
-        when(discordEvent.getName()).thenReturn(MOCK_EVENT_NAME);
-        when(discordEvent.getDescription()).thenReturn(MOCK_DESCRIPTION);
-        when(discordEvent.getStartTime()).thenReturn(OffsetDateTime.parse(MOCK_START_TIME));
-        when(discordEvent.getEndTime()).thenReturn(OffsetDateTime.parse(MOCK_END_TIME));
-        lenient().when(discordEvent.getGuild()).thenReturn(mock(net.dv8tion.jda.api.entities.Guild.class));
-        when(discordEvent.getGuild().getName()).thenReturn(MOCK_LOCATION);
-
-        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
-
-        ArgumentCaptor<DiscordSyncEventDTO> captor = ArgumentCaptor.forClass(DiscordSyncEventDTO.class);
-        verify(calendarService, atLeastOnce()).syncDiscordEvent(captor.capture());
-        
-        DiscordSyncEventDTO saved = captor.getValue();
-        assertEquals(MOCK_EVENT_ID, saved.getDiscordId());
-        assertEquals(MOCK_EVENT_NAME, saved.getName());
-        assertEquals(MOCK_DESCRIPTION, saved.getDescription());
-        assertEquals(MOCK_LOCATION, saved.getServerName());
-        assertNull(saved.getRrule());
-    }
-
-    @Test
-    void shouldUseRecursiveRuleOnEventCreation() {
-        ScheduledEventCreateEvent event = mock(ScheduledEventCreateEvent.class);
-        ScheduledEvent discordEvent = mock(ScheduledEvent.class);
-        
-        DataObject rruleObj = DataObject.empty()
-                .put(FREQUENCY_KEY, 2)
-                .put(INTERVAL_KEY, 1)
-                .put(BY_WEEKDAY_KEY, DataArray.fromCollection(List.of(0, 2, 4)));
-
-        DataObject rawData = DataObject.empty()
-                .put("d", DataObject.empty()
-                        .put(RECURRENCE_RULE_KEY, rruleObj));
-
-        when(event.getScheduledEvent()).thenReturn(discordEvent);
-        when(event.getRawData()).thenReturn(rawData);
-        when(discordEvent.getId()).thenReturn(MOCK_EVENT_ID);
-        when(discordEvent.getName()).thenReturn(MOCK_EVENT_NAME);
-        when(discordEvent.getStartTime()).thenReturn(OffsetDateTime.parse(MOCK_START_TIME));
-        lenient().when(discordEvent.getGuild()).thenReturn(mock(net.dv8tion.jda.api.entities.Guild.class));
-        lenient().when(discordEvent.getGuild().getName()).thenReturn("Test Server");
-
-        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
-
-        ArgumentCaptor<DiscordSyncEventDTO> captor = ArgumentCaptor.forClass(DiscordSyncEventDTO.class);
-        verify(calendarService, atLeastOnce()).syncDiscordEvent(captor.capture());
-        
-        DiscordSyncEventDTO saved = captor.getValue();
-        assertNotNull(saved.getRrule());
-        assertTrue(saved.getRrule().contains("FREQ=WEEKLY"));
-        assertTrue(saved.getRrule().contains("BYDAY=MO,WE,FR"));
-    }
-
-    @Test
-    void shouldCreateExceptionsOnUpdateOfSeriesInstance() {
-        ScheduledEventCreateEvent event = mock(ScheduledEventCreateEvent.class);
-        ScheduledEvent discordEvent = mock(ScheduledEvent.class);
-        
+    void shouldParseEventExceptionsInPayload() {
+        long snowflake = TimeUtil.getDiscordTimestamp(Instant.parse("2026-03-19T10:00:00Z").toEpochMilli());
         DataObject exceptionObj = DataObject.empty()
-                .put(EVENT_EXCEPTION_ID_KEY, MOCK_EXCEPTION_ID)
-                .put(IS_CANCELED_KEY, true)
-                .put(RAW_SCHEDULED_START_TIME_KEY, MOCK_EXCEPTION_TIME)
-                .put(RAW_SCHEDULED_END_TIME_KEY, MOCK_EXCEPTION_TIME);
+                .put("event_exception_id", String.valueOf(snowflake))
+                .put("event_id", "123")
+                .put("is_canceled", true);
 
-        DataObject rawData = DataObject.empty()
-                .put("d", DataObject.empty()
-                        .put(RECURRENCE_RULE_KEY, null)
-                        .put(GUILD_SCHEDULED_EVENT_EXCEPTIONS_KEY, DataArray.fromCollection(List.of(exceptionObj))));
+        DataObject payload = DataObject.empty()
+                .put("id", "123")
+                .put("name", "Event with Exceptions")
+                .put("scheduled_start_time", "2026-03-20T10:00:00Z")
+                .put("guild_scheduled_event_exceptions", DataArray.fromCollection(List.of(exceptionObj)));
 
-        when(event.getScheduledEvent()).thenReturn(discordEvent);
-        when(event.getRawData()).thenReturn(rawData);
-        when(discordEvent.getId()).thenReturn(MOCK_EVENT_ID);
-        when(discordEvent.getName()).thenReturn(MOCK_EVENT_NAME);
-        when(discordEvent.getStartTime()).thenReturn(OffsetDateTime.parse(MOCK_START_TIME));
-        lenient().when(discordEvent.getGuild()).thenReturn(mock(net.dv8tion.jda.api.entities.Guild.class));
-        lenient().when(discordEvent.getGuild().getName()).thenReturn("Test Server");
+        RawGatewayEvent rawEvent = mock(RawGatewayEvent.class);
+        when(rawEvent.getType()).thenReturn("GUILD_SCHEDULED_EVENT_CREATE");
+        when(rawEvent.getPayload()).thenReturn(payload);
 
-        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
+        listener.onRawGateway(rawEvent);
 
-        ArgumentCaptor<DiscordSyncEventDTO> rootCaptor = ArgumentCaptor.forClass(DiscordSyncEventDTO.class);
-        verify(calendarService, atLeastOnce()).syncDiscordEvent(rootCaptor.capture());
+        ArgumentCaptor<DiscordSyncEventDTO> captor = ArgumentCaptor.forClass(DiscordSyncEventDTO.class);
+        verify(calendarService).syncDiscordEvent(captor.capture());
         
-        DiscordSyncEventDTO savedRoot = rootCaptor.getValue();
-        assertEquals(1, savedRoot.getExceptions().size());
-
-        DiscordSyncExceptionDTO savedEx = savedRoot.getExceptions().get(0);
-        assertEquals(MOCK_EXCEPTION_ID, savedEx.getExceptionId());
-        assertTrue(savedEx.isCancelled());
-        assertEquals(OffsetDateTime.parse(MOCK_EXCEPTION_TIME).toInstant(), savedEx.getNewStart());
-        assertEquals(OffsetDateTime.parse(MOCK_EXCEPTION_TIME).toInstant(), savedEx.getExceptionDate());
+        List<DiscordSyncExceptionDTO> exceptions = captor.getValue().getExceptions();
+        assertEquals(1, exceptions.size());
+        assertEquals(String.valueOf(snowflake), exceptions.get(0).getExceptionId());
+        assertTrue(exceptions.get(0).isCancelled());
     }
 
     @Test
-    void shouldDeleteEvent() {
-        ScheduledEventDeleteEvent event = mock(ScheduledEventDeleteEvent.class);
-        ScheduledEvent discordEvent = mock(ScheduledEvent.class);
-        
-        when(event.getScheduledEvent()).thenReturn(discordEvent);
-        when(discordEvent.getId()).thenReturn(MOCK_EVENT_ID);
+    void shouldHandleScheduleEventDeleted() {
+        DataObject payload = DataObject.empty().put("id", "ev_to_delete");
+        RawGatewayEvent rawEvent = mock(RawGatewayEvent.class);
+        when(rawEvent.getType()).thenReturn("GUILD_SCHEDULED_EVENT_DELETE");
+        when(rawEvent.getPayload()).thenReturn(payload);
 
-        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
+        listener.onRawGateway(rawEvent);
 
-        verify(calendarService).deleteDiscordEvent(MOCK_EVENT_ID);
+        verify(calendarService).deleteDiscordEvent("ev_to_delete");
+        verify(cache).clear();
+    }
 
-        Cache cache = mock(Cache.class);
-        when(cacheManager.getCache(CALENDAR_CACHE_NAME)).thenReturn(cache);
-        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
-        verify(cache, atLeastOnce()).clear();
+    @Test
+    void shouldHandleExceptionCreatedThroughGateway() {
+        long snowflake = TimeUtil.getDiscordTimestamp(Instant.parse("2026-03-19T10:00:00Z").toEpochMilli());
+        DataObject payload = DataObject.empty()
+                .put("event_exception_id", String.valueOf(snowflake))
+                .put("event_id", "parent_ev")
+                .put("is_canceled", true);
+
+        RawGatewayEvent rawEvent = mock(RawGatewayEvent.class);
+        when(rawEvent.getType()).thenReturn("GUILD_SCHEDULED_EVENT_EXCEPTION_CREATE");
+        when(rawEvent.getPayload()).thenReturn(payload);
+
+        listener.onRawGateway(rawEvent);
+
+        ArgumentCaptor<DiscordSyncExceptionDTO> captor = ArgumentCaptor.forClass(DiscordSyncExceptionDTO.class);
+        verify(calendarService).syncDiscordEventException(eq("parent_ev"), captor.capture());
+
+        assertEquals(String.valueOf(snowflake), captor.getValue().getExceptionId());
+        assertTrue(captor.getValue().isCancelled());
+        verify(cache).clear();
+    }
+
+    @Test
+    void shouldHandleExceptionDeletedThroughGateway() {
+        DataObject payload = DataObject.empty()
+                .put("event_exception_id", "ex_to_delete")
+                .put("event_id", "parent_ev");
+
+        RawGatewayEvent rawEvent = mock(RawGatewayEvent.class);
+        when(rawEvent.getType()).thenReturn("GUILD_SCHEDULED_EVENT_EXCEPTION_DELETE");
+        when(rawEvent.getPayload()).thenReturn(payload);
+
+        listener.onRawGateway(rawEvent);
+
+        verify(calendarService).deleteDiscordEventException("ex_to_delete");
+        verify(cache).clear();
     }
 }
