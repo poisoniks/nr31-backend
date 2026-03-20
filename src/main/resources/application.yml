@@ -38,6 +38,14 @@ logging:
   level:
     org.springframework.web: INFO
     org.nr31.backend: INFO
+  file:
+    name: /app/logs/application.log
+logback:
+  rollingpolicy:
+    file-name-pattern: /app/logs/application-%d{yyyy-MM-dd}.%i.log
+    max-history: 14
+    max-file-size: 10MB
+    total-size-cap: 1GB
 
 jwt:
   secret: ${JWT_SECRET}

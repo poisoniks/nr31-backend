@@ -8,13 +8,20 @@ import jakarta.persistence.EntityManager;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.dto.LogFilesListResponse;
+import org.nr31.backend.exception.ResourceAccessException;
 import org.nr31.backend.integration.discord.DiscordBotManager;
 import org.nr31.backend.integration.discord.dto.DiscordBotStatusResponse;
 import org.nr31.backend.service.AppConfigService;
 import org.springframework.cache.CacheManager;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,6 +45,7 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 @Tag(name = "Admin Panel", description = "Endpoints for administrative actions")
 public class AdminPanelController {
+    private static final String LOG_DIRECTORY = "/app/logs";
 
     private final CacheManager cacheManager;
     private final EntityManager entityManager;
@@ -61,6 +69,55 @@ public class AdminPanelController {
         entityManager.getEntityManagerFactory().getCache().evictAll();
 
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "List log files", description = "Retrieves a list of available application log files")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved log files list")
+    })
+    @GetMapping(value = "/logs/list", produces = "application/json")
+    @PreAuthorize("hasAuthority('logs:read')")
+    public ResponseEntity<LogFilesListResponse> listLogFiles() {
+        try (Stream<Path> paths = Files.walk(Paths.get(LOG_DIRECTORY), 1)) {
+            List<String> fileNames = paths
+                    .filter(Files::isRegularFile)
+                    .map(path -> path.getFileName().toString())
+                    .filter(name -> name.endsWith(".log"))
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(new LogFilesListResponse(fileNames));
+        } catch (Exception e) {
+            throw new ResourceAccessException("Unable to list log files", e);
+        }
+    }
+
+    @Operation(summary = "Get log file", description = "Retrieves the content of a specific log file")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved log file"),
+            @ApiResponse(responseCode = "403", description = "Invalid path"),
+            @ApiResponse(responseCode = "404", description = "Log file not found")
+    })
+    @GetMapping("/logs/{fileName}")
+    @PreAuthorize("hasAuthority('logs:read')")
+    public ResponseEntity<Resource> getLogFile(@PathVariable String fileName) {
+        Path baseDirectory = Paths.get(LOG_DIRECTORY).toAbsolutePath().normalize();
+        Path filePath = baseDirectory.resolve(fileName).normalize();
+
+        if (!filePath.startsWith(baseDirectory)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        File logFile = new File(LOG_DIRECTORY, fileName);
+
+        if (!logFile.exists() || !logFile.isFile()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Resource resource = new FileSystemResource(logFile);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_PLAIN)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + logFile.getName() + "\"")
+                .body(resource);
     }
 
     @Operation(summary = "Get application config", description = "Retrieves an application configuration by key")
