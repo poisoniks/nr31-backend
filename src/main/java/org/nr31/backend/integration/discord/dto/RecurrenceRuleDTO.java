@@ -1,4 +1,4 @@
-package org.nr31.backend.integration.discord;
+package org.nr31.backend.integration.discord.dto;
 
 import lombok.Data;
 import lombok.Builder;

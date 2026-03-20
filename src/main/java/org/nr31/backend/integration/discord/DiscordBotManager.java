@@ -19,7 +19,7 @@ public class DiscordBotManager {
     @Value("${app.discord.bot-token}")
     private String botToken;
 
-    private final DiscordEventListener discordEventListener;
+    private final CalendarUpdateDiscordListener calendarUpdateDiscordListener;
 
     private JDA jdaInstance;
 
@@ -38,8 +38,9 @@ public class DiscordBotManager {
         try {
             jdaInstance = JDABuilder.createLight(botToken, GatewayIntent.SCHEDULED_EVENTS)
                     .enableCache(CacheFlag.SCHEDULED_EVENTS)
-                    .addEventListeners(discordEventListener)
+                    .addEventListeners(calendarUpdateDiscordListener)
                     .setEventPassthrough(true)
+                    .setRawEventsEnabled(true)
                     .build();
             log.info("Discord Bot connection initiated.");
         } catch (Exception e) {

@@ -34,19 +34,19 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.nr31.backend.integration.discord.DiscordEventListener.BY_WEEKDAY_KEY;
-import static org.nr31.backend.integration.discord.DiscordEventListener.CALENDAR_CACHE_NAME;
-import static org.nr31.backend.integration.discord.DiscordEventListener.EVENT_EXCEPTION_ID_KEY;
-import static org.nr31.backend.integration.discord.DiscordEventListener.FREQUENCY_KEY;
-import static org.nr31.backend.integration.discord.DiscordEventListener.GUILD_SCHEDULED_EVENT_EXCEPTIONS_KEY;
-import static org.nr31.backend.integration.discord.DiscordEventListener.INTERVAL_KEY;
-import static org.nr31.backend.integration.discord.DiscordEventListener.IS_CANCELED_KEY;
-import static org.nr31.backend.integration.discord.DiscordEventListener.RAW_SCHEDULED_END_TIME_KEY;
-import static org.nr31.backend.integration.discord.DiscordEventListener.RAW_SCHEDULED_START_TIME_KEY;
-import static org.nr31.backend.integration.discord.DiscordEventListener.RECURRENCE_RULE_KEY;
+import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.BY_WEEKDAY_KEY;
+import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.CALENDAR_CACHE_NAME;
+import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.EVENT_EXCEPTION_ID_KEY;
+import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.FREQUENCY_KEY;
+import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.GUILD_SCHEDULED_EVENT_EXCEPTIONS_KEY;
+import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.INTERVAL_KEY;
+import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.IS_CANCELED_KEY;
+import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.RAW_SCHEDULED_END_TIME_KEY;
+import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.RAW_SCHEDULED_START_TIME_KEY;
+import static org.nr31.backend.integration.discord.CalendarUpdateDiscordListener.RECURRENCE_RULE_KEY;
 
 @ExtendWith(MockitoExtension.class)
-class DiscordEventListenerTest {
+class CalendarUpdateDiscordListenerTest {
 
     private static final String MOCK_EVENT_ID = "event123";
     private static final String MOCK_EVENT_NAME = "Test Event";
@@ -65,7 +65,7 @@ class DiscordEventListenerTest {
     private TransactionTemplate transactionTemplate;
 
     @InjectMocks
-    private DiscordEventListener discordEventListener;
+    private CalendarUpdateDiscordListener calendarUpdateDiscordListener;
 
     @BeforeEach
     void setUp() {
@@ -98,7 +98,7 @@ class DiscordEventListenerTest {
         lenient().when(discordEvent.getGuild()).thenReturn(mock(net.dv8tion.jda.api.entities.Guild.class));
         lenient().when(discordEvent.getGuild().getName()).thenReturn("Test Server");
 
-        discordEventListener.onGenericScheduledEventGateway(event);
+        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
 
         ArgumentCaptor<DiscordSyncEventDTO> captor = ArgumentCaptor.forClass(DiscordSyncEventDTO.class);
         verify(calendarService, atLeastOnce()).syncDiscordEvent(captor.capture());
@@ -126,7 +126,7 @@ class DiscordEventListenerTest {
         lenient().when(discordEvent.getGuild()).thenReturn(mock(net.dv8tion.jda.api.entities.Guild.class));
         lenient().when(discordEvent.getGuild().getName()).thenReturn("Test Server");
 
-        discordEventListener.onGenericScheduledEventGateway(event);
+        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
 
         verify(calendarService, atLeastOnce()).syncDiscordEvent(any(DiscordSyncEventDTO.class));
     }
@@ -150,7 +150,7 @@ class DiscordEventListenerTest {
         lenient().when(discordEvent.getGuild()).thenReturn(mock(net.dv8tion.jda.api.entities.Guild.class));
         when(discordEvent.getGuild().getName()).thenReturn(MOCK_LOCATION);
 
-        discordEventListener.onGenericScheduledEventGateway(event);
+        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
 
         ArgumentCaptor<DiscordSyncEventDTO> captor = ArgumentCaptor.forClass(DiscordSyncEventDTO.class);
         verify(calendarService, atLeastOnce()).syncDiscordEvent(captor.capture());
@@ -185,7 +185,7 @@ class DiscordEventListenerTest {
         lenient().when(discordEvent.getGuild()).thenReturn(mock(net.dv8tion.jda.api.entities.Guild.class));
         lenient().when(discordEvent.getGuild().getName()).thenReturn("Test Server");
 
-        discordEventListener.onGenericScheduledEventGateway(event);
+        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
 
         ArgumentCaptor<DiscordSyncEventDTO> captor = ArgumentCaptor.forClass(DiscordSyncEventDTO.class);
         verify(calendarService, atLeastOnce()).syncDiscordEvent(captor.capture());
@@ -220,7 +220,7 @@ class DiscordEventListenerTest {
         lenient().when(discordEvent.getGuild()).thenReturn(mock(net.dv8tion.jda.api.entities.Guild.class));
         lenient().when(discordEvent.getGuild().getName()).thenReturn("Test Server");
 
-        discordEventListener.onGenericScheduledEventGateway(event);
+        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
 
         ArgumentCaptor<DiscordSyncEventDTO> rootCaptor = ArgumentCaptor.forClass(DiscordSyncEventDTO.class);
         verify(calendarService, atLeastOnce()).syncDiscordEvent(rootCaptor.capture());
@@ -243,13 +243,13 @@ class DiscordEventListenerTest {
         when(event.getScheduledEvent()).thenReturn(discordEvent);
         when(discordEvent.getId()).thenReturn(MOCK_EVENT_ID);
 
-        discordEventListener.onGenericScheduledEventGateway(event);
+        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
 
         verify(calendarService).deleteDiscordEvent(MOCK_EVENT_ID);
 
         Cache cache = mock(Cache.class);
         when(cacheManager.getCache(CALENDAR_CACHE_NAME)).thenReturn(cache);
-        discordEventListener.onGenericScheduledEventGateway(event);
+        calendarUpdateDiscordListener.onGenericScheduledEventGateway(event);
         verify(cache, atLeastOnce()).clear();
     }
 }

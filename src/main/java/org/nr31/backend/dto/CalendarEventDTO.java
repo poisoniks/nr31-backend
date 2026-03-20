@@ -53,4 +53,7 @@ public class CalendarEventDTO {
 
     @Schema(description = "Discord Scheduled Event ID if the event is synced from Discord")
     private String discordId;
+
+    @Schema(description = "Indicates whether the event occurrence is cancelled", example = "false")
+    private boolean isCancelled;
 }

@@ -164,13 +164,11 @@ public class CalendarServiceImpl implements CalendarService {
 
                 if (exOpt.isPresent()) {
                     CalendarEventException ex = exOpt.get();
-                    if (!ex.isCancelled()) {
-                        Instant newStart = ex.getNewStart() != null ? ex.getNewStart() : originalStart;
-                        Instant newEnd = ex.getNewEnd() != null ? ex.getNewEnd() : newStart.plus(duration);
+                    Instant newStart = ex.getNewStart() != null ? ex.getNewStart() : originalStart;
+                    Instant newEnd = ex.getNewEnd() != null ? ex.getNewEnd() : newStart.plus(duration);
 
-                        if (newStart.isBefore(windowEnd) && newEnd.isAfter(windowStart)) {
-                            result.add(convertToDTOWithException(event, ex, newStart, newEnd, targetZone));
-                        }
+                    if (newStart.isBefore(windowEnd) && newEnd.isAfter(windowStart)) {
+                        result.add(convertToDTOWithException(event, ex, newStart, newEnd, targetZone));
                     }
                 } else {
                     ZonedDateTime zdtStart = originalStart.atZone(zoneId);
@@ -459,6 +457,7 @@ public class CalendarServiceImpl implements CalendarService {
         dto.setRecurring(isRecurring);
         dto.setSource(event.getSource());
         dto.setDiscordId(event.getDiscordId());
+        dto.setCancelled(false);
         return dto;
     }
 
@@ -480,6 +479,7 @@ public class CalendarServiceImpl implements CalendarService {
         dto.setRecurring(true);
         dto.setSource(event.getSource());
         dto.setDiscordId(event.getDiscordId());
+        dto.setCancelled(ex.isCancelled());
         return dto;
     }
 
@@ -490,7 +490,7 @@ public class CalendarServiceImpl implements CalendarService {
                 .orElseGet(() -> {
                     CalendarEvent newEvent = new CalendarEvent();
                     newEvent.setDiscordId(dto.getDiscordId());
-                    newEvent.setSource(org.nr31.backend.integration.discord.EventSource.DISCORD);
+                    newEvent.setSource(EventSource.DISCORD);
                     newEvent.setSeriesId(UUID.randomUUID().toString());
                     //TODO resolve dynamically
                     eventTypeRepository.findById(1L).ifPresent(newEvent::setType);
@@ -541,10 +541,41 @@ public class CalendarServiceImpl implements CalendarService {
 
     @Override
     @Transactional
+    public void syncDiscordEventException(String discordId, DiscordSyncExceptionDTO exDto) {
+        calendarEventRepository.findByDiscordId(discordId).ifPresent(event -> {
+            CalendarEventException exception = calendarEventExceptionRepository
+                    .findByDiscordExceptionId(exDto.getExceptionId())
+                    .orElseGet(() -> {
+                        CalendarEventException ex = new CalendarEventException();
+                        ex.setDiscordExceptionId(exDto.getExceptionId());
+                        return ex;
+                    });
+
+            exception.setOriginalEvent(event);
+            exception.setCancelled(exDto.isCancelled());
+            exception.setExceptionDate(exDto.getExceptionDate());
+            exception.setNewStart(exDto.getNewStart());
+            exception.setNewEnd(exDto.getNewEnd());
+
+            calendarEventExceptionRepository.save(exception);
+            log.info("Synced discord event exception for event discord ID: {}", discordId);
+        });
+    }
+
+    @Override
+    @Transactional
+    public void deleteDiscordEventException(String exceptionId) {
+        calendarEventExceptionRepository.findByDiscordExceptionId(exceptionId).ifPresent(ex -> {
+            calendarEventExceptionRepository.delete(ex);
+            log.info("Deleted discord event exception with ID: {}", exceptionId);
+        });
+    }
+
+    @Override
+    @Transactional
     public void removeOrphanedDiscordEvents(List<String> activeDiscordIds) {
         Instant now = Instant.now();
-        List<CalendarEvent> allFutureDiscordEvents = calendarEventRepository.findBySourceAndEndAfter(
-                org.nr31.backend.integration.discord.EventSource.DISCORD, now);
+        List<CalendarEvent> allFutureDiscordEvents = calendarEventRepository.findBySourceAndEndAfter(EventSource.DISCORD, now);
 
         for (CalendarEvent event : allFutureDiscordEvents) {
             if (event.getDiscordId() != null && !activeDiscordIds.contains(event.getDiscordId())) {

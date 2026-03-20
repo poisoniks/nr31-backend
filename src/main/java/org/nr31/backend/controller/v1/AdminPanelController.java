@@ -8,6 +8,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.integration.discord.DiscordBotManager;
+import org.nr31.backend.integration.discord.dto.DiscordBotStatusResponse;
 import org.nr31.backend.service.AppConfigService;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
@@ -32,6 +42,7 @@ public class AdminPanelController {
     private final CacheManager cacheManager;
     private final EntityManager entityManager;
     private final AppConfigService appConfigService;
+    private final DiscordBotManager discordBotManager;
 
     @Operation(summary = "Clear caches", description = "Resets application cache")
     @ApiResponses(value = {
@@ -84,5 +95,38 @@ public class AdminPanelController {
             @PathVariable String name,
             @Valid @RequestBody AppConfigDto appConfigDto) {
         return ResponseEntity.ok(appConfigService.updateConfig(name, appConfigDto));
+    }
+
+    @Operation(summary = "Start Discord bot", description = "Starts the Discord bot integration")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Successfully started the bot")
+    })
+    @PostMapping("/integrations/discord/start")
+    @PreAuthorize("hasAuthority('discord:manage')")
+    public ResponseEntity<Void> startBot() {
+        discordBotManager.startBot();
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Stop Discord bot", description = "Stops the Discord bot integration")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Successfully stopped the bot")
+    })
+    @PostMapping("/integrations/discord/stop")
+    @PreAuthorize("hasAuthority('discord:manage')")
+    public ResponseEntity<Void> stopBot() {
+        discordBotManager.stopBot();
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Get Discord bot status", description = "Retrieves the current status of the Discord bot")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved bot status")
+    })
+    @GetMapping("/integrations/discord/status")
+    @PreAuthorize("hasAuthority('discord:manage')")
+    public ResponseEntity<DiscordBotStatusResponse> getBotStatus() {
+        String status = discordBotManager.getBotStatus();
+        return ResponseEntity.ok(new DiscordBotStatusResponse(status));
     }
 }
