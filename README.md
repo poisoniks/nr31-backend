@@ -4,57 +4,73 @@ Welcome to the backend service for the 31st Feldkanonenregiment (Nr.31 FKR), a U
 
 ## Project Purpose
 This project serves as the central hub and administrative backbone for the regiment's soldiers, officers, and recruits. It provides essential services such as:
-- Access to the regimental roster
-- An event calendar
-- Management of training materials and administrative controls
+- **Regimental Roster:** (Planned) Centralized management of active members and recruits.
+- **Event Calendar:** A scheduling system supporting recursive events, exceptions, and integration with third-party platforms.
+- **Administrative Controls:** Tools for officers to manage application state and configurations.
 
 ## Technologies Used
-The application is built on a modern Spring Boot stack. Core technologies include:
-- **Framework:** Spring Boot (v4.1.0-M1) and Java 17
-- **Database:** PostgreSQL with Hibernate ORM
-- **Authentication:** Stateless JWT (JSON Web Tokens)
-- **Caching:** Caffeine Cache (used with `@Cacheable` in services) and Hibernate L2 (Second-Level) Cache for optimized database queries
-- **Documentation:** OpenAPI / Swagger UI
-- **Deployment:** Docker
-- **CI/CD:** GitHub Actions
+The application is built on the Spring Boot stack:
+- **Backend:** Spring Boot (v4.1.0-M1) / Java 17
+- **Database:** PostgreSQL for persistent storage.
+- **ORM & Migrations:** Hibernate with Flyway for versioned schema management.
+- **Security:** Stateless JWT-based authentication with role-based access control (RBAC).
+- **Caching:** 
+  - **Caffeine Cache:** In-memory application-level caching for calendar data.
+  - **Hibernate L2 Cache:** SQL result caching for optimized database access.
+- **Integrations:** JDA (Java Discord API) for guild event synchronization.
+- **Documentation:** OpenAPI/Swagger UI.
+- **CI/CD & Deployment:** Dockerized containers deployed via GitHub Actions.
 
-## Features & APIs
-- **Authentication API:** (`AuthController.java`) Manages secure user logins and issues stateless JWTs.
-- **Calendar API:** (`CalendarController.java`) Provides endpoints to manage scheduled events.
-- **Admin Control API:** (`AdminPanelController.java`) Secured endpoints for officers to manage configurations, caches, and administrative tasks.
+## Core Features
 
-## Security & Architecture
-- **Deny by Default:** The application employs a strict "deny-by-default" security policy (`SecurityConfig.java`), ensuring endpoints must be actively whitelisted or role-restricted.
-- **Exception Handling:** Centralized exception handling ensures consistent, clean error responses (`GlobalExceptionHandler.java`). 
-- **Async Scheduled Jobs:** Background tasks automatically manage the system, such as `TokenCleanupJob.java` which prunes expired authentication tokens.
-- **API Documentation:** Interactive Swagger UI and OpenAPI documentation are automatically generated and available when running the application on `local` profile.
+### 1. Calendar API
+The core of the application is a comprehensive calendar management system.
+- **Recursive Events:** Supports complex recurring event logic (RRULE).
+- **Exception Management:** Ability to handle single-occurrence exceptions, including rescheduling and cancellations.
+- **Data Consistency:** Synchronized state across internal storage and integrated platforms.
 
-## Database Migrations
-We utilize **Flyway** for robust database schema versioning and initial data population. 
-- Global migrations reside in `src/main/resources/db/migration`.
-- Profile-specific local mock data resides in `src/main/resources/db/migrationlocal` and is only evaluated when running the application locally.
+### 2. Discord Synchronization
+Provides an integration bridge with Discord Scheduled Guild Events.
+- **Automated Update:** `CalendarUpdateDiscordListener` monitors Discord event lifecycle (creation, updates, deletions) and reflects changes in the application calendar.
+- **Bidirectional Logic:** Handles event exceptions generated on Discord to ensure parity with the backend data model.
+- **Startup Reconciliation:** Performs a full sync upon service initialization to resolve discrepancies.
+
+### 3. Application Configuration
+Managed via `AppConfig.java`, allowing for runtime settings adjustments.
+- **Key-Value Store:** Database-backed JSON structure for configuration values.
+- **Schema Validation:** Optional JSON schema enforcement for configuration updates.
+- **Usage:** Management of integration parameters, feature toggles, and system thresholds.
+
+### 4. Admin Panel
+Located at `/api/v1/admin`, providing authorized users with system control:
+- **Cache Management:** Eviction of application and Hibernate second-level caches.
+- **Log Access:** Listing and retrieval of application log files from the `/app/logs` directory.
+- **Integration Control:** Programmatic control of the Discord bot status (start/stop/status).
+- **Config Management:** Endpoints for viewing and updating dynamic application settings.
+
+## Security Architecture
+- **Deny-by-Default:** Security policy ensuring all endpoints require explicit authorization or whitelisting.
+- **Permissions:** Granular access control using specific authorities (e.g., `discord:manage`, `config:read`).
+- **Standardized Error Handling:** Consistent JSON responses for all error states via a global exception handler.
 
 ## Testing Strategy
-- **End-to-End (E2E) Tests:** Comprehensive automated testing is implemented using Cucumber. You can execute these tests via:
-  ```bash
-  ./gradlew cucumber
-  ```
-  Results can be found in `build/reports/cucumber/cucumber-report.html`.
-- **Unit Tests:** While end-to-end coverage exists, traditional unit tests are currently omitted but are **planned for future adoption**.
+The project follows a tiered testing approach:
+- **End-to-End (E2E):** Cucumber-based integration tests for full API flows. Run via `./gradlew cucumber`.
+- **Unit Testing:** Focus on component-level logic, such as event synchronization and configuration parsing (e.g., `CalendarUpdateDiscordListenerTest.java`).
+- **Integration Tests:** Verification of database migrations and service-layer interactions.
 
-## Profiles & Configuration
-The application leverages Spring Profiles to switch between environments seamlessly:
-- **`prod`:** The primary production profile.
-- **`local`:** Configured for local development, enabling SQL logging and loading mock test data from Flyway's `migrationlocal` directory.
-- **`test`:** Dedicated isolated environment for the Cucumber automated test suite.
+## Profiles & Environment Management
+- **`prod`:** Production settings and performance optimizations.
+- **`local`:** Development environment with SQL logging and mock data.
+- **`test`:** Isolated environment for automated test suites.
 
-## Running Locally
-To run the application on your machine, you must first have **Docker** installed. 
+## Getting Started
 
-**1. Start the PostgreSQL Database**
-Depending on your OS, use one of the following commands to spin up a PostgreSQL instance in Docker:
+### Prerequisites
+- Java 17+
+- Docker & Docker Compose
 
-**Windows (PowerShell):**
+### 1. Start Infrastructure
 ```powershell
 docker run --name nr31-postgres `
   -e POSTGRES_DB=nr31db `
@@ -64,30 +80,16 @@ docker run --name nr31-postgres `
   -d postgres
 ```
 
-**Linux / macOS (Bash):**
-```bash
-docker run --name nr31-postgres \
-  -e POSTGRES_DB=nr31db \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=password \
-  -p 5432:5432 \
-  -d postgres
+### 2. Run Application
+```powershell
+$env:SPRING_PROFILES_ACTIVE="local"; ./gradlew bootRun
 ```
 
-**2. Run the Application**
-Ensure the `local` Spring profile is active when booting the backend API.
-- **Via Gradle (Windows PowerShell):** 
-  ```powershell
-  $env:SPRING_PROFILES_ACTIVE="local"; ./gradlew bootRun
-  ```
-- **Via Gradle (Linux/macOS Bash):** 
-  ```bash
-  SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
-  ```
-- **Via IDE (IntelliJ / Eclipse):** Navigate to `Nr31BackendApplication.java`. Edit your Run/Debug Configuration to include `SPRING_PROFILES_ACTIVE=local` in your Environment Variables, then execute the `main` method.
-
 ## Deployment
-Automated deployment is modeled via a GitHub Actions pipeline (`.github/workflows/prod-deploy.yml`). Pushes to the main branch trigger a workflow that builds the Docker image (`Dockerfile`), pushes it to the GitHub Container Registry, and securely deploys it to the production VPS via SSH. 
+Managed via `.github/workflows/prod-deploy.yml`. The pipeline includes:
+1. Automated test execution (Cucumber and Unit tests).
+2. Docker image build and push to GitHub Container Registry.
+3. Production deployment via SSH.
 
 ## License
-This project is licensed under the [MIT License](LICENSE). Copyright (c) 2026 poisoniks.
+Licensed under the [MIT License](LICENSE). Copyright (c) 2026 poisoniks.
