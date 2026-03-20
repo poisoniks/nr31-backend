@@ -19,6 +19,7 @@ spring:
         javax:
           cache:
             provider: com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider
+            missing_cache_strategy: create
   cache:
     type: caffeine
     caffeine:
