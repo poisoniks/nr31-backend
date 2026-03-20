@@ -39,4 +39,8 @@ public class UnitType {
     @Column(columnDefinition = "jsonb")
     @Schema(description = "Localized description of the unit type", example = "{\"en\": \"Special operations squad\", \"uk\": \"Загін спеціального призначення\"}")
     private Map<String, String> description;
+
+    @Column(name = "custom_icon")
+    @Schema(description = "Custom icon associated with this unit type", example = "/squad_icon")
+    private String customIcon;
 }

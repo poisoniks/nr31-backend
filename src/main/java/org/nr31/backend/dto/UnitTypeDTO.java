@@ -23,4 +23,7 @@ public class UnitTypeDTO {
 
     @Schema(description = "Localized description of the unit type", example = "{\"en\": \"Special operations squad\", \"uk\": \"Загін спеціального призначення\"}")
     private Map<String, String> description;
+
+    @Schema(description = "Custom icon associated with this unit type", example = "/squad_icon")
+    private String customIcon;
 }
