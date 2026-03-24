@@ -13,6 +13,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -178,6 +179,20 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleFeatureDisabledException(FeatureDisabledException e) {
         log.debug("Feature disabled: {}", e.getMessage());
         return new ErrorResponse("Requested endpoint is disabled", LocalDateTime.now());
+    }
+
+    @ExceptionHandler(FileStorageException.class)
+    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleFileStorageException(FileStorageException e) {
+        log.debug("File storage exception: {}", e.getMessage());
+        return new ErrorResponse(e.getMessage(), LocalDateTime.now());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(code = HttpStatus.CONTENT_TOO_LARGE)
+    public ErrorResponse handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
+        log.debug("File upload size exceeded: {}", e.getMessage());
+        return new ErrorResponse("File size exceeds the maximum allowed limit of 5MB", LocalDateTime.now());
     }
 
     @ExceptionHandler(Exception.class)

@@ -25,5 +25,7 @@ jwt:
     expiration: 604800000
 
 app:
+  uploads:
+    dir: ./uploads
   discord:
     bot-token:

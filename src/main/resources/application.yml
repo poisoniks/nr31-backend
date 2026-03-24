@@ -25,6 +25,11 @@ spring:
     caffeine:
       spec: maximumSize=1000,expireAfterAccess=1h
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
   flyway:
     enabled: true
     baseline-on-migrate: true

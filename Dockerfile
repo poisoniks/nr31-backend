@@ -19,7 +19,12 @@ ARG PROFILE=prod
 ENV SPRING_PROFILES_ACTIVE=${PROFILE}
 
 RUN addgroup --system nr31 && adduser --system --ingroup nr31 nr31
+RUN mkdir -p /app/uploads && chown nr31:nr31 /app/uploads
+RUN mkdir -p /app/logs && chown nr31:nr31 /app/logs
 USER nr31:nr31
+
+VOLUME /app/uploads
+VOLUME /app/logs
 
 COPY --from=builder /app/build/libs/*.jar app.jar
 
