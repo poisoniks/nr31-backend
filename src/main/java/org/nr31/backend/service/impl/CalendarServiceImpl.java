@@ -547,6 +547,7 @@ public class CalendarServiceImpl implements CalendarService {
         
         event.setServerName(dto.getServerName() != null ? dto.getServerName() : "Discord");
         event.setRrule(dto.getRrule());
+        event.setTimezone(dto.getTimezone() != null ? dto.getTimezone() : "Z");
 
         final CalendarEvent savedEvent = calendarEventRepository.save(event);
 

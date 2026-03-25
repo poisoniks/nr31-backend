@@ -17,5 +17,6 @@ public class DiscordScheduledEventDTO {
     private Instant scheduledEndTime;
     private String serverName;
     private String rrule;
+    private String timezone;
     private List<DiscordEventExceptionDTO> exceptions;
 }

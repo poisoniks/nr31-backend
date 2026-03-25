@@ -20,5 +20,6 @@ public class DiscordSyncEventDTO {
     private Instant end;
     private String serverName;
     private String rrule;
+    private String timezone;
     private List<DiscordSyncExceptionDTO> exceptions;
 }

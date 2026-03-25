@@ -89,7 +89,9 @@ public abstract class UpdatedListenerAdapter extends ListenerAdapter {
         String name = rawEventData.getString(RAW_NAME_KEY, "Unknown Event");
         String description = rawEventData.isNull(RAW_DESCRIPTION_KEY) ? ""
                 : rawEventData.getString(RAW_DESCRIPTION_KEY, "");
-        Instant startTime = OffsetDateTime.parse(rawEventData.getString(RAW_SCHEDULED_START_TIME_KEY)).toInstant();
+        OffsetDateTime odtStart = OffsetDateTime.parse(rawEventData.getString(RAW_SCHEDULED_START_TIME_KEY));
+        Instant startTime = odtStart.toInstant();
+        String timezoneStr = odtStart.getOffset().getId();
         Instant endTime = rawEventData.isNull(RAW_SCHEDULED_END_TIME_KEY) ? null
                 : OffsetDateTime.parse(rawEventData.getString(RAW_SCHEDULED_END_TIME_KEY)).toInstant();
 
@@ -108,7 +110,8 @@ public abstract class UpdatedListenerAdapter extends ListenerAdapter {
                 .description(description)
                 .scheduledStartTime(startTime)
                 .scheduledEndTime(endTime)
-                .serverName(serverName);
+                .serverName(serverName)
+                .timezone(timezoneStr);
 
         if (!rawEventData.isNull(RECURRENCE_RULE_KEY)) {
             try {

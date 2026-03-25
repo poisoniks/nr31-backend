@@ -150,7 +150,8 @@ public class CalendarUpdateDiscordListener extends UpdatedListenerAdapter {
                 .start(rawDto.getScheduledStartTime())
                 .end(rawDto.getScheduledEndTime())
                 .serverName(rawDto.getServerName())
-                .rrule(rawDto.getRrule());
+                .rrule(rawDto.getRrule())
+                .timezone(rawDto.getTimezone());
 
         if (rawDto.getExceptions() != null) {
             List<DiscordSyncExceptionDTO> mappedExceptions = rawDto.getExceptions().stream()
