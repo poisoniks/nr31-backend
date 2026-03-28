@@ -259,6 +259,9 @@ public class CalendarServiceImpl implements CalendarService {
 
     private CalendarEventDTO updateFutureEvents(UpdateEventRequest request, CalendarEvent originalEvent,
             Instant splitDate, Long typeId) {
+        if (EventSource.DISCORD.equals(originalEvent.getSource())) {
+            throw new IllegalArgumentException(String.format("Unable to update events with source %s in %s mode", EventSource.DISCORD, CalendarActionMode.FUTURE));
+        }
         if (originalEvent.getRrule() != null) {
             Instant untilTimestamp = splitDate.minusSeconds(1);
             stopEventAt(originalEvent, new DateTime(untilTimestamp.toEpochMilli()));

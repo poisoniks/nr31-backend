@@ -142,6 +142,13 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(e.getMessage(), LocalDateTime.now());
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleIllegalArgumentException(IllegalArgumentException e) {
+        log.debug("Illegal argument exception", e);
+        return new ErrorResponse(e.getMessage(), LocalDateTime.now());
+    }
+
     @ExceptionHandler(ElementNotFoundException.class)
     @ResponseStatus(code = HttpStatus.NOT_FOUND)
     public ErrorResponse handleElementNotFoundException(ElementNotFoundException e) {

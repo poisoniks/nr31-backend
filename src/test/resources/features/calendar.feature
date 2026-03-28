@@ -368,4 +368,25 @@ Feature: Calendar Events Management
       | participatingUnits | [2]                  |
     Then the response status code should be 200
     And the response body should contain array "participatingUnits" with length 1
-    And the response body should contain "participatingUnits.0.id" with value "2"
+    And the response body should contain "participatingUnits.0.id" with value "2"
+
+  Scenario: Prevent 'FUTURE' update for Discord-sourced events
+    Given I log in with user "admin" and password "testpass"
+    And I create an event with the following details:
+      | title.en             | Discord Event Base   |
+      | start                | 2026-10-27T10:00:00Z |
+      | end                  | 2026-10-27T11:00:00Z |
+      | type                 | 1                    |
+      | serverName           | Discord Server       |
+      | recurrence.frequency | DAILY                |
+      | recurrence.count     | 5                    |
+    And I save the created event "id" as "discordEventId"
+    And the event "{discordEventId}" has source "DISCORD"
+    When I update the event "{discordEventId}" with the following details:
+      | mode          | FUTURE               |
+      | title.en      | Attempted Update     |
+      | originalStart | 2026-10-28T10:00:00Z |
+      | start         | 2026-10-28T11:00:00Z |
+      | type          | 1                    |
+    Then the response status code should be 400
+    And the response body should contain "message" with value "Unable to update events with source DISCORD in FUTURE mode"

@@ -67,6 +67,12 @@ public class CalendarSteps extends CommonStepDefs {
         contextHelper.addValue("jwt_token", null);
     }
 
+    @Given("the event {string} has source {string}")
+    public void the_event_has_source(String eventIdRef, String source) {
+        String eventId = resolveVariables(eventIdRef);
+        jdbcTemplate.update("UPDATE events SET source = ? WHERE id = ?", source, Long.parseLong(eventId));
+    }
+
     @When("I create an event with the following details:")
     public void i_create_an_event_with_the_following_details(DataTable dataTable) throws Exception {
         String body = dataTableToJson(dataTable);
