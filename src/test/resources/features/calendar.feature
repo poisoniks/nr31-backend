@@ -344,3 +344,28 @@ Feature: Calendar Events Management
     When I retrieve the nearest event to "2026-05-10T12:00:00Z"
     Then the response status code should be 200
     And the response body should contain "title.en" with value "Second Event"
+
+  Scenario: Update a single occurrence of a recurring event with different participating units
+    Given I log in with user "admin" and password "testpass"
+    And I create an event with the following details:
+      | title.en             | Unit override base event |
+      | start                | 2026-10-30T10:00:00Z     |
+      | end                  | 2026-10-30T11:00:00Z     |
+      | type                 | 1                        |
+      | serverName           | Main Server              |
+      | participatingUnits   | [1, 2]                   |
+      | recurrence.frequency | DAILY                    |
+      | recurrence.interval  | 1                        |
+      | recurrence.count     | 5                        |
+    And I save the created event "id" as "seriesId"
+    When I update the event "{seriesId}" with the following details:
+      | mode               | SINGLE               |
+      | title.en           | Unit override update |
+      | start              | 2026-10-31T10:00:00Z |
+      | end                | 2026-10-31T11:00:00Z |
+      | originalStart      | 2026-10-31T10:00:00Z |
+      | type               | 1                    |
+      | participatingUnits | [2]                  |
+    Then the response status code should be 200
+    And the response body should contain array "participatingUnits" with length 1
+    And the response body should contain "participatingUnits.0.id" with value "2"

@@ -317,6 +317,10 @@ public class CalendarServiceImpl implements CalendarService {
         
         originalEvent.setType(type);
         originalEvent.setServerName(request.getServerName());
+        List<UnitType> unitTypes = request.getParticipatingUnits() != null
+                ? unitTypeRepository.findAllById(request.getParticipatingUnits())
+                : originalEvent.getParticipatingUnits();
+        originalEvent.setParticipatingUnits(unitTypes);
 
         originalEvent = calendarEventRepository.save(originalEvent);
         calendarEventExceptionRepository.deleteByOriginalEvent(originalEvent);
@@ -355,6 +359,7 @@ public class CalendarServiceImpl implements CalendarService {
             }
             ex.setNewType(type);
             ex.setNewServerName(request.getServerName());
+            ex.setNewParticipatingUnits(unitTypes != null ? new ArrayList<>(unitTypes) : null);
 
             calendarEventExceptionRepository.save(ex);
             return convertToDTOWithException(originalEvent, ex, newStart, newEnd,
@@ -474,7 +479,9 @@ public class CalendarServiceImpl implements CalendarService {
         dto.setType(mapToEventTypeDTO(type));
         
         dto.setServerName(ex.getNewServerName() != null ? ex.getNewServerName() : event.getServerName());
-        dto.setParticipatingUnits(mapToUnitTypeDTOList(event.getParticipatingUnits()));
+        List<UnitType> units = (ex.getNewParticipatingUnits() != null && !ex.getNewParticipatingUnits().isEmpty())
+                ? ex.getNewParticipatingUnits() : event.getParticipatingUnits();
+        dto.setParticipatingUnits(mapToUnitTypeDTOList(units));
         
         dto.setRecurring(true);
         dto.setSource(event.getSource());

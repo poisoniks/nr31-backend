@@ -95,7 +95,11 @@ public class CalendarSteps extends CommonStepDefs {
         String[] pathParts = jsonPath.split("\\.");
         JsonNode current = root;
         for (String part : pathParts) {
-            current = current.get(part);
+            if (current != null && current.isArray()) {
+                current = current.get(Integer.parseInt(part));
+            } else {
+                current = current.get(part);
+            }
             assertNotNull(current, "Path " + jsonPath + " not found in " + response.body());
         }
         assertEquals(expectedValue, current.asText());
@@ -107,6 +111,20 @@ public class CalendarSteps extends CommonStepDefs {
         JsonNode root = objectMapper.readTree(response.body());
         assertTrue(root.has(fieldName));
         assertTrue(root.get(fieldName).asBoolean());
+    }
+
+    @Then("the response body should contain array {string} with length {int}")
+    public void the_response_body_should_contain_array_with_length(String jsonPath, int expectedLength) throws Exception {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        JsonNode root = objectMapper.readTree(response.body());
+        String[] pathParts = jsonPath.split("\\.");
+        JsonNode current = root;
+        for (String part : pathParts) {
+            current = current.get(part);
+            assertNotNull(current, "Path " + jsonPath + " not found in " + response.body());
+        }
+        assertTrue(current.isArray(), "Path " + jsonPath + " is not an array");
+        assertEquals(expectedLength, current.size());
     }
 
     @When("I retrieve events with the following parameters:")

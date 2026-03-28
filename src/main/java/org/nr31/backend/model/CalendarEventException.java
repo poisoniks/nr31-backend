@@ -7,6 +7,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -15,6 +17,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 @Entity
@@ -57,6 +60,10 @@ public class CalendarEventException {
 
     @Column(name = "new_server_name")
     private String newServerName;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "event_exception_participating_units", joinColumns = @JoinColumn(name = "event_exception_id"), inverseJoinColumns = @JoinColumn(name = "unit_id"))
+    private List<UnitType> newParticipatingUnits;
 
     @Column(name = "discord_exception_id", unique = true)
     private String discordExceptionId;
