@@ -1,5 +1,6 @@
 package org.nr31.backend.controller.v1;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.annotation.FeatureSwitch;
 import org.nr31.backend.dto.CalendarActionMode;
@@ -91,7 +92,7 @@ public class CalendarController {
     })
     @PostMapping(produces = "application/json", consumes = "application/json")
     @PreAuthorize("hasAuthority('event:write')")
-    public ResponseEntity<CalendarEventDTO> createEvent(@RequestBody CreateEventRequest request) {
+    public ResponseEntity<CalendarEventDTO> createEvent(@Valid @RequestBody CreateEventRequest request) {
         CalendarEventDTO created = calendarService.createEvent(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -106,7 +107,7 @@ public class CalendarController {
     @PreAuthorize("hasAuthority('event:write')")
     public ResponseEntity<CalendarEventDTO> updateEvent(
             @PathVariable Long id,
-            @RequestBody UpdateEventRequest request) {
+            @Valid @RequestBody UpdateEventRequest request) {
         CalendarEventDTO updated = calendarService.updateEvent(id, request);
         return ResponseEntity.ok(updated);
     }

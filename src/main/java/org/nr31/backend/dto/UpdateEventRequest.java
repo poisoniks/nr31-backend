@@ -1,7 +1,6 @@
 package org.nr31.backend.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
@@ -48,7 +47,6 @@ public class UpdateEventRequest {
     private Long type;
 
     @Schema(description = "Name of the server where the event takes place", example = "Main Server")
-    @NotBlank
     private String serverName;
 
     @Schema(description = "List of unit identifiers participating in the event")
