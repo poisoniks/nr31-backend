@@ -377,6 +377,16 @@ public class CalendarServiceImpl implements CalendarService {
         CalendarEvent originalEvent = calendarEventRepository.findById(id)
                 .orElseThrow(() -> new CalendarException.UserError("Event not found"));
 
+        if (originalEvent.getSource() == EventSource.DISCORD) {
+            throw new CalendarException.UserError("Unable to delete event synced from Discord server");
+        }
+
+        if (originalEvent.getRrule() == null || originalEvent.getRrule().isEmpty()) {
+            calendarEventExceptionRepository.deleteByOriginalEvent(originalEvent);
+            calendarEventRepository.delete(originalEvent);
+            return;
+        }
+
         switch (mode) {
             case SINGLE -> {
                 if (exceptionDate == null) {

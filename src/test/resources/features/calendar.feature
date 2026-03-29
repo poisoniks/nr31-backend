@@ -69,6 +69,7 @@ Feature: Calendar Events Management
       | start         | 2026-10-28T14:00:00Z     |
       | end           | 2026-10-28T16:00:00Z     |
       | originalStart | 2026-10-28T14:00:00Z     |
+      | type          | 1                        |
     Then the response status code should be 200
     And the response body should contain "title.en" with value "Updated Training Session"
 
@@ -390,3 +391,69 @@ Feature: Calendar Events Management
       | type          | 1                    |
     Then the response status code should be 400
     And the response body should contain "message" with value "Unable to update events with source DISCORD in FUTURE mode"
+
+  Scenario: Delete a non-recurring event successfully regardless of mode
+    Given I log in with user "admin" and password "testpass"
+    And I create an event with the following details:
+      | title.en   | Single case event    |
+      | start      | 2026-10-10T10:00:00Z |
+      | end        | 2026-10-10T11:00:00Z |
+      | type       | 1                    |
+      | serverName | Test Server          |
+    And I save the created event "id" as "eventId"
+    When I delete the event "{eventId}" with parameters:
+      | mode          | SINGLE               |
+      | exceptionDate | 2026-10-10T10:00:00Z |
+    Then the response status code should be 204
+    And I should not be able to retrieve event "{eventId}"
+
+  Scenario: Prevent 'ALL' deletion for Discord-sourced events
+    Given I log in with user "admin" and password "testpass"
+    And I create an event with the following details:
+      | title.en             | Discord Series To Delete |
+      | start                | 2026-11-20T10:00:00Z     |
+      | end                  | 2026-11-20T11:00:00Z     |
+      | type                 | 1                        |
+      | serverName           | Discord Server           |
+      | recurrence.frequency | DAILY                    |
+      | recurrence.count     | 5                        |
+    And I save the created event "id" as "discordEventId"
+    And the event "{discordEventId}" has source "DISCORD"
+    When I delete the event "{discordEventId}" with parameters:
+      | mode | ALL |
+    Then the response status code should be 400
+    And the response body should contain "message" with value "Unable to delete event synced from Discord server"
+
+  Scenario: Prevent 'FUTURE' deletion for Discord-sourced events
+    Given I log in with user "admin" and password "testpass"
+    And I create an event with the following details:
+      | title.en             | Discord Series Future Delete |
+      | start                | 2026-11-20T10:30:00Z         |
+      | end                  | 2026-11-20T11:30:00Z         |
+      | type                 | 1                            |
+      | serverName           | Discord Server               |
+      | recurrence.frequency | DAILY                        |
+      | recurrence.count     | 5                            |
+    And I save the created event "id" as "discordEventId"
+    And the event "{discordEventId}" has source "DISCORD"
+    When I delete the event "{discordEventId}" with parameters:
+      | mode          | FUTURE               |
+      | exceptionDate | 2026-11-22T10:30:00Z |
+    Then the response status code should be 400
+    And the response body should contain "message" with value "Unable to delete event synced from Discord server"
+
+  Scenario: Prevent deletion for Discord-sourced non-recurring event
+    Given I log in with user "admin" and password "testpass"
+    And I create an event with the following details:
+      | title.en   | Discord Single Event |
+      | start      | 2026-10-10T11:00:00Z |
+      | end        | 2026-10-10T12:00:00Z |
+      | type       | 1                    |
+      | serverName | Discord Server       |
+    And I save the created event "id" as "discordEventId"
+    And the event "{discordEventId}" has source "DISCORD"
+    When I delete the event "{discordEventId}" with parameters:
+      | mode | SINGLE |
+    Then the response status code should be 400
+    And the response body should contain "message" with value "Unable to delete event synced from Discord server"
+
