@@ -166,6 +166,14 @@ public class CalendarSteps extends CommonStepDefs {
         assertTrue(root.isArray());
     }
 
+    @Then("the response list should have size {int}")
+    public void the_response_list_should_have_size(int expectedSize) throws Exception {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        JsonNode root = objectMapper.readTree(response.body());
+        assertTrue(root.isArray());
+        assertEquals(expectedSize, root.size());
+    }
+
     @Then("each event in the list should have a valid {string} and {string} date")
     public void each_event_in_the_list_should_have_a_valid_and_date(String field1, String field2) throws Exception {
         HttpResponse<String> response = contextHelper.getValue("response");

@@ -340,11 +340,14 @@ public class CalendarServiceImpl implements CalendarService {
                 originalEvent.setDescription(request.getDescription());
                 originalEvent.setStart(newStart);
                 originalEvent.setEnd(newEnd);
+                String rruleString = buildRRuleString(request.getRecurrence());
+                originalEvent.setRrule(rruleString);
+                originalEvent.setSeriesId(UUID.randomUUID().toString());
             }
             originalEvent.setType(type);
             originalEvent.setParticipatingUnits(unitTypes);
             calendarEventRepository.save(originalEvent);
-            return convertToDTO(originalEvent, newStart, newEnd, false, ZoneId.of(originalEvent.getTimezone()));
+            return convertToDTO(originalEvent, newStart, newEnd, originalEvent.getRrule() != null, ZoneId.of(originalEvent.getTimezone()));
         } else {
             CalendarEventException ex = calendarEventExceptionRepository
                     .findByOriginalEventAndExceptionDate(originalEvent, exceptionDate)

@@ -457,3 +457,61 @@ Feature: Calendar Events Management
     Then the response status code should be 400
     And the response body should contain "message" with value "Unable to delete event synced from Discord server"
 
+  Scenario: Lifecycle of event recurrence and deletions
+    Given I log in with user "admin" and password "testpass"
+    When I create an event with the following details:
+      | title.en             | Alpha Squad Practice |
+      | start                | 2026-05-01T10:00:00Z |
+      | end                  | 2026-05-01T11:00:00Z |
+      | type                 | 1                    |
+      | serverName           | HQ Server            |
+      | recurrence.frequency | DAILY                |
+      | recurrence.count     | 5                    |
+    Then the response status code should be 201
+    And the response body should indicate "recurring" is true
+    And I save the created event "id" as "eventId"
+    When I update the event "{eventId}" with the following details:
+      | mode       | ALL                    |
+      | title.en   | Alpha Squad Single     |
+      | start      | 2026-05-01T10:00:00Z   |
+      | end        | 2026-05-01T11:00:00Z   |
+      | type       | 1                      |
+      | recurrence | null                   |
+    Then the response status code should be 200
+    When I retrieve events with the following parameters:
+      | from     | 2026-05-01 |
+      | to       | 2026-05-10 |
+      | timezone | UTC        |
+    Then the response list should have size 1
+    When I update the event "{eventId}" with the following details:
+      | mode                 | SINGLE                 |
+      | title.en             | Weekly Alpha Training  |
+      | start                | 2026-05-01T10:00:00Z   |
+      | end                  | 2026-05-01T11:00:00Z   |
+      | originalStart        | 2026-05-01T10:00:00Z   |
+      | type                 | 1                      |
+      | recurrence.frequency | WEEKLY                 |
+      | recurrence.count     | 3                      |
+    Then the response status code should be 200
+    When I retrieve events with the following parameters:
+      | from     | 2026-05-01 |
+      | to       | 2026-05-20 |
+      | timezone | UTC        |
+    Then the response list should have size 3
+    When I delete the event "{eventId}" with parameters:
+      | mode          | SINGLE               |
+      | exceptionDate | 2026-05-08T10:00:00Z |
+    Then the response status code should be 204
+    When I retrieve events with the following parameters:
+      | from     | 2026-05-01 |
+      | to       | 2026-05-20 |
+      | timezone | Europe/Kyiv |
+    Then the response list should contain exactly the following state for the series:
+      | Expected Title        | Expected Start Time (Kyiv Time) | Expected Server | Status  |
+      | Weekly Alpha Training | 2026-05-01T13:00:00+03:00       | HQ Server       | Present |
+      | N/A                   | N/A                             | N/A             | Deleted |
+      | Weekly Alpha Training | 2026-05-15T13:00:00+03:00       | HQ Server       | Present |
+    When I delete the event "{eventId}" with parameters:
+      | mode | ALL |
+    Then the response status code should be 204
+    And I should not be able to retrieve event "{eventId}"
