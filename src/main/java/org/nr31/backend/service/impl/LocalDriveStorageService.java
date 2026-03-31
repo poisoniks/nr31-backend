@@ -70,6 +70,18 @@ public class LocalDriveStorageService implements FileStorageService {
         User uploader = userRepository.findByUsername(uploaderUsername)
                 .orElseThrow(() -> new ElementNotFoundException("User not found"));
 
+        long currentTotalSize = fileMetadataRepository.sumSizeBytesByUploaderId(uploader.getId());
+        long maxQuotaBytes = uploader.getRoles().stream()
+                .mapToLong(role -> role.getFilesUploadQuotaBytes() != null ? role.getFilesUploadQuotaBytes() : 0L)
+                .max()
+                .orElse(0L);
+
+        if (currentTotalSize + file.getSize() > maxQuotaBytes) {
+            throw new FileStorageException(
+                    "User upload quota exceeded (max " + formatSize(maxQuotaBytes) + "). Currently used: " +
+                            formatSize(currentTotalSize));
+        }
+
         String originalName = file.getOriginalFilename();
         String extension = extractExtension(originalName);
         UUID fileId = UUID.randomUUID();
@@ -133,5 +145,15 @@ public class LocalDriveStorageService implements FileStorageService {
             return "";
         }
         return filename.substring(filename.lastIndexOf('.'));
+    }
+
+    private String formatSize(long sizeBytes) {
+        if (sizeBytes >= 1024 * 1024) {
+            return String.format("%.2f MB", sizeBytes / (1024.0 * 1024.0));
+        } else if (sizeBytes >= 1024) {
+            return String.format("%.2f KB", sizeBytes / 1024.0);
+        } else {
+            return sizeBytes + " B";
+        }
     }
 }

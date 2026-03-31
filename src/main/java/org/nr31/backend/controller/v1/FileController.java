@@ -11,9 +11,13 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.nr31.backend.model.Role;
+import org.nr31.backend.repository.RoleRepository;
+import org.nr31.backend.exception.ElementNotFoundException;
 
 import java.security.Principal;
 import java.util.UUID;
@@ -32,6 +36,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class FileController {
 
     private final FileStorageService fileStorageService;
+    private final RoleRepository roleRepository;
 
     @Operation(summary = "Upload a file", description = "Uploads a file and stores its metadata. Allowed types: image/png, image/jpeg, image/webp. Max size: 5MB.")
     @ApiResponses(value = {
@@ -67,6 +72,22 @@ public class FileController {
     @PreAuthorize("hasAuthority('file:delete')")
     public ResponseEntity<Void> deleteFile(@PathVariable UUID id) {
         fileStorageService.deleteFile(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Update file upload quota for a role", description = "Updates the filesUploadQuotaBytes for a given role ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Quota updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Role not found"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
+    @PatchMapping("/quota/role/{id}")
+    @PreAuthorize("hasAuthority('file:manage_quota')")
+    public ResponseEntity<Void> updateRoleQuota(@PathVariable Long id, @RequestParam Long quotaBytes) {
+        Role role = roleRepository.findById(id)
+                .orElseThrow(() -> new ElementNotFoundException("Role not found"));
+        role.setFilesUploadQuotaBytes(quotaBytes);
+        roleRepository.save(role);
         return ResponseEntity.noContent().build();
     }
 }

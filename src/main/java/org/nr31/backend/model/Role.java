@@ -36,6 +36,9 @@ public class Role {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Column(name = "files_upload_quota_bytes")
+    private Long filesUploadQuotaBytes;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "role_permissions", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
