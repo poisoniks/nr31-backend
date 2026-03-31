@@ -4,7 +4,9 @@ Welcome to the backend service for the 31st Feldkanonenregiment (Nr.31 FKR), a U
 
 ## Project Purpose
 This project serves as the central hub and administrative backbone for the regiment's soldiers, officers, and recruits. It provides essential services such as:
-- **Regimental Roster:** (Planned) Centralized management of active members and recruits.
+- **Regimental Roster:** Centralized management of active members, unit types, and event types.
+- **File Management:** Scalable storage for regimental assets with quota control and automated cleanup.
+- **Authentication Services:** Secure JWT-based access with token refreshing and session management.
 - **Event Calendar:** A scheduling system supporting recursive events, exceptions, and integration with third-party platforms.
 - **Administrative Controls:** Tools for officers to manage application state and configurations.
 
@@ -19,6 +21,7 @@ The application is built on the Spring Boot stack:
   - **Hibernate L2 Cache:** SQL result caching for optimized database access.
 - **Integrations:** JDA (Java Discord API) for guild event synchronization.
 - **Documentation:** OpenAPI/Swagger UI.
+- **Scheduled Tasks:** Automated system maintenance (e.g., file cleanup, token rotation).
 - **CI/CD & Deployment:** Dockerized containers deployed via GitHub Actions.
 
 ## Core Features
@@ -48,14 +51,28 @@ Located at `/api/v1/admin`, providing authorized users with system control:
 - **Integration Control:** Programmatic control of the Discord bot status (start/stop/status).
 - **Config Management:** Endpoints for viewing and updating dynamic application settings.
 
-## Security Architecture
+### 5. File Management System
+A storage solution for regimental assets.
+- **Validated Uploads:** Supports image types (PNG, JPEG, WEBP) with strict 5MB size limits.
+- **Quota Control:** Role-based file upload limits (configurable via Patch endpoints).
+- **Lifecycle Management:** Automatic cleanup of stale or unlinked files via the `FileCleanupJob`.
+
+### 6. Roster & Metadata Management
+Centralized control over regimental organizational structure.
+- **Unit & Event Types:** Full CRUD operations for categorizing regimental activities and organizational units.
+- **Public Exposure:** Optimized read access for UI components with Hibernate L2 caching.
+
+### 7. Authentication & Security
+Industry-standard security implementation.
+- **JWT Lifecycle:** Implementation of Access and Refresh token pairs.
+- **Secure Handshakes:** Dedicated endpoints for login, logout, and token refreshing.
+- **Granular Permissions:** Expanded authority model (e.g., `roster:write`, `file:upload`).
 - **Deny-by-Default:** Security policy ensuring all endpoints require explicit authorization or whitelisting.
-- **Permissions:** Granular access control using specific authorities (e.g., `discord:manage`, `config:read`).
 - **Standardized Error Handling:** Consistent JSON responses for all error states via a global exception handler.
 
 ## Testing Strategy
 The project follows a tiered testing approach:
-- **End-to-End (E2E):** Cucumber-based integration tests for full API flows. Run via `./gradlew cucumber`.
+- **End-to-End (E2E):** Cucumber-based integration tests for full API flows (Calendar, Auth, Roster). Run via `./gradlew cucumber`.
 - **Unit Testing:** Focus on component-level logic, such as event synchronization and configuration parsing (e.g., `CalendarUpdateDiscordListenerTest.java`).
 - **Integration Tests:** Verification of database migrations and service-layer interactions.
 
