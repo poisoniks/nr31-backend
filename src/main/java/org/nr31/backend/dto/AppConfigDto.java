@@ -19,7 +19,7 @@ import java.util.Map;
 public class AppConfigDto {
 
     @NotBlank
-    @Schema(description = "Name of the property")
+    @Schema(description = "Name of the property", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
     @ValidLocalizedString
@@ -27,7 +27,7 @@ public class AppConfigDto {
     private Map<String, String> description;
 
     @NotNull(message = "Config value is required")
-    @Schema(description = "The actual configuration value as a JSON object, validated by schema")
+    @Schema(description = "The actual configuration value as a JSON object, validated by schema", requiredMode = Schema.RequiredMode.REQUIRED)
     private String configValue;
 
     @Schema(description = "JSON schema used to validate the configValue")

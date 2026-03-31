@@ -14,6 +14,6 @@ import java.util.List;
 @NoArgsConstructor
 @Schema(description = "Response object containing list of available log files")
 public class LogFilesListResponse {
-    @Schema(description = "Array of available log files", example = "[/app/logs/application.log]")
+    @Schema(description = "Array of available log files", example = "[/app/logs/application.log]", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<String> logFiles;
 }

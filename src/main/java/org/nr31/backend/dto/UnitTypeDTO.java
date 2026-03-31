@@ -15,10 +15,10 @@ import java.util.Map;
 @Schema(description = "DTO representing a participating military unit")
 public class UnitTypeDTO {
 
-    @Schema(description = "Unique identifier of the unit type", example = "1")
+    @Schema(description = "Unique identifier of the unit type", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long id;
 
-    @Schema(description = "Localized name of the unit type", example = "{\"en\": \"Alpha Squad\", \"uk\": \"Загін Альфа\"}")
+    @Schema(description = "Localized name of the unit type", example = "{\"en\": \"Alpha Squad\", \"uk\": \"Загін Альфа\"}", requiredMode = Schema.RequiredMode.REQUIRED)
     private Map<String, String> name;
 
     @Schema(description = "Localized description of the unit type", example = "{\"en\": \"Special operations squad\", \"uk\": \"Загін спеціального призначення\"}")

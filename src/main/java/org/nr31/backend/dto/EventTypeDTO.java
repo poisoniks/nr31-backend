@@ -15,10 +15,10 @@ import java.util.Map;
 @Schema(description = "DTO representing a type of calendar event")
 public class EventTypeDTO {
 
-    @Schema(description = "Unique identifier of the event type", example = "1")
+    @Schema(description = "Unique identifier of the event type", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long id;
 
-    @Schema(description = "Localized name of the event type", example = "{\"en\": \"Training\", \"uk\": \"Тренування\"}")
+    @Schema(description = "Localized name of the event type", example = "{\"en\": \"Training\", \"uk\": \"Тренування\"}", requiredMode = Schema.RequiredMode.REQUIRED)
     private Map<String, String> name;
 
     @Schema(description = "Custom icon associated with this event type", example = "target")

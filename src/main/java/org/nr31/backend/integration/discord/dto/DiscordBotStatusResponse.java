@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(description = "Response object containing discord bot status")
 public class DiscordBotStatusResponse {
-    @Schema(description = "Current status of discord bot", example = "OFFLINE")
+    @Schema(description = "Current status of discord bot", example = "OFFLINE", requiredMode = Schema.RequiredMode.REQUIRED)
     private String status;
 }
