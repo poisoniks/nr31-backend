@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.EventTypeDTO;
@@ -58,7 +59,7 @@ public class RosterController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    @Operation(summary = "Create unit type", description = "Creates a new unit type")
+    @Operation(summary = "Create unit type", description = "Creates a new unit type", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Successfully created unit type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UnitTypeDTO.class)))
     })
@@ -69,7 +70,7 @@ public class RosterController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @Operation(summary = "Update unit type", description = "Updates an existing unit type")
+    @Operation(summary = "Update unit type", description = "Updates an existing unit type", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully updated unit type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UnitTypeDTO.class))),
             @ApiResponse(responseCode = "404", description = "Unit type not found")
@@ -82,7 +83,7 @@ public class RosterController {
         return ResponseEntity.ok(updated);
     }
 
-    @Operation(summary = "Delete unit type", description = "Deletes a unit type by ID")
+    @Operation(summary = "Delete unit type", description = "Deletes a unit type by ID", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully deleted unit type"),
             @ApiResponse(responseCode = "404", description = "Unit type not found")
@@ -115,7 +116,7 @@ public class RosterController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    @Operation(summary = "Create event type", description = "Creates a new event type")
+    @Operation(summary = "Create event type", description = "Creates a new event type", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Successfully created event type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventTypeDTO.class)))
     })
@@ -126,7 +127,7 @@ public class RosterController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @Operation(summary = "Update event type", description = "Updates an existing event type")
+    @Operation(summary = "Update event type", description = "Updates an existing event type", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully updated event type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventTypeDTO.class))),
             @ApiResponse(responseCode = "404", description = "Event type not found")
@@ -139,7 +140,7 @@ public class RosterController {
         return ResponseEntity.ok(updated);
     }
 
-    @Operation(summary = "Delete event type", description = "Deletes an event type by ID")
+    @Operation(summary = "Delete event type", description = "Deletes an event type by ID", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully deleted event type"),
             @ApiResponse(responseCode = "404", description = "Event type not found")

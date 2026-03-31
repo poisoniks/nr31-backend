@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Validated
@@ -60,7 +61,7 @@ public class AuthController {
         return ResponseEntity.ok(new AuthResponse(accessToken, request.getRefreshToken()));
     }
 
-    @Operation(summary = "Logout user", description = "Invalidates the provided refresh token")
+    @Operation(summary = "Logout user", description = "Invalidates the provided refresh token", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully logged out"),
             @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),

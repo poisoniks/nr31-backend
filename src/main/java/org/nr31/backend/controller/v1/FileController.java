@@ -27,12 +27,14 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1/files")
 @RequiredArgsConstructor
 @Tag(name = "Files", description = "Endpoints for file storage management")
+@SecurityRequirement(name = "Bearer Authentication")
 public class FileController {
 
     private final FileStorageService fileStorageService;

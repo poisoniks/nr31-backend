@@ -3,6 +3,7 @@ package org.nr31.backend.controller.v1;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityManager;
 import jakarta.validation.Valid;
@@ -44,6 +45,7 @@ import java.util.stream.Stream;
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 @Tag(name = "Admin Panel", description = "Endpoints for administrative actions")
+@SecurityRequirement(name = "Bearer Authentication")
 public class AdminPanelController {
     private static final String LOG_DIRECTORY = "/app/logs";
 
