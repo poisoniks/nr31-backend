@@ -89,3 +89,50 @@ Feature: App Config Management
     And the response body should contain "page.number" with value "0"
     And the response body should contain "page.totalElements" with value "6"
     And the response body should contain "page.totalPages" with value "1"
+
+  Scenario: Assign permission to role successfully
+    Given I log in with user "admin" and password "testpass"
+    When I assign permission "cache:clear" to role "ROLE_ADMIN"
+    Then the response status code should be 204
+
+  Scenario: Prevent unauthorized user from assigning permission
+    Given I log in with user "user" and password "testpass"
+    When I assign permission "cache:clear" to role "ROLE_ADMIN"
+    Then the response status code should be 403
+
+  Scenario: List all roles successfully
+    Given I log in with user "admin" and password "testpass"
+    When I retrieve all roles
+    Then the response status code should be 200
+    And the response list of configs should contain an item with name "ROLE_ADMIN"
+    And the response list of configs should contain an item with name "ROLE_USER"
+
+  Scenario: Get role by name successfully
+    Given I log in with user "admin" and password "testpass"
+    When I retrieve the role "ROLE_ADMIN"
+    Then the response status code should be 200
+    And the response body should contain name "ROLE_ADMIN"
+
+  Scenario: Create, update and delete role successfully
+    Given I log in with user "admin" and password "testpass"
+    When I create a new role with name "ROLE_NEW_TEST"
+    Then the response status code should be 201
+    And the response body should contain "name" with value "ROLE_NEW_TEST"
+
+    When I update the role "ROLE_NEW_TEST" to have name "ROLE_UPDATED_TEST"
+    Then the response status code should be 200
+    And the response body should contain "name" with value "ROLE_UPDATED_TEST"
+
+    When I delete the role "ROLE_UPDATED_TEST"
+    Then the response status code should be 204
+
+    When I retrieve the role "ROLE_UPDATED_TEST"
+    Then the response status code should be 404
+
+  Scenario: Prevent unauthorized user from managing roles
+    Given I log in with user "user" and password "testpass"
+    When I retrieve all roles
+    Then the response status code should be 403
+
+    When I create a new role with name "ROLE_HACKER"
+    Then the response status code should be 403

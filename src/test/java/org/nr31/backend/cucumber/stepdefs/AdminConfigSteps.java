@@ -12,7 +12,14 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+
 public class AdminConfigSteps extends CommonStepDefs {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @When("I retrieve the config {string}")
     public void i_retrieve_the_config(String configName) throws Exception {
@@ -50,8 +57,8 @@ public class AdminConfigSteps extends CommonStepDefs {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
 
-        JsonNode contentNode = root.get("content");
-        assertTrue(contentNode.isArray(), "Response content array missing or invalid");
+        JsonNode contentNode = root.isArray() ? root : root.get("content");
+        assertTrue(contentNode != null && contentNode.isArray(), "Response content array missing or invalid");
 
         boolean found = false;
         for (JsonNode node : contentNode) {
@@ -61,7 +68,14 @@ public class AdminConfigSteps extends CommonStepDefs {
                 break;
             }
         }
-        assertTrue(found, "Expected to find an item with config name: " + configName);
+        assertTrue(found, "Expected to find an item with name: " + configName);
+    }
+
+    @And("the response body should contain name {string}")
+    public void the_response_body_should_contain_name(String expectedName) throws Exception {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        assertTrue(response.body().contains("\"name\":\"" + expectedName + "\""), 
+                "Expected response to contain name: " + expectedName + "\nBody: " + response.body());
     }
 
     @And("the updated config value should be {string}")
@@ -71,4 +85,51 @@ public class AdminConfigSteps extends CommonStepDefs {
         assertEquals(expectedValue, root.get("configValue").asText());
     }
 
+    @When("I assign permission {string} to role {string}")
+    public void i_assign_permission_to_role(String permissionName, String roleName) throws Exception {
+        Long permissionId = jdbcTemplate.queryForObject("SELECT id FROM permissions WHERE name = ?", Long.class, permissionName);
+        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
+        HttpResponse<String> response = makeApiCall("POST", "/api/v1/admin/roles/" + roleId + "/permissions/" + permissionId, "");
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I retrieve all roles")
+    public void i_retrieve_all_roles() throws Exception {
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/admin/roles", null);
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I retrieve the role {string}")
+    public void i_retrieve_the_role(String roleName) throws Exception {
+        try {
+            Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
+            HttpResponse<String> response = makeApiCall("GET", "/api/v1/admin/roles/" + roleId, null);
+            contextHelper.addValue("response", response);
+        } catch (EmptyResultDataAccessException e) {
+            HttpResponse<String> response = makeApiCall("GET", "/api/v1/admin/roles/99999", null);
+            contextHelper.addValue("response", response);
+        }
+    }
+
+    @When("I create a new role with name {string}")
+    public void i_create_a_new_role(String roleName) throws Exception {
+        String body = "{\"name\": \"" + roleName + "\"}";
+        HttpResponse<String> response = makeApiCall("POST", "/api/v1/admin/roles", body);
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I update the role {string} to have name {string}")
+    public void i_update_the_role(String oldName, String newName) throws Exception {
+        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, oldName);
+        String body = "{\"name\": \"" + newName + "\"}";
+        HttpResponse<String> response = makeApiCall("PUT", "/api/v1/admin/roles/" + roleId, body);
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I delete the role {string}")
+    public void i_delete_the_role(String roleName) throws Exception {
+        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
+        HttpResponse<String> response = makeApiCall("DELETE", "/api/v1/admin/roles/" + roleId, null);
+        contextHelper.addValue("response", response);
+    }
 }
