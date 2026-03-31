@@ -5,6 +5,7 @@ import org.nr31.backend.dto.FileUploadResponse;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.exception.FileStorageException;
 import org.nr31.backend.model.FileMetadata;
+import org.nr31.backend.model.FileStatus;
 import org.nr31.backend.model.User;
 import org.nr31.backend.repository.FileMetadataRepository;
 import org.nr31.backend.repository.UserRepository;
@@ -106,6 +107,7 @@ public class LocalDriveStorageService implements FileStorageService {
                 .sizeBytes(file.getSize())
                 .uploader(uploader)
                 .createdAt(Instant.now())
+                .status(FileStatus.PENDING)
                 .build();
 
         fileMetadataRepository.save(metadata);
