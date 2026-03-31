@@ -252,8 +252,8 @@ Feature: Calendar Events Management
       | serverName | Main Server          |
     Then the response status code should be 201
     When I retrieve events with the following parameters:
-      | from     | 2026-10-27 |
-      | to       | 2026-10-28 |
+      | from     | 2026-10-27  |
+      | to       | 2026-10-28  |
       | timezone | Europe/Kyiv |
     Then the response status code should be 200
     And the event start time should be adjusted to local time in the response
@@ -319,13 +319,13 @@ Feature: Calendar Events Management
       | timezone | Europe/Kyiv |
     Then the response status code should be 200
     And the response list should contain exactly the following state for the series:
-      | Original Date (UTC) | Expected Title                     | Expected Start Time (Kyiv Time) | Expected Server | Status  |
-      | 2026-11-02          | Global Synchronization             | 2026-11-02T17:00:00+02:00       | US-East-1       | Present |
-      | 2026-11-04          | Global Synchronization - Delayed   | 2026-11-04T19:00:00+02:00       | US-East-1       | Present |
-      | 2026-11-06          | N/A                                | N/A                             | N/A             | Deleted |
-      | 2026-11-09          | Global Synchronization - Phase 2   | 2026-11-09T16:00:00+02:00       | EU-Central      | Present |
-      | 2026-11-11          | Global Synchronization - Phase 2   | 2026-11-11T16:00:00+02:00       | EU-Central      | Present |
-      | 2026-11-13          | Global Synchronization - Phase 2   | 2026-11-13T16:00:00+02:00       | EU-Central      | Present |
+      | Original Date (UTC) | Expected Title                   | Expected Start Time (Kyiv Time) | Expected Server | Status  |
+      | 2026-11-02          | Global Synchronization           | 2026-11-02T17:00:00+02:00       | US-East-1       | Present |
+      | 2026-11-04          | Global Synchronization - Delayed | 2026-11-04T19:00:00+02:00       | US-East-1       | Present |
+      | 2026-11-06          | N/A                              | N/A                             | N/A             | Deleted |
+      | 2026-11-09          | Global Synchronization - Phase 2 | 2026-11-09T16:00:00+02:00       | EU-Central      | Present |
+      | 2026-11-11          | Global Synchronization - Phase 2 | 2026-11-11T16:00:00+02:00       | EU-Central      | Present |
+      | 2026-11-13          | Global Synchronization - Phase 2 | 2026-11-13T16:00:00+02:00       | EU-Central      | Present |
 
   Scenario: Retrieve nearest event to a public user
     Given I log in with user "admin" and password "testpass"
@@ -471,12 +471,13 @@ Feature: Calendar Events Management
     And the response body should indicate "recurring" is true
     And I save the created event "id" as "eventId"
     When I update the event "{eventId}" with the following details:
-      | mode       | ALL                    |
-      | title.en   | Alpha Squad Single     |
-      | start      | 2026-05-01T10:00:00Z   |
-      | end        | 2026-05-01T11:00:00Z   |
-      | type       | 1                      |
-      | recurrence | null                   |
+      | mode       | ALL                  |
+      | title.en   | Alpha Squad Single   |
+      | start      | 2026-05-01T10:00:00Z |
+      | end        | 2026-05-01T11:00:00Z |
+      | type       | 1                    |
+      | recurrence | null                 |
+      | serverName | HQ Server            |
     Then the response status code should be 200
     When I retrieve events with the following parameters:
       | from     | 2026-05-01 |
@@ -484,14 +485,15 @@ Feature: Calendar Events Management
       | timezone | UTC        |
     Then the response list should have size 1
     When I update the event "{eventId}" with the following details:
-      | mode                 | SINGLE                 |
-      | title.en             | Weekly Alpha Training  |
-      | start                | 2026-05-01T10:00:00Z   |
-      | end                  | 2026-05-01T11:00:00Z   |
-      | originalStart        | 2026-05-01T10:00:00Z   |
-      | type                 | 1                      |
-      | recurrence.frequency | WEEKLY                 |
-      | recurrence.count     | 3                      |
+      | mode                 | SINGLE                |
+      | title.en             | Weekly Alpha Training |
+      | start                | 2026-05-01T10:00:00Z  |
+      | end                  | 2026-05-01T11:00:00Z  |
+      | originalStart        | 2026-05-01T10:00:00Z  |
+      | type                 | 1                     |
+      | recurrence.frequency | WEEKLY                |
+      | recurrence.count     | 3                     |
+      | serverName           | HQ Server             |
     Then the response status code should be 200
     When I retrieve events with the following parameters:
       | from     | 2026-05-01 |
@@ -503,8 +505,8 @@ Feature: Calendar Events Management
       | exceptionDate | 2026-05-08T10:00:00Z |
     Then the response status code should be 204
     When I retrieve events with the following parameters:
-      | from     | 2026-05-01 |
-      | to       | 2026-05-20 |
+      | from     | 2026-05-01  |
+      | to       | 2026-05-20  |
       | timezone | Europe/Kyiv |
     Then the response list should contain exactly the following state for the series:
       | Expected Title        | Expected Start Time (Kyiv Time) | Expected Server | Status  |
