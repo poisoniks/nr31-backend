@@ -6,8 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
 
 public interface FileStorageService {
-
     FileUploadResponse storeFile(MultipartFile file, String uploaderUsername);
-
     void deleteFile(UUID fileId);
+    void deleteOldPendingFiles(java.time.Instant before);
 }

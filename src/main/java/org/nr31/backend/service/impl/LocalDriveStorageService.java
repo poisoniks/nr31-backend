@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -140,6 +141,25 @@ public class LocalDriveStorageService implements FileStorageService {
 
         fileMetadataRepository.delete(metadata);
         log.info("Deleted file metadata: {}", fileId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteOldPendingFiles(Instant before) {
+        log.info("Starting cleanup of pending files older than {}...", before);
+        List<FileMetadata> oldPendingFiles = fileMetadataRepository.findByStatusAndCreatedAtBefore(FileStatus.PENDING, before);
+
+        for (FileMetadata metadata : oldPendingFiles) {
+            try {
+                Path filePath = uploadDir.resolve(metadata.getStoredName()).normalize();
+                Files.deleteIfExists(filePath);
+                fileMetadataRepository.delete(metadata);
+                log.info("Deleted old pending file: {}", metadata.getStoredName());
+            } catch (IOException e) {
+                log.error("Failed to delete old pending file from disk: {}", metadata.getStoredName(), e);
+            }
+        }
+        log.info("Finished cleanup of {} pending files.", oldPendingFiles.size());
     }
 
     private String extractExtension(String filename) {
