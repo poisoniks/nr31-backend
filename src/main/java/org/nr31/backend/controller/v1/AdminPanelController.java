@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityManager;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.nr31.backend.dto.AppConfigDto;
 import org.nr31.backend.dto.LogFilesListResponse;
 import org.nr31.backend.dto.RoleDTO;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
@@ -67,6 +69,7 @@ public class AdminPanelController {
     @PostMapping(value = "/cache/clear", produces = "application/json")
     @PreAuthorize("hasAuthority('cache:clear')")
     public ResponseEntity<Void> clearCache() {
+        log.info("Cache clear issued");
         cacheManager.getCacheNames().forEach(cacheName -> {
             var cache = cacheManager.getCache(cacheName);
             if (cache != null) {
@@ -76,6 +79,7 @@ public class AdminPanelController {
 
         entityManager.getEntityManagerFactory().getCache().evictAll();
 
+        log.info("Cache cleared successfully");
         return ResponseEntity.noContent().build();
     }
 
