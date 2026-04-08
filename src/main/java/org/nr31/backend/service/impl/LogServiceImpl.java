@@ -24,6 +24,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 @Slf4j
 @Service
 public class LogServiceImpl implements LogService {
@@ -35,13 +39,22 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
-    public List<String> listLogFiles() {
+    public Page<String> listLogFiles(Pageable pageable) {
         try (Stream<Path> paths = Files.walk(Paths.get(logDirectory), 1)) {
-            return paths
+            List<String> allFiles = paths
                     .filter(Files::isRegularFile)
                     .map(path -> path.getFileName().toString())
                     .filter(name -> name.endsWith(".log"))
                     .collect(Collectors.toList());
+
+            int start = (int) pageable.getOffset();
+            int end = Math.min((start + pageable.getPageSize()), allFiles.size());
+
+            if (start > allFiles.size()) {
+                return new PageImpl<>(Collections.emptyList(), pageable, allFiles.size());
+            }
+
+            return new PageImpl<>(allFiles.subList(start, end), pageable, allFiles.size());
         } catch (Exception e) {
             throw new ResourceAccessException("Unable to list log files", e);
         }
@@ -72,11 +85,13 @@ public class LogServiceImpl implements LogService {
                     .setBufferSize(4096)
                     .get()) {
                 for (long i = 0; i < off; i++) {
-                    if (reader.readLine() == null) break;
+                    if (reader.readLine() == null)
+                        break;
                 }
                 for (long i = 0; i < lim; i++) {
                     String line = reader.readLine();
-                    if (line == null) break;
+                    if (line == null)
+                        break;
                     lines.add(line);
                 }
             } catch (IOException e) {

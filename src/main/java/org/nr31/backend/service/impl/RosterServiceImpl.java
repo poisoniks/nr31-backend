@@ -16,10 +16,11 @@ import org.nr31.backend.service.RosterService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -31,10 +32,9 @@ public class RosterServiceImpl implements RosterService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UnitTypeDTO> getAllUnitTypes() {
-        return unitTypeRepository.findAll().stream()
-                .map(this::mapToUnitTypeDTO)
-                .collect(Collectors.toList());
+    public Page<UnitTypeDTO> getAllUnitTypes(Pageable pageable) {
+        return unitTypeRepository.findAll(pageable)
+                .map(this::mapToUnitTypeDTO);
     }
 
     @Override
@@ -80,10 +80,9 @@ public class RosterServiceImpl implements RosterService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventTypeDTO> getAllEventTypes() {
-        return eventTypeRepository.findAll().stream()
-                .map(this::mapToEventTypeDTO)
-                .collect(Collectors.toList());
+    public Page<EventTypeDTO> getAllEventTypes(Pageable pageable) {
+        return eventTypeRepository.findAll(pageable)
+                .map(this::mapToEventTypeDTO);
     }
 
     @Override

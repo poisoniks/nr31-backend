@@ -10,7 +10,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.nr31.backend.dto.AppConfigDto;
-import org.nr31.backend.dto.LogFilesListResponse;
 import org.nr31.backend.dto.PermissionDTO;
 import org.nr31.backend.dto.PermissionUpdateRequest;
 import org.nr31.backend.dto.RoleDTO;
@@ -40,8 +39,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -84,9 +81,8 @@ public class AdminPanelController {
     })
     @GetMapping(value = "/logs/list", produces = "application/json")
     @PreAuthorize("hasAuthority('logs:read')")
-    public ResponseEntity<LogFilesListResponse> listLogFiles() {
-        List<String> fileNames = logService.listLogFiles();
-        return ResponseEntity.ok(new LogFilesListResponse(fileNames));
+    public ResponseEntity<Page<String>> listLogFiles(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(logService.listLogFiles(pageable));
     }
 
     @Operation(summary = "Get log file", description = "Retrieves the content of a specific log file")
@@ -206,8 +202,8 @@ public class AdminPanelController {
     })
     @GetMapping("/roles")
     @PreAuthorize("hasAuthority('access:manage')")
-    public ResponseEntity<List<RoleDTO>> getAllRoles() {
-        return ResponseEntity.ok(accessControlService.getAllRoles());
+    public ResponseEntity<Page<RoleDTO>> getAllRoles(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(accessControlService.getAllRoles(pageable));
     }
 
     @Operation(summary = "Get role by id", description = "Retrieves detailed information about a specific role")
@@ -227,8 +223,8 @@ public class AdminPanelController {
     })
     @GetMapping("/permissions")
     @PreAuthorize("hasAuthority('access:manage')")
-    public ResponseEntity<List<PermissionDTO>> getAllPermissions() {
-        return ResponseEntity.ok(accessControlService.getAllPermissions());
+    public ResponseEntity<Page<PermissionDTO>> getAllPermissions(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(accessControlService.getAllPermissions(pageable));
     }
 
     @Operation(summary = "Update permission description", description = "Updates localized description of a permission")

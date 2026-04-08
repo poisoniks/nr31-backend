@@ -2,8 +2,9 @@ package org.nr31.backend.service;
 
 import org.nr31.backend.dto.SupportedLocaleDTO;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface PublicService {
-    List<SupportedLocaleDTO> getSupportedLocales();
+    Page<SupportedLocaleDTO> getSupportedLocales(Pageable pageable);
 }

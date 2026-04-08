@@ -16,8 +16,8 @@ import org.nr31.backend.service.AccessControlService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -41,10 +41,9 @@ public class AccessControlServiceImpl implements AccessControlService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<RoleDTO> getAllRoles() {
-        return roleRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<RoleDTO> getAllRoles(Pageable pageable) {
+        return roleRepository.findAll(pageable)
+                .map(this::convertToDTO);
     }
 
     @Override
@@ -97,10 +96,9 @@ public class AccessControlServiceImpl implements AccessControlService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PermissionDTO> getAllPermissions() {
-        return permissionRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<PermissionDTO> getAllPermissions(Pageable pageable) {
+        return permissionRepository.findAll(pageable)
+                .map(this::convertToDTO);
     }
 
     @Override

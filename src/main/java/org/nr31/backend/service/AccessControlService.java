@@ -1,18 +1,29 @@
 package org.nr31.backend.service;
 
 import org.nr31.backend.dto.PermissionDTO;
+import org.nr31.backend.dto.PermissionUpdateRequest;
 import org.nr31.backend.dto.RoleDTO;
 import org.nr31.backend.dto.RoleRequest;
-import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface AccessControlService {
     void assignPermissionToRole(Long roleId, Long permissionId);
-    List<RoleDTO> getAllRoles();
+
+    Page<RoleDTO> getAllRoles(Pageable pageable);
+
     RoleDTO getRole(Long id);
+
     RoleDTO createRole(RoleRequest request);
+
     RoleDTO updateRole(Long id, RoleRequest request);
+
     void deleteRole(Long id);
+
     void assignRoleToUser(Long userId, Long roleId);
-    List<PermissionDTO> getAllPermissions();
-    PermissionDTO updatePermission(Long id, org.nr31.backend.dto.PermissionUpdateRequest request);
+
+    Page<PermissionDTO> getAllPermissions(Pageable pageable);
+
+    PermissionDTO updatePermission(Long id, PermissionUpdateRequest request);
 }

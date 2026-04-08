@@ -8,7 +8,8 @@ import org.nr31.backend.service.PublicService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -18,10 +19,9 @@ public class PublicServiceImpl implements PublicService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SupportedLocaleDTO> getSupportedLocales() {
-        return supportedLocaleRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .toList();
+    public Page<SupportedLocaleDTO> getSupportedLocales(Pageable pageable) {
+        return supportedLocaleRepository.findAll(pageable)
+                .map(this::convertToDTO);
     }
 
     private SupportedLocaleDTO convertToDTO(SupportedLocale locale) {
