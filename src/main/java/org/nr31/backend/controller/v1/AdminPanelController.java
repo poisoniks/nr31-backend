@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.nr31.backend.dto.AppConfigDto;
 import org.nr31.backend.dto.LogFilesListResponse;
+import org.nr31.backend.dto.PermissionDTO;
 import org.nr31.backend.dto.RoleDTO;
 import org.nr31.backend.dto.RoleRequest;
 import org.nr31.backend.integration.discord.DiscordBotManager;
@@ -186,6 +187,18 @@ public class AdminPanelController {
         accessControlService.assignPermissionToRole(roleId, permissionId);
     }
 
+    @Operation(summary = "Assign role to user", description = "Assigns a specific role to a user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Successfully assigned role"),
+            @ApiResponse(responseCode = "404", description = "User or Role not found")
+    })
+    @PostMapping("/users/{userId}/roles/{roleId}")
+    @PreAuthorize("hasAuthority('access:manage')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void assignRoleToUser(@PathVariable Long userId, @PathVariable Long roleId) {
+        accessControlService.assignRoleToUser(userId, roleId);
+    }
+
     @Operation(summary = "Get all roles", description = "Retrieves a list of all user roles")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved roles list")
@@ -205,6 +218,16 @@ public class AdminPanelController {
     @PreAuthorize("hasAuthority('access:manage')")
     public ResponseEntity<RoleDTO> getRole(@PathVariable Long id) {
         return ResponseEntity.ok(accessControlService.getRole(id));
+    }
+
+    @Operation(summary = "Get all permissions", description = "Retrieves a list of all application permissions")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved permissions list")
+    })
+    @GetMapping("/permissions")
+    @PreAuthorize("hasAuthority('access:manage')")
+    public ResponseEntity<List<PermissionDTO>> getAllPermissions() {
+        return ResponseEntity.ok(accessControlService.getAllPermissions());
     }
 
     @Operation(summary = "Create role", description = "Creates a new application role")
