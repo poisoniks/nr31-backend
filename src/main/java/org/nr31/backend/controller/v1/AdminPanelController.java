@@ -13,13 +13,12 @@ import org.nr31.backend.dto.AppConfigDto;
 import org.nr31.backend.dto.LogFilesListResponse;
 import org.nr31.backend.dto.RoleDTO;
 import org.nr31.backend.dto.RoleRequest;
-import org.nr31.backend.exception.ResourceAccessException;
 import org.nr31.backend.integration.discord.DiscordBotManager;
 import org.nr31.backend.integration.discord.dto.DiscordBotStatusResponse;
 import org.nr31.backend.service.AccessControlService;
 import org.nr31.backend.service.AppConfigService;
+import org.nr31.backend.service.LogService;
 import org.springframework.cache.CacheManager;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,16 +35,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 @RestController
@@ -54,10 +48,9 @@ import java.util.stream.Stream;
 @Tag(name = "Admin Panel", description = "Endpoints for administrative actions")
 @SecurityRequirement(name = "Bearer Authentication")
 public class AdminPanelController {
-    private static final String LOG_DIRECTORY = "/app/logs";
-
     private final CacheManager cacheManager;
     private final EntityManager entityManager;
+    private final LogService logService;
     private final AppConfigService appConfigService;
     private final DiscordBotManager discordBotManager;
     private final AccessControlService accessControlService;
@@ -90,16 +83,8 @@ public class AdminPanelController {
     @GetMapping(value = "/logs/list", produces = "application/json")
     @PreAuthorize("hasAuthority('logs:read')")
     public ResponseEntity<LogFilesListResponse> listLogFiles() {
-        try (Stream<Path> paths = Files.walk(Paths.get(LOG_DIRECTORY), 1)) {
-            List<String> fileNames = paths
-                    .filter(Files::isRegularFile)
-                    .map(path -> path.getFileName().toString())
-                    .filter(name -> name.endsWith(".log"))
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(new LogFilesListResponse(fileNames));
-        } catch (Exception e) {
-            throw new ResourceAccessException("Unable to list log files", e);
-        }
+        List<String> fileNames = logService.listLogFiles();
+        return ResponseEntity.ok(new LogFilesListResponse(fileNames));
     }
 
     @Operation(summary = "Get log file", description = "Retrieves the content of a specific log file")
@@ -110,25 +95,15 @@ public class AdminPanelController {
     })
     @GetMapping("/logs/{fileName}")
     @PreAuthorize("hasAuthority('logs:read')")
-    public ResponseEntity<Resource> getLogFile(@PathVariable String fileName) {
-        Path baseDirectory = Paths.get(LOG_DIRECTORY).toAbsolutePath().normalize();
-        Path filePath = baseDirectory.resolve(fileName).normalize();
-
-        if (!filePath.startsWith(baseDirectory)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        File logFile = new File(LOG_DIRECTORY, fileName);
-
-        if (!logFile.exists() || !logFile.isFile()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        Resource resource = new FileSystemResource(logFile);
+    public ResponseEntity<Resource> getLogFile(
+            @PathVariable String fileName,
+            @RequestParam(required = false) Long offsetFromEnd,
+            @RequestParam(required = false) Long limit) {
+        Resource resource = logService.getLogFile(fileName, offsetFromEnd, limit);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_PLAIN)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + logFile.getName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
                 .body(resource);
     }
 

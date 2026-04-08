@@ -38,6 +38,7 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
     implementation 'org.dmfs:lib-recur:0.17.1'
     implementation 'com.networknt:json-schema-validator:2.0.1'
+    implementation 'commons-io:commons-io:2.21.0'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
     implementation("net.dv8tion:JDA:6.3.1")
