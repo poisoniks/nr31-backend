@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.nr31.backend.dto.AppConfigDto;
 import org.nr31.backend.dto.LogFilesListResponse;
 import org.nr31.backend.dto.PermissionDTO;
+import org.nr31.backend.dto.PermissionUpdateRequest;
 import org.nr31.backend.dto.RoleDTO;
 import org.nr31.backend.dto.RoleRequest;
 import org.nr31.backend.integration.discord.DiscordBotManager;
@@ -228,6 +229,20 @@ public class AdminPanelController {
     @PreAuthorize("hasAuthority('access:manage')")
     public ResponseEntity<List<PermissionDTO>> getAllPermissions() {
         return ResponseEntity.ok(accessControlService.getAllPermissions());
+    }
+
+    @Operation(summary = "Update permission description", description = "Updates localized description of a permission")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully updated permission description"),
+            @ApiResponse(responseCode = "404", description = "Permission not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid request payload")
+    })
+    @PutMapping("/permissions/{id}")
+    @PreAuthorize("hasAuthority('access:manage')")
+    public ResponseEntity<PermissionDTO> updatePermission(
+            @PathVariable Long id,
+            @Valid @RequestBody PermissionUpdateRequest request) {
+        return ResponseEntity.ok(accessControlService.updatePermission(id, request));
     }
 
     @Operation(summary = "Create role", description = "Creates a new application role")

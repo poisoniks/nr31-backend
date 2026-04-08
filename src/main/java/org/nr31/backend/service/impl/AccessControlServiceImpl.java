@@ -2,6 +2,7 @@ package org.nr31.backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.PermissionDTO;
+import org.nr31.backend.dto.PermissionUpdateRequest;
 import org.nr31.backend.dto.RoleDTO;
 import org.nr31.backend.dto.RoleRequest;
 import org.nr31.backend.exception.ElementNotFoundException;
@@ -100,6 +101,15 @@ public class AccessControlServiceImpl implements AccessControlService {
         return permissionRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public PermissionDTO updatePermission(Long id, PermissionUpdateRequest request) {
+        Permission permission = permissionRepository.findById(id)
+                .orElseThrow(() -> new ElementNotFoundException("Permission not found with id: " + id));
+        permission.setDescription(request.getDescription());
+        return convertToDTO(permissionRepository.save(permission));
     }
 
     private RoleDTO convertToDTO(Role role) {

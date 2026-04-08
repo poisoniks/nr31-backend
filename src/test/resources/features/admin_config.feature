@@ -145,3 +145,13 @@ Feature: App Config Management
     When I create a new role with name "ROLE_HACKER" and localized name:
       | en | Hacker |
     Then the response status code should be 403
+
+  Scenario: Update permission successfully
+    Given I log in with user "admin" and password "testpass"
+    When I update the permission "cache:clear" with the following description:
+      | en | Can clear application cache updated |
+      | uk | Може очистити кеш додатку |
+    Then the response status code should be 200
+    And the response body should contain updated permission description:
+      | en | Can clear application cache updated |
+      | uk | Може очистити кеш додатку |

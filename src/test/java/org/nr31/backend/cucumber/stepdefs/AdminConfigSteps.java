@@ -151,4 +151,29 @@ public class AdminConfigSteps extends CommonStepDefs {
         HttpResponse<String> response = makeApiCall("DELETE", "/api/v1/admin/roles/" + roleId, null);
         contextHelper.addValue("response", response);
     }
+
+    @When("I update the permission {string} with the following description:")
+    public void i_update_permission_description(String permissionName, DataTable dataTable) throws Exception {
+        Long permissionId = jdbcTemplate.queryForObject("SELECT id FROM permissions WHERE name = ?", Long.class, permissionName);
+        Map<String, String> description = dataTable.asMap(String.class, String.class);
+        String descriptionJson = objectMapper.writeValueAsString(description);
+        String body = "{\"description\": " + descriptionJson + "}";
+        HttpResponse<String> response = makeApiCall("PUT", "/api/v1/admin/permissions/" + permissionId, body);
+        contextHelper.addValue("response", response);
+    }
+
+    @And("the response body should contain updated permission description:")
+    public void the_response_body_should_contain_updated_permission_description(DataTable dataTable) throws Exception {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        JsonNode root = objectMapper.readTree(response.body());
+        JsonNode descriptionNode = root.get("description");
+        assertTrue(descriptionNode != null && descriptionNode.isObject(), "description is missing or not an object");
+
+        Map<String, String> expectedDescription = dataTable.asMap(String.class, String.class);
+        for (Map.Entry<String, String> entry : expectedDescription.entrySet()) {
+            JsonNode val = descriptionNode.get(entry.getKey());
+            assertTrue(val != null, "Missing description for key: " + entry.getKey());
+            assertEquals(entry.getValue(), val.asText());
+        }
+    }
 }

@@ -14,4 +14,5 @@ public interface AccessControlService {
     void deleteRole(Long id);
     void assignRoleToUser(Long userId, Long roleId);
     List<PermissionDTO> getAllPermissions();
+    PermissionDTO updatePermission(Long id, org.nr31.backend.dto.PermissionUpdateRequest request);
 }
