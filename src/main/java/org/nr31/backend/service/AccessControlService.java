@@ -4,6 +4,7 @@ import org.nr31.backend.dto.PermissionDTO;
 import org.nr31.backend.dto.PermissionUpdateRequest;
 import org.nr31.backend.dto.RoleDTO;
 import org.nr31.backend.dto.RoleRequest;
+import org.nr31.backend.dto.UserDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,4 +27,8 @@ public interface AccessControlService {
     Page<PermissionDTO> getAllPermissions(Pageable pageable);
 
     PermissionDTO updatePermission(Long id, PermissionUpdateRequest request);
+
+    Page<UserDTO> getAllUsers(Pageable pageable);
+
+    Page<UserDTO> searchUsersByUsername(String username, Pageable pageable);
 }

@@ -1,10 +1,14 @@
 package org.nr31.backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.stream.Collectors;
+
 import org.nr31.backend.dto.PermissionDTO;
 import org.nr31.backend.dto.PermissionUpdateRequest;
 import org.nr31.backend.dto.RoleDTO;
 import org.nr31.backend.dto.RoleRequest;
+import org.nr31.backend.dto.UserDTO;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.model.Permission;
 import org.nr31.backend.model.Role;
@@ -110,6 +114,20 @@ public class AccessControlServiceImpl implements AccessControlService {
         return convertToDTO(permissionRepository.save(permission));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserDTO> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(this::convertToUserDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserDTO> searchUsersByUsername(String username, Pageable pageable) {
+        return userRepository.findByUsernameContainingIgnoreCase(username, pageable)
+                .map(this::convertToUserDTO);
+    }
+
     private RoleDTO convertToDTO(Role role) {
         return RoleDTO.builder()
                 .id(role.getId())
@@ -123,6 +141,16 @@ public class AccessControlServiceImpl implements AccessControlService {
                 .id(permission.getId())
                 .name(permission.getName())
                 .description(permission.getDescription())
+                .build();
+    }
+
+    private UserDTO convertToUserDTO(User user) {
+        return UserDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .roles(user.getRoles().stream()
+                        .map(this::convertToDTO)
+                        .collect(Collectors.toSet()))
                 .build();
     }
 }

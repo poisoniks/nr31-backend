@@ -176,4 +176,34 @@ public class AdminConfigSteps extends CommonStepDefs {
             assertEquals(entry.getValue(), val.asText());
         }
     }
+
+    @When("I retrieve all users")
+    public void i_retrieve_all_users() throws Exception {
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/admin/users", null);
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I search users by username {string}")
+    public void i_search_users_by_username(String username) throws Exception {
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/admin/users/search?username=" + username, null);
+        contextHelper.addValue("response", response);
+    }
+
+    @And("the response body should contain a user with username {string}")
+    public void the_response_body_should_contain_a_user_with_username(String expectedUsername) throws Exception {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        JsonNode root = objectMapper.readTree(response.body());
+        JsonNode contentNode = root.isArray() ? root : root.get("content");
+        assertTrue(contentNode != null && contentNode.isArray(), "Response content is not an array");
+
+        boolean found = false;
+        for (JsonNode node : contentNode) {
+            JsonNode usernameNode = node.get("username");
+            if (usernameNode != null && usernameNode.asText().equals(expectedUsername)) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found, "Expected to find user with username: " + expectedUsername);
+    }
 }

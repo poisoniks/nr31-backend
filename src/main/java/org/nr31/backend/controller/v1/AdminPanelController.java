@@ -14,6 +14,7 @@ import org.nr31.backend.dto.PermissionDTO;
 import org.nr31.backend.dto.PermissionUpdateRequest;
 import org.nr31.backend.dto.RoleDTO;
 import org.nr31.backend.dto.RoleRequest;
+import org.nr31.backend.dto.UserDTO;
 import org.nr31.backend.integration.discord.DiscordBotManager;
 import org.nr31.backend.integration.discord.dto.DiscordBotStatusResponse;
 import org.nr31.backend.service.AccessControlService;
@@ -273,5 +274,27 @@ public class AdminPanelController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteRole(@PathVariable Long id) {
         accessControlService.deleteRole(id);
+    }
+
+    @Operation(summary = "Get all users", description = "Retrieves a paginated list of all users")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved users list")
+    })
+    @GetMapping("/users")
+    @PreAuthorize("hasAuthority('access:manage')")
+    public ResponseEntity<Page<UserDTO>> getAllUsers(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(accessControlService.getAllUsers(pageable));
+    }
+
+    @Operation(summary = "Search users by username", description = "Retrieves a paginated list of users filtered by username (fuzzy match)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved users list")
+    })
+    @GetMapping("/users/search")
+    @PreAuthorize("hasAuthority('access:manage')")
+    public ResponseEntity<Page<UserDTO>> searchUsersByUsername(
+            @RequestParam String username,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(accessControlService.searchUsersByUsername(username, pageable));
     }
 }

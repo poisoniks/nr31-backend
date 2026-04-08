@@ -155,3 +155,21 @@ Feature: App Config Management
     And the response body should contain updated permission description:
       | en | Can clear application cache updated |
       | uk | Може очистити кеш додатку |
+
+  Scenario: List all users successfully
+    Given I log in with user "admin" and password "testpass"
+    When I retrieve all users
+    Then the response status code should be 200
+    And the response body should contain a user with username "admin"
+    And the response body should contain a user with username "user"
+
+  Scenario: Search users by username fuzzy match
+    Given I log in with user "admin" and password "testpass"
+    When I search users by username "adm"
+    Then the response status code should be 200
+    And the response body should contain a user with username "admin"
+
+  Scenario: Prevent unauthorized user from listing users
+    Given I log in with user "user" and password "testpass"
+    When I retrieve all users
+    Then the response status code should be 403
