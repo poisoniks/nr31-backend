@@ -16,6 +16,10 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import java.util.Map;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -38,6 +42,10 @@ public class Role {
 
     @Column(name = "files_upload_quota_bytes")
     private Long filesUploadQuotaBytes;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "localized_name", columnDefinition = "jsonb")
+    private Map<String, String> localizedName;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "role_permissions", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))

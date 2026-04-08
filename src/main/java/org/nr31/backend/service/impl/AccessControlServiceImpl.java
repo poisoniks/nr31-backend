@@ -59,6 +59,7 @@ public class AccessControlServiceImpl implements AccessControlService {
     public RoleDTO createRole(RoleRequest request) {
         Role role = new Role();
         role.setName(request.getName());
+        role.setLocalizedName(request.getLocalizedName());
         return convertToDTO(roleRepository.save(role));
     }
 
@@ -68,6 +69,7 @@ public class AccessControlServiceImpl implements AccessControlService {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new ElementNotFoundException("Role not found with id: " + id));
         role.setName(request.getName());
+        role.setLocalizedName(request.getLocalizedName());
         return convertToDTO(roleRepository.save(role));
     }
 
@@ -104,6 +106,7 @@ public class AccessControlServiceImpl implements AccessControlService {
         return RoleDTO.builder()
                 .id(role.getId())
                 .name(role.getName())
+                .localizedName(role.getLocalizedName())
                 .build();
     }
 

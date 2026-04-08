@@ -115,13 +115,21 @@ Feature: App Config Management
 
   Scenario: Create, update and delete role successfully
     Given I log in with user "admin" and password "testpass"
-    When I create a new role with name "ROLE_NEW_TEST"
+    When I create a new role with name "ROLE_NEW_TEST" and localized name:
+      | en | New Test Role |
+      | uk | Нова тестова роль |
     Then the response status code should be 201
     And the response body should contain "name" with value "ROLE_NEW_TEST"
+    And the response body should contain localized name:
+      | en | New Test Role |
+      | uk | Нова тестова роль |
 
-    When I update the role "ROLE_NEW_TEST" to have name "ROLE_UPDATED_TEST"
+    When I update the role "ROLE_NEW_TEST" to have name "ROLE_UPDATED_TEST" and localized name:
+      | en | Updated Test Role |
     Then the response status code should be 200
     And the response body should contain "name" with value "ROLE_UPDATED_TEST"
+    And the response body should contain localized name:
+      | en | Updated Test Role |
 
     When I delete the role "ROLE_UPDATED_TEST"
     Then the response status code should be 204
@@ -134,5 +142,6 @@ Feature: App Config Management
     When I retrieve all roles
     Then the response status code should be 403
 
-    When I create a new role with name "ROLE_HACKER"
+    When I create a new role with name "ROLE_HACKER" and localized name:
+      | en | Hacker |
     Then the response status code should be 403

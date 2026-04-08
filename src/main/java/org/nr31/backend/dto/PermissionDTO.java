@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,6 +20,6 @@ public class PermissionDTO {
     @Schema(description = "Permission identifier name", example = "access:manage", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
-    @Schema(description = "Detailed description of what this permission allows", example = "Allows managing user roles and permissions")
-    private String description;
+    @Schema(description = "Detailed description of what this permission allows", example = "{\"en\": \"Allows managing user roles and permissions\", \"uk\": \"Дозволяє керувати ролями користувачів і дозволами\"}")
+    private Map<String, String> description;
 }

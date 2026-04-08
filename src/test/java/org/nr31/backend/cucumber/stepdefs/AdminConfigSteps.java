@@ -111,19 +111,38 @@ public class AdminConfigSteps extends CommonStepDefs {
         }
     }
 
-    @When("I create a new role with name {string}")
-    public void i_create_a_new_role(String roleName) throws Exception {
-        String body = "{\"name\": \"" + roleName + "\"}";
+    @When("I create a new role with name {string} and localized name:")
+    public void i_create_a_new_role(String roleName, DataTable dataTable) throws Exception {
+        Map<String, String> localizedName = dataTable.asMap(String.class, String.class);
+        String localizedNameJson = objectMapper.writeValueAsString(localizedName);
+        String body = "{\"name\": \"" + roleName + "\", \"localizedName\": " + localizedNameJson + "}";
         HttpResponse<String> response = makeApiCall("POST", "/api/v1/admin/roles", body);
         contextHelper.addValue("response", response);
     }
 
-    @When("I update the role {string} to have name {string}")
-    public void i_update_the_role(String oldName, String newName) throws Exception {
+    @When("I update the role {string} to have name {string} and localized name:")
+    public void i_update_the_role(String oldName, String newName, DataTable dataTable) throws Exception {
         Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, oldName);
-        String body = "{\"name\": \"" + newName + "\"}";
+        Map<String, String> localizedName = dataTable.asMap(String.class, String.class);
+        String localizedNameJson = objectMapper.writeValueAsString(localizedName);
+        String body = "{\"name\": \"" + newName + "\", \"localizedName\": " + localizedNameJson + "}";
         HttpResponse<String> response = makeApiCall("PUT", "/api/v1/admin/roles/" + roleId, body);
         contextHelper.addValue("response", response);
+    }
+
+    @And("the response body should contain localized name:")
+    public void the_response_body_should_contain_localized_name(DataTable dataTable) throws Exception {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        JsonNode root = objectMapper.readTree(response.body());
+        JsonNode localizedNameNode = root.get("localizedName");
+        assertTrue(localizedNameNode != null && localizedNameNode.isObject(), "localizedName is missing or not an object");
+
+        Map<String, String> expectedLocalizedName = dataTable.asMap(String.class, String.class);
+        for (Map.Entry<String, String> entry : expectedLocalizedName.entrySet()) {
+            JsonNode val = localizedNameNode.get(entry.getKey());
+            assertTrue(val != null, "Missing localized name for key: " + entry.getKey());
+            assertEquals(entry.getValue(), val.asText());
+        }
     }
 
     @When("I delete the role {string}")
