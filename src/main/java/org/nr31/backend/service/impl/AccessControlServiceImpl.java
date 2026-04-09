@@ -27,6 +27,7 @@ import org.springframework.data.domain.Pageable;
 @Service
 @RequiredArgsConstructor
 public class AccessControlServiceImpl implements AccessControlService {
+    private static final String SUPER_ADMIN_ROLE_NAME = "SUPER_ADMIN";
 
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
@@ -73,6 +74,11 @@ public class AccessControlServiceImpl implements AccessControlService {
     public RoleDTO updateRole(Long id, RoleRequest request) {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new ElementNotFoundException("Role not found with id: " + id));
+
+        if (SUPER_ADMIN_ROLE_NAME.equals(role.getName()) && !SUPER_ADMIN_ROLE_NAME.equals(request.getName())) {
+            throw new IllegalArgumentException("Cannot change the name of the system super admin role.");
+        }
+
         role.setName(request.getName());
         role.setLocalizedName(request.getLocalizedName());
         return convertToDTO(roleRepository.save(role));
@@ -81,9 +87,13 @@ public class AccessControlServiceImpl implements AccessControlService {
     @Override
     @Transactional
     public void deleteRole(Long id) {
-        if (!roleRepository.existsById(id)) {
-            throw new ElementNotFoundException("Role not found with id: " + id);
+        Role role = roleRepository.findById(id)
+                .orElseThrow(() -> new ElementNotFoundException("Role not found with id: " + id));
+
+        if (SUPER_ADMIN_ROLE_NAME.equals(role.getName())) {
+            throw new IllegalArgumentException("Cannot delete the system super admin role.");
         }
+
         roleRepository.deleteById(id);
     }
 
@@ -107,6 +117,13 @@ public class AccessControlServiceImpl implements AccessControlService {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new ElementNotFoundException("Role not found with id: " + roleId));
 
+        if (SUPER_ADMIN_ROLE_NAME.equals(role.getName())) {
+            long adminCount = userRepository.countByRolesId(roleId);
+            if (adminCount <= 1 && user.getRoles().contains(role)) {
+                throw new IllegalStateException("Cannot unassign role: The system must have at least one Super Admin.");
+            }
+        }
+
         user.getRoles().remove(role);
         userRepository.save(user);
     }
@@ -118,6 +135,10 @@ public class AccessControlServiceImpl implements AccessControlService {
                 .orElseThrow(() -> new ElementNotFoundException("Role not found with id: " + roleId));
         Permission permission = permissionRepository.findById(permissionId)
                 .orElseThrow(() -> new ElementNotFoundException("Permission not found with id: " + permissionId));
+
+        if (SUPER_ADMIN_ROLE_NAME.equals(role.getName())) {
+            throw new IllegalArgumentException("Cannot remove permissions from the system super admin role.");
+        }
 
         role.getPermissions().remove(permission);
         roleRepository.save(role);

@@ -194,3 +194,23 @@ Feature: App Config Management
     And I retrieve the role "ROLE_ADMIN"
     Then the response status code should be 200
     And the response body should contain a permission with name "access:manage"
+
+  Scenario: Verify system protection for SUPER_ADMIN role
+    Given I log in with user "admin" and password "testpass"
+    When I assign role "SUPER_ADMIN" to user "admin"
+    Then the response status code should be 204
+    When I unassign role "SUPER_ADMIN" from user "admin"
+    Then the response status code should be 500
+
+    When I assign role "SUPER_ADMIN" to user "user"
+    Then the response status code should be 204
+    When I unassign role "SUPER_ADMIN" from user "admin"
+    Then the response status code should be 204
+
+    When I update the role "SUPER_ADMIN" to have name "NORMAL_ADMIN" and localized name:
+      | en | Normal Admin |
+    Then the response status code should be 400
+    When I delete the role "SUPER_ADMIN"
+    Then the response status code should be 400
+    When I unassign permission "access:manage" from role "SUPER_ADMIN"
+    Then the response status code should be 400
