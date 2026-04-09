@@ -2,6 +2,7 @@ package org.nr31.backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.nr31.backend.dto.PermissionDTO;
@@ -157,6 +158,7 @@ public class AccessControlServiceImpl implements AccessControlService {
                 .id(role.getId())
                 .name(role.getName())
                 .localizedName(role.getLocalizedName())
+                .permissions(role.getPermissions().stream().filter(Objects::nonNull).map(this::convertToDTO).toList())
                 .build();
     }
 

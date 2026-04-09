@@ -187,3 +187,10 @@ Feature: App Config Management
     Then the response status code should be 204
     When I unassign role "ROLE_ADMIN" from user "user"
     Then the response status code should be 204
+
+  Scenario: Verify assigned permissions are present in RoleDTO
+    Given I log in with user "admin" and password "testpass"
+    When I assign permission "access:manage" to role "ROLE_ADMIN"
+    And I retrieve the role "ROLE_ADMIN"
+    Then the response status code should be 200
+    And the response body should contain a permission with name "access:manage"

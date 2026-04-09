@@ -230,4 +230,22 @@ public class AdminConfigSteps extends CommonStepDefs {
         HttpResponse<String> response = makeApiCall("DELETE", "/api/v1/admin/users/" + userId + "/roles/" + roleId, null);
         contextHelper.addValue("response", response);
     }
+
+    @And("the response body should contain a permission with name {string}")
+    public void the_response_body_should_contain_a_permission_with_name(String expectedPermissionName) throws Exception {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        JsonNode root = objectMapper.readTree(response.body());
+        JsonNode permissionsNode = root.get("permissions");
+        assertTrue(permissionsNode != null && permissionsNode.isArray(), "permissions list is missing or not an array");
+
+        boolean found = false;
+        for (JsonNode node : permissionsNode) {
+            JsonNode nameNode = node.get("name");
+            if (nameNode != null && nameNode.asText().equals(expectedPermissionName)) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found, "Expected to find permission with name: " + expectedPermissionName);
+    }
 }

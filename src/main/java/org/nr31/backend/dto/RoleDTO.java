@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -22,4 +23,7 @@ public class RoleDTO {
 
     @Schema(description = "Localized name of the role", example = "{\"en\": \"Admin\", \"uk\": \"Адміністратор\"}")
     private Map<String, String> localizedName;
+
+    @Schema(description = "Permissions assigned to this role", requiredMode = Schema.RequiredMode.REQUIRED)
+    private List<PermissionDTO> permissions;
 }
