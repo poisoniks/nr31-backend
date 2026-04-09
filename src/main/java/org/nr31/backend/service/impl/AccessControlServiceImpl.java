@@ -99,6 +99,30 @@ public class AccessControlServiceImpl implements AccessControlService {
     }
 
     @Override
+    @Transactional
+    public void unassignRoleFromUser(Long userId, Long roleId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ElementNotFoundException("User not found with id: " + userId));
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ElementNotFoundException("Role not found with id: " + roleId));
+
+        user.getRoles().remove(role);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void unassignPermissionFromRole(Long roleId, Long permissionId) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ElementNotFoundException("Role not found with id: " + roleId));
+        Permission permission = permissionRepository.findById(permissionId)
+                .orElseThrow(() -> new ElementNotFoundException("Permission not found with id: " + permissionId));
+
+        role.getPermissions().remove(permission);
+        roleRepository.save(role);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Page<PermissionDTO> getAllPermissions(Pageable pageable) {
         return permissionRepository.findAll(pageable)

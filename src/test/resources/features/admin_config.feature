@@ -173,3 +173,17 @@ Feature: App Config Management
     Given I log in with user "user" and password "testpass"
     When I retrieve all users
     Then the response status code should be 403
+
+  Scenario: Unassign permission from role successfully
+    Given I log in with user "admin" and password "testpass"
+    When I assign permission "discord:manage" to role "ROLE_USER"
+    Then the response status code should be 204
+    When I unassign permission "discord:manage" from role "ROLE_USER"
+    Then the response status code should be 204
+
+  Scenario: Unassign role from user successfully
+    Given I log in with user "admin" and password "testpass"
+    When I assign role "ROLE_ADMIN" to user "user"
+    Then the response status code should be 204
+    When I unassign role "ROLE_ADMIN" from user "user"
+    Then the response status code should be 204

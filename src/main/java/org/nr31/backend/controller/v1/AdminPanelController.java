@@ -185,6 +185,18 @@ public class AdminPanelController {
         accessControlService.assignPermissionToRole(roleId, permissionId);
     }
 
+    @Operation(summary = "Unassign permission from role", description = "Removes a specific permission from a role")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Successfully unassigned permission"),
+            @ApiResponse(responseCode = "404", description = "Role or Permission not found")
+    })
+    @DeleteMapping("/roles/{roleId}/permissions/{permissionId}")
+    @PreAuthorize("hasAuthority('access:manage')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unassignPermissionFromRole(@PathVariable Long roleId, @PathVariable Long permissionId) {
+        accessControlService.unassignPermissionFromRole(roleId, permissionId);
+    }
+
     @Operation(summary = "Assign role to user", description = "Assigns a specific role to a user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully assigned role"),
@@ -195,6 +207,18 @@ public class AdminPanelController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void assignRoleToUser(@PathVariable Long userId, @PathVariable Long roleId) {
         accessControlService.assignRoleToUser(userId, roleId);
+    }
+
+    @Operation(summary = "Unassign role from user", description = "Removes a specific role from a user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Successfully unassigned role"),
+            @ApiResponse(responseCode = "404", description = "User or Role not found")
+    })
+    @DeleteMapping("/users/{userId}/roles/{roleId}")
+    @PreAuthorize("hasAuthority('access:manage')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unassignRoleFromUser(@PathVariable Long userId, @PathVariable Long roleId) {
+        accessControlService.unassignRoleFromUser(userId, roleId);
     }
 
     @Operation(summary = "Get all roles", description = "Retrieves a list of all user roles")

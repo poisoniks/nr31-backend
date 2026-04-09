@@ -24,6 +24,10 @@ public interface AccessControlService {
 
     void assignRoleToUser(Long userId, Long roleId);
 
+    void unassignRoleFromUser(Long userId, Long roleId);
+
+    void unassignPermissionFromRole(Long roleId, Long permissionId);
+
     Page<PermissionDTO> getAllPermissions(Pageable pageable);
 
     PermissionDTO updatePermission(Long id, PermissionUpdateRequest request);

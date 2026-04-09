@@ -206,4 +206,28 @@ public class AdminConfigSteps extends CommonStepDefs {
         }
         assertTrue(found, "Expected to find user with username: " + expectedUsername);
     }
+
+    @When("I unassign permission {string} from role {string}")
+    public void i_unassign_permission_from_role(String permissionName, String roleName) throws Exception {
+        Long permissionId = jdbcTemplate.queryForObject("SELECT id FROM permissions WHERE name = ?", Long.class, permissionName);
+        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
+        HttpResponse<String> response = makeApiCall("DELETE", "/api/v1/admin/roles/" + roleId + "/permissions/" + permissionId, null);
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I assign role {string} to user {string}")
+    public void i_assign_role_to_user(String roleName, String username) throws Exception {
+        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
+        Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE username = ?", Long.class, username);
+        HttpResponse<String> response = makeApiCall("POST", "/api/v1/admin/users/" + userId + "/roles/" + roleId, "");
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I unassign role {string} from user {string}")
+    public void i_unassign_role_from_user(String roleName, String username) throws Exception {
+        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
+        Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE username = ?", Long.class, username);
+        HttpResponse<String> response = makeApiCall("DELETE", "/api/v1/admin/users/" + userId + "/roles/" + roleId, null);
+        contextHelper.addValue("response", response);
+    }
 }
