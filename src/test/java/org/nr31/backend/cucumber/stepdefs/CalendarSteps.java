@@ -36,7 +36,6 @@ public class CalendarSteps extends CommonStepDefs {
 
     @Before
     public void setup() {
-        jdbcTemplate.execute("TRUNCATE TABLE events CASCADE");
         contextHelper.initialize();
     }
 

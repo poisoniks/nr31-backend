@@ -12,12 +12,16 @@ public class FlywayConfig {
     @Value("${spring.flyway.locations:classpath:db/migration}")
     private String[] flywayLocations;
 
+    @Value("${spring.flyway.cleanDisabled:true}")
+    private boolean flywayCleanDisabled;
+
     @Bean(initMethod = "migrate")
     public Flyway flyway(DataSource dataSource) {
         return Flyway.configure()
                 .dataSource(dataSource)
                 .locations(flywayLocations)
                 .baselineOnMigrate(true)
+                .cleanDisabled(flywayCleanDisabled)
                 .load();
     }
 }
