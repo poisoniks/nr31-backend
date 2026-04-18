@@ -7,11 +7,23 @@ INSERT INTO roles (name) VALUES ('ROLE_ADMIN') ON CONFLICT (name) DO NOTHING;
 INSERT INTO roles (name) VALUES ('ROLE_USER') ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO role_permissions (role_id, permission_id) 
-SELECT r.id, p.id FROM roles r, permissions p WHERE r.name = 'ROLE_ADMIN' AND p.name IN ('event:write', 'config:read', 'config:write', 'roster:write', 'file:manage_quota', 'access:manage')
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name = 'ROLE_ADMIN' AND p.name IN ('event:write', 'config:read', 'config:write', 'roster:write', 'file:manage_quota', 'access:manage', 'file:upload:public', 'file:upload:attachment', 'file:delete')
 ON CONFLICT (role_id, permission_id) DO NOTHING;
+
+UPDATE roles SET files_upload_quota_bytes = 10485760 WHERE name = 'ROLE_ADMIN';
 
 INSERT INTO user_roles (user_id, role_id) 
 SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'admin' AND r.name = 'ROLE_ADMIN'
+ON CONFLICT (user_id, role_id) DO NOTHING;
+
+INSERT INTO role_permissions (role_id, permission_id) 
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name = 'ROLE_USER' AND p.name IN ('file:upload:attachment')
+ON CONFLICT (role_id, permission_id) DO NOTHING;
+
+UPDATE roles SET files_upload_quota_bytes = 10485760 WHERE name = 'ROLE_USER';
+
+INSERT INTO user_roles (user_id, role_id) 
+SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'user' AND r.name = 'ROLE_USER'
 ON CONFLICT (user_id, role_id) DO NOTHING;
 
 INSERT INTO event_types (name) SELECT CAST('{"en": "Type 1"}' AS JSONB) WHERE NOT EXISTS (SELECT 1 FROM event_types WHERE name->>'en' = 'Type 1');

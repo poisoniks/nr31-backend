@@ -16,12 +16,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.beans.factory.ObjectProvider;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
@@ -53,8 +56,10 @@ public class LocalDriveStorageService implements FileStorageService {
     public LocalDriveStorageService(
             @Value("${app.uploads.dir:/app/uploads}") String uploadDir,
             FileMetadataRepository fileMetadataRepository,
-            UserRepository userRepository) {
-        this.uploadDir = Paths.get(uploadDir).toAbsolutePath().normalize();
+            UserRepository userRepository,
+            ObjectProvider<FileSystem> fileSystemProvider) {
+        FileSystem fs = fileSystemProvider.getIfAvailable(FileSystems::getDefault);
+        this.uploadDir = fs.getPath(uploadDir).toAbsolutePath().normalize();
         this.fileMetadataRepository = fileMetadataRepository;
         this.userRepository = userRepository;
 
