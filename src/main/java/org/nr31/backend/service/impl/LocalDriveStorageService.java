@@ -27,6 +27,7 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
@@ -39,10 +40,11 @@ public class LocalDriveStorageService implements FileStorageService {
     private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
             "image/png",
             "image/jpeg",
-            "image/webp"
-    );
+            "image/webp");
 
     private static final String FILES_URL_PREFIX = "/api/v1/files/";
+
+    private static final int PHYSICAL_PURGE_BATCH_SIZE = 500;
 
     private final Path uploadDir;
     private final FileMetadataRepository fileMetadataRepository;
@@ -98,7 +100,7 @@ public class LocalDriveStorageService implements FileStorageService {
             tempFile = Files.createTempFile(uploadDir, "upload-", ".tmp");
 
             try (InputStream inputStream = file.getInputStream();
-                 DigestInputStream digestInputStream = new DigestInputStream(inputStream, digest)) {
+                    DigestInputStream digestInputStream = new DigestInputStream(inputStream, digest)) {
                 Files.copy(digestInputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
             }
 
@@ -189,26 +191,56 @@ public class LocalDriveStorageService implements FileStorageService {
 
     @Override
     public void purgeOrphanedPhysicalFiles() {
-        log.info("Starting physical purge of unreferenced files...");
-        Set<String> referencedHashes = fileMetadataRepository.findAllStoredNames();
-        int deletedCount = 0;
+        log.info("Starting physical purge of unreferenced files (batch size={})...", PHYSICAL_PURGE_BATCH_SIZE);
+        int totalDeleted = 0;
 
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(uploadDir)) {
+            List<Path> batch = new ArrayList<>(PHYSICAL_PURGE_BATCH_SIZE);
+
             for (Path filePath : stream) {
-                if (Files.isRegularFile(filePath)) {
-                    String fileName = filePath.getFileName().toString();
-                    if (!referencedHashes.contains(fileName)) {
-                        Files.deleteIfExists(filePath);
-                        deletedCount++;
-                        log.info("Deleted unreferenced physical file: {}", fileName);
-                    }
+                if (!Files.isRegularFile(filePath)) {
+                    continue;
                 }
+                batch.add(filePath);
+
+                if (batch.size() >= PHYSICAL_PURGE_BATCH_SIZE) {
+                    totalDeleted += purgeBatch(batch);
+                    batch.clear();
+                }
+            }
+
+            if (!batch.isEmpty()) {
+                totalDeleted += purgeBatch(batch);
             }
         } catch (IOException e) {
             log.error("Error during physical file purge", e);
         }
 
-        log.info("Physical purge complete. {} unreferenced files deleted.", deletedCount);
+        log.info("Physical purge complete. {} unreferenced files deleted.", totalDeleted);
+    }
+
+    private int purgeBatch(List<Path> batch) {
+        List<String> fileNames = batch.stream()
+                .map(p -> p.getFileName().toString())
+                .toList();
+
+        Set<String> referenced = fileMetadataRepository.findReferencedStoredNames(fileNames);
+        int deleted = 0;
+
+        for (Path filePath : batch) {
+            String fileName = filePath.getFileName().toString();
+            if (!referenced.contains(fileName)) {
+                try {
+                    Files.deleteIfExists(filePath);
+                    deleted++;
+                    log.info("Deleted unreferenced physical file: {}", fileName);
+                } catch (IOException e) {
+                    log.error("Failed to delete unreferenced physical file: {}", fileName, e);
+                }
+            }
+        }
+
+        return deleted;
     }
 
     private void deleteTempFileSilently(Path tempFile) {

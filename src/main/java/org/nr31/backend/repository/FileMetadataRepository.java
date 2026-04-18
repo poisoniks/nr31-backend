@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -23,8 +24,6 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, UUID
            "AND f.id NOT IN (SELECT e.customIcon.id FROM EventType e WHERE e.customIcon IS NOT NULL)")
     List<FileMetadata> findOrphanedAttachments(@Param("threshold") Instant threshold);
 
-    @Query("SELECT DISTINCT f.storedName FROM FileMetadata f")
-    Set<String> findAllStoredNames();
-
-    boolean existsByStoredName(String storedName);
+    @Query("SELECT DISTINCT f.storedName FROM FileMetadata f WHERE f.storedName IN :names")
+    Set<String> findReferencedStoredNames(@Param("names") Collection<String> names);
 }
