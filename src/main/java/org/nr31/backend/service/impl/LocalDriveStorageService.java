@@ -11,6 +11,7 @@ import org.nr31.backend.repository.FileMetadataRepository;
 import org.nr31.backend.repository.UserRepository;
 import org.nr31.backend.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -123,12 +125,10 @@ public class LocalDriveStorageService implements FileStorageService {
         }
 
         try {
-            if (Files.exists(targetPath)) {
-                Files.deleteIfExists(tempFile);
-                log.debug("CAS dedup: file with hash {} already exists on disk", sha256Hash);
-            } else {
-                Files.move(tempFile, targetPath, StandardCopyOption.ATOMIC_MOVE);
-            }
+            Files.move(tempFile, targetPath, StandardCopyOption.ATOMIC_MOVE);
+        } catch (FileAlreadyExistsException e) {
+            deleteTempFileSilently(tempFile);
+            log.debug("CAS dedup: file with hash {} already exists on disk (caught during move)", sha256Hash);
         } catch (IOException e) {
             deleteTempFileSilently(tempFile);
             throw new FileStorageException("Failed to store file: " + sha256Hash, e);
@@ -162,6 +162,7 @@ public class LocalDriveStorageService implements FileStorageService {
     }
 
     @Override
+    @CacheEvict(value = "fileResolution", key = "#fileId")
     @Transactional
     public void deleteFile(UUID fileId) {
         FileMetadata metadata = fileMetadataRepository.findById(fileId)
