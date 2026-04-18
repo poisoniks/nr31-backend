@@ -5,22 +5,29 @@ import org.nr31.backend.dto.FileUploadResponse;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.exception.FileStorageException;
 import org.nr31.backend.model.FileMetadata;
-import org.nr31.backend.model.FileStatus;
+import org.nr31.backend.model.FileScope;
 import org.nr31.backend.model.User;
 import org.nr31.backend.repository.FileMetadataRepository;
 import org.nr31.backend.repository.UserRepository;
 import org.nr31.backend.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -35,7 +42,7 @@ public class LocalDriveStorageService implements FileStorageService {
             "image/webp"
     );
 
-    private static final String UPLOADS_URL_PREFIX = "/uploads/";
+    private static final String FILES_URL_PREFIX = "/api/v1/files/";
 
     private final Path uploadDir;
     private final FileMetadataRepository fileMetadataRepository;
@@ -58,7 +65,7 @@ public class LocalDriveStorageService implements FileStorageService {
 
     @Override
     @Transactional
-    public FileUploadResponse storeFile(MultipartFile file, String uploaderUsername) {
+    public FileUploadResponse storeFile(MultipartFile file, String uploaderUsername, FileScope scope) {
         if (file.isEmpty()) {
             throw new FileStorageException("Cannot upload an empty file");
         }
@@ -84,41 +91,65 @@ public class LocalDriveStorageService implements FileStorageService {
                             formatSize(currentTotalSize));
         }
 
-        String originalName = file.getOriginalFilename();
-        String extension = extractExtension(originalName);
-        UUID fileId = UUID.randomUUID();
-        String storedName = fileId + extension;
+        String sha256Hash;
+        Path tempFile;
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            tempFile = Files.createTempFile(uploadDir, "upload-", ".tmp");
 
-        Path targetPath = uploadDir.resolve(storedName).normalize();
+            try (InputStream inputStream = file.getInputStream();
+                 DigestInputStream digestInputStream = new DigestInputStream(inputStream, digest)) {
+                Files.copy(digestInputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            sha256Hash = HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException e) {
+            throw new FileStorageException("SHA-256 algorithm not available", e);
+        } catch (IOException e) {
+            throw new FileStorageException("Failed to process uploaded file", e);
+        }
+
+        Path targetPath = uploadDir.resolve(sha256Hash).normalize();
         if (!targetPath.startsWith(uploadDir)) {
+            deleteTempFileSilently(tempFile);
             throw new FileStorageException("Cannot store file outside upload directory");
         }
 
         try {
-            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            if (Files.exists(targetPath)) {
+                Files.deleteIfExists(tempFile);
+                log.debug("CAS dedup: file with hash {} already exists on disk", sha256Hash);
+            } else {
+                Files.move(tempFile, targetPath, StandardCopyOption.ATOMIC_MOVE);
+            }
         } catch (IOException e) {
-            throw new FileStorageException("Failed to store file: " + storedName, e);
+            deleteTempFileSilently(tempFile);
+            throw new FileStorageException("Failed to store file: " + sha256Hash, e);
         }
+
+        String originalName = file.getOriginalFilename();
+        UUID fileId = UUID.randomUUID();
 
         FileMetadata metadata = FileMetadata.builder()
                 .id(fileId)
                 .originalName(originalName)
-                .storedName(storedName)
+                .storedName(sha256Hash)
                 .contentType(contentType)
                 .sizeBytes(file.getSize())
                 .uploader(uploader)
                 .createdAt(Instant.now())
-                .status(FileStatus.PENDING)
+                .scope(scope)
                 .build();
 
         fileMetadataRepository.save(metadata);
 
-        log.info("File uploaded: {} -> {} by user {}", originalName, storedName, uploaderUsername);
+        log.info("File uploaded: {} -> {} (hash: {}) by user {} [scope={}]",
+                originalName, fileId, sha256Hash, uploaderUsername, scope);
 
         return FileUploadResponse.builder()
                 .id(fileId)
                 .originalName(originalName)
-                .url(UPLOADS_URL_PREFIX + storedName)
+                .url(FILES_URL_PREFIX + fileId)
                 .size(file.getSize())
                 .build();
     }
@@ -129,44 +160,63 @@ public class LocalDriveStorageService implements FileStorageService {
         FileMetadata metadata = fileMetadataRepository.findById(fileId)
                 .orElseThrow(() -> new ElementNotFoundException("File not found"));
 
-        Path filePath = uploadDir.resolve(metadata.getStoredName()).normalize();
-
-        try {
-            Files.deleteIfExists(filePath);
-            log.info("Deleted file from disk: {}", metadata.getStoredName());
-        } catch (IOException e) {
-            log.error("Failed to delete file from disk: {}", metadata.getStoredName(), e);
-            throw new FileStorageException("Failed to delete file from disk", e);
-        }
-
+        // Delete metadata only; physical file cleanup is deferred to the scheduled job
         fileMetadataRepository.delete(metadata);
-        log.info("Deleted file metadata: {}", fileId);
+        log.info("Deleted file metadata: {} (physical cleanup deferred to scheduled job)", fileId);
+    }
+
+    @Override
+    @Cacheable("fileResolution")
+    @Transactional(readOnly = true)
+    public FileMetadata resolveFile(UUID fileId) {
+        return fileMetadataRepository.findById(fileId)
+                .orElseThrow(() -> new ElementNotFoundException("File not found"));
     }
 
     @Override
     @Transactional
-    public void deleteOldPendingFiles(Instant before) {
-        log.info("Starting cleanup of pending files older than {}...", before);
-        List<FileMetadata> oldPendingFiles = fileMetadataRepository.findByStatusAndCreatedAtBefore(FileStatus.PENDING, before);
+    public void purgeOrphanedAttachments(Instant threshold) {
+        log.info("Starting metadata purge of orphaned attachments older than {}...", threshold);
+        List<FileMetadata> orphans = fileMetadataRepository.findOrphanedAttachments(threshold);
 
-        for (FileMetadata metadata : oldPendingFiles) {
-            try {
-                Path filePath = uploadDir.resolve(metadata.getStoredName()).normalize();
-                Files.deleteIfExists(filePath);
-                fileMetadataRepository.delete(metadata);
-                log.info("Deleted old pending file: {}", metadata.getStoredName());
-            } catch (IOException e) {
-                log.error("Failed to delete old pending file from disk: {}", metadata.getStoredName(), e);
-            }
+        for (FileMetadata metadata : orphans) {
+            fileMetadataRepository.delete(metadata);
+            log.info("Purged orphaned attachment metadata: {} (hash: {})", metadata.getId(), metadata.getStoredName());
         }
-        log.info("Finished cleanup of {} pending files.", oldPendingFiles.size());
+
+        log.info("Metadata purge complete. {} orphaned attachments removed.", orphans.size());
     }
 
-    private String extractExtension(String filename) {
-        if (filename == null || !filename.contains(".")) {
-            return "";
+    @Override
+    public void purgeOrphanedPhysicalFiles() {
+        log.info("Starting physical purge of unreferenced files...");
+        Set<String> referencedHashes = fileMetadataRepository.findAllStoredNames();
+        int deletedCount = 0;
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(uploadDir)) {
+            for (Path filePath : stream) {
+                if (Files.isRegularFile(filePath)) {
+                    String fileName = filePath.getFileName().toString();
+                    if (!referencedHashes.contains(fileName)) {
+                        Files.deleteIfExists(filePath);
+                        deletedCount++;
+                        log.info("Deleted unreferenced physical file: {}", fileName);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            log.error("Error during physical file purge", e);
         }
-        return filename.substring(filename.lastIndexOf('.'));
+
+        log.info("Physical purge complete. {} unreferenced files deleted.", deletedCount);
+    }
+
+    private void deleteTempFileSilently(Path tempFile) {
+        try {
+            Files.deleteIfExists(tempFile);
+        } catch (IOException ignored) {
+            log.warn("Failed to delete temporary file: {}", tempFile);
+        }
     }
 
     private String formatSize(long sizeBytes) {

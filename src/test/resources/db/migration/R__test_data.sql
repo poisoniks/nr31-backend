@@ -14,8 +14,8 @@ INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'admin' AND r.name = 'ROLE_ADMIN'
 ON CONFLICT (user_id, role_id) DO NOTHING;
 
-INSERT INTO event_types (name, custom_icon) SELECT CAST('{"en": "Type 1"}' AS JSONB), 'icon1' WHERE NOT EXISTS (SELECT 1 FROM event_types WHERE name->>'en' = 'Type 1');
-INSERT INTO event_types (name, custom_icon) SELECT CAST('{"en": "Type 2"}' AS JSONB), 'icon2' WHERE NOT EXISTS (SELECT 1 FROM event_types WHERE name->>'en' = 'Type 2');
+INSERT INTO event_types (name) SELECT CAST('{"en": "Type 1"}' AS JSONB) WHERE NOT EXISTS (SELECT 1 FROM event_types WHERE name->>'en' = 'Type 1');
+INSERT INTO event_types (name) SELECT CAST('{"en": "Type 2"}' AS JSONB) WHERE NOT EXISTS (SELECT 1 FROM event_types WHERE name->>'en' = 'Type 2');
 
 INSERT INTO unit_types (name, description) SELECT CAST('{"en": "Alpha"}' AS JSONB), CAST('{"en": "First Squad"}' AS JSONB) WHERE NOT EXISTS (SELECT 1 FROM unit_types WHERE name->>'en' = 'Alpha');
 INSERT INTO unit_types (name, description) SELECT CAST('{"en": "Bravo"}' AS JSONB), CAST('{"en": "Second Squad"}' AS JSONB) WHERE NOT EXISTS (SELECT 1 FROM unit_types WHERE name->>'en' = 'Bravo');

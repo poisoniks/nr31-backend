@@ -31,7 +31,7 @@ public class FileMetadata {
     @Column(name = "original_name", nullable = false)
     private String originalName;
 
-    @Column(name = "stored_name", nullable = false, unique = true)
+    @Column(name = "stored_name", nullable = false)
     private String storedName;
 
     @Column(name = "content_type", nullable = false)
@@ -49,5 +49,5 @@ public class FileMetadata {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private FileStatus status;
+    private FileScope scope;
 }

@@ -1,6 +1,7 @@
 package org.nr31.backend.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,7 +19,7 @@ public class EventTypeRequest {
     @ValidLocalizedString
     private Map<String, String> name;
 
-    @Schema(description = "Custom icon associated with this event type", example = "/aim_icon")
-    private String customIcon;
+    @Schema(description = "UUID of the custom icon file to associate with this event type", example = "550e8400-e29b-41d4-a716-446655440000")
+    private UUID customIcon;
 
 }

@@ -1,6 +1,7 @@
 package org.nr31.backend.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,6 @@ public class UnitTypeRequest {
     @ValidLocalizedString
     private Map<String, String> description;
 
-    @Schema(description = "Custom icon associated with this unit type", example = "/squad_icon")
-    private String customIcon;
+    @Schema(description = "UUID of the custom icon file to associate with this unit type", example = "550e8400-e29b-41d4-a716-446655440000")
+    private UUID customIcon;
 }

@@ -9,8 +9,10 @@ import org.nr31.backend.dto.UnitTypeDTO;
 import org.nr31.backend.dto.UnitTypeRequest;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.model.EventType;
+import org.nr31.backend.model.FileMetadata;
 import org.nr31.backend.model.UnitType;
 import org.nr31.backend.repository.EventTypeRepository;
+import org.nr31.backend.repository.FileMetadataRepository;
 import org.nr31.backend.repository.UnitTypeRepository;
 import org.nr31.backend.service.RosterService;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -29,6 +32,7 @@ public class RosterServiceImpl implements RosterService {
 
     private final UnitTypeRepository unitTypeRepository;
     private final EventTypeRepository eventTypeRepository;
+    private final FileMetadataRepository fileMetadataRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -46,10 +50,11 @@ public class RosterServiceImpl implements RosterService {
     @Override
     @Transactional
     public UnitTypeDTO createUnitType(UnitTypeRequest request) {
+        FileMetadata icon = resolveIcon(request.getCustomIcon());
         UnitType unitType = UnitType.builder()
                 .name(request.getName())
                 .description(request.getDescription())
-                .customIcon(request.getCustomIcon())
+                .customIcon(icon)
                 .build();
         unitType = unitTypeRepository.save(unitType);
         return mapToUnitTypeDTO(unitType);
@@ -63,7 +68,7 @@ public class RosterServiceImpl implements RosterService {
 
         unitType.setName(request.getName());
         unitType.setDescription(request.getDescription());
-        unitType.setCustomIcon(request.getCustomIcon());
+        unitType.setCustomIcon(resolveIcon(request.getCustomIcon()));
         unitType = unitTypeRepository.save(unitType);
 
         return mapToUnitTypeDTO(unitType);
@@ -94,9 +99,10 @@ public class RosterServiceImpl implements RosterService {
     @Override
     @Transactional
     public EventTypeDTO createEventType(EventTypeRequest request) {
+        FileMetadata icon = resolveIcon(request.getCustomIcon());
         EventType eventType = EventType.builder()
                 .name(request.getName())
-                .customIcon(request.getCustomIcon())
+                .customIcon(icon)
                 .build();
         eventType = eventTypeRepository.save(eventType);
         return mapToEventTypeDTO(eventType);
@@ -109,7 +115,7 @@ public class RosterServiceImpl implements RosterService {
                 .orElseThrow(() -> new ElementNotFoundException("EventType not found"));
 
         eventType.setName(request.getName());
-        eventType.setCustomIcon(request.getCustomIcon());
+        eventType.setCustomIcon(resolveIcon(request.getCustomIcon()));
         eventType = eventTypeRepository.save(eventType);
 
         return mapToEventTypeDTO(eventType);
@@ -124,6 +130,14 @@ public class RosterServiceImpl implements RosterService {
         eventTypeRepository.deleteById(id);
     }
 
+    private FileMetadata resolveIcon(UUID iconId) {
+        if (iconId == null) {
+            return null;
+        }
+        return fileMetadataRepository.findById(iconId)
+                .orElseThrow(() -> new ElementNotFoundException("Icon file not found"));
+    }
+
     private UnitTypeDTO mapToUnitTypeDTO(UnitType entity) {
         if (entity == null) {
             return null;
@@ -133,7 +147,7 @@ public class RosterServiceImpl implements RosterService {
                 .id(entity.getId())
                 .name(entity.getName() != null ? new HashMap<>(entity.getName()) : null)
                 .description(entity.getDescription() != null ? new HashMap<>(entity.getDescription()) : null)
-                .customIcon(entity.getCustomIcon())
+                .customIcon(entity.getCustomIcon() != null ? entity.getCustomIcon().getId() : null)
                 .build();
     }
 
@@ -145,7 +159,7 @@ public class RosterServiceImpl implements RosterService {
         return EventTypeDTO.builder()
                 .id(entity.getId())
                 .name(entity.getName() != null ? new HashMap<>(entity.getName()) : null)
-                .customIcon(entity.getCustomIcon())
+                .customIcon(entity.getCustomIcon() != null ? entity.getCustomIcon().getId() : null)
                 .build();
     }
 }

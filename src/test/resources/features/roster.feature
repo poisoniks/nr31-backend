@@ -6,7 +6,6 @@ Feature: Roster Management
     Given I log in with user "admin" and password "testpass"
     When I create an event type with the following details:
       | name.en    | Skirmish |
-      | customIcon | aim_icon |
     Then the response status code should be 201
     And I save the created event "id" as "eventTypeId"
 
@@ -16,7 +15,6 @@ Feature: Roster Management
 
     When I update the event type "{eventTypeId}" with the following details:
       | name.en    | Skirmish Updated |
-      | customIcon | updated_icon     |
     Then the response status code should be 200
 
     When I retrieve the event type "{eventTypeId}"
@@ -55,3 +53,4 @@ Feature: Roster Management
 
     When I retrieve the unit type "{unitTypeId}"
     Then the response status code should be 404
+

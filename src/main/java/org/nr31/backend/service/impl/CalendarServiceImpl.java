@@ -514,7 +514,7 @@ public class CalendarServiceImpl implements CalendarService {
         return EventTypeDTO.builder()
                 .id(entity.getId())
                 .name(new HashMap<>(entity.getName()))
-                .customIcon(entity.getCustomIcon())
+                .customIcon(entity.getCustomIcon() != null ? entity.getCustomIcon().getId() : null)
                 .build();
     }
 

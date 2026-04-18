@@ -21,7 +21,7 @@ public class FileUploadResponse {
     @Schema(description = "Original filename", example = "training_plan.pdf", requiredMode = Schema.RequiredMode.REQUIRED)
     private String originalName;
 
-    @Schema(description = "Temporary download URL for the file", example = "upload/550e8400-e29b-41d4-a716-446655440000", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "File access URL", example = "/api/v1/files/550e8400-e29b-41d4-a716-446655440000", requiredMode = Schema.RequiredMode.REQUIRED)
     private String url;
 
     @Schema(description = "File size in bytes", example = "1048576", requiredMode = Schema.RequiredMode.REQUIRED)
