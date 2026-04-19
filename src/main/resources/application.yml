@@ -64,6 +64,7 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
+  writer-with-order-by-keys: true
   openapi:
     info:
       title: Nr.31 FKR API
