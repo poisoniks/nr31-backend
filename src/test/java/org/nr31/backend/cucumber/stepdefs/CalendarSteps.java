@@ -107,7 +107,7 @@ public class CalendarSteps extends CommonStepDefs {
             }
             assertNotNull(current, "Path " + jsonPath + " not found in " + response.body());
         }
-        assertEquals(expectedValue, current.asText());
+        assertEquals(resolveVariables(expectedValue), current.asText());
     }
 
     @Then("the response body should indicate {string} is true")
@@ -269,10 +269,20 @@ public class CalendarSteps extends CommonStepDefs {
 
 
     @Then("the response body should contain {string}")
-    public void the_response_body_should_contain(String fieldName) throws Exception {
+    public void the_response_body_should_contain(String jsonPath) throws Exception {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
-        assertTrue(root.has(fieldName), "Response does not contain " + fieldName + "\nBody: " + response.body());
+        String[] pathParts = jsonPath.split("\\.");
+        JsonNode current = root;
+        for (String part : pathParts) {
+            if (current != null && current.isArray()) {
+                current = current.get(Integer.parseInt(part));
+            } else {
+                current = current.get(part);
+            }
+            assertNotNull(current, "Path " + jsonPath + " not found in " + response.body());
+        }
+        assertTrue(current != null && !current.isMissingNode(), "Response does not contain " + jsonPath + "\nBody: " + response.body());
     }
 
     @Then("subsequent GET requests for any date in the series should show title {string}")

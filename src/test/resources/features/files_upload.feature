@@ -304,5 +304,5 @@ Feature: File Management
     When I upload a PNG file "p2.png" to library root
     When I list library files at root with page 0 size 1
     Then the response status code should be 200
-    And the response body should contain "totalElements"
+    And the response body should contain "page.totalElements"
     And the response body should contain "content"

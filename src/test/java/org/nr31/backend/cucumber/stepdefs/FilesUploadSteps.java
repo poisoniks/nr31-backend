@@ -160,7 +160,8 @@ public class FilesUploadSteps extends CommonStepDefs {
         String boundary = UUID.randomUUID().toString();
         byte[] body = buildMultipartBody(boundary, "file", fileName, contentType, content);
 
-        String url = "http://localhost:" + port + "/api/v1/files/" + scope;
+        String path = scope.equals("library") ? "library/files" : scope;
+        String url = "http://localhost:" + port + "/api/v1/files/" + path;
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
