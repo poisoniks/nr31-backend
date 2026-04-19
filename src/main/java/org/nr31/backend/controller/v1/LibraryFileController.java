@@ -47,9 +47,7 @@ public class LibraryFileController {
             description = "Returns a paginated list of LIBRARY files. " +
                     "Pass ?folderId to list files in a specific folder; omit it to list root-level files.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Page of file metadata",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = Page.class))),
+            @ApiResponse(responseCode = "200", description = "Page of file metadata"),
             @ApiResponse(responseCode = "404", description = "Folder not found", content = @Content),
             @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)

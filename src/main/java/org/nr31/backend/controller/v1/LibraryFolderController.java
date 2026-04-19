@@ -42,9 +42,7 @@ public class LibraryFolderController {
             description = "Returns a list of logical folders in the media library. " +
                     "Pass parentId to list sub-folders; omit it to list root-level folders.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "List of folder metadata",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = List.class))),
+            @ApiResponse(responseCode = "200", description = "List of folder metadata"),
             @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
     })
