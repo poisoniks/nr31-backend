@@ -1,6 +1,10 @@
 package org.nr31.backend.repository;
 
 import org.nr31.backend.model.FileMetadata;
+import org.nr31.backend.model.FileScope;
+import org.nr31.backend.model.MediaFolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -26,4 +30,10 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, UUID
 
     @Query("SELECT DISTINCT f.storedName FROM FileMetadata f WHERE f.storedName IN :names")
     Set<String> findReferencedStoredNames(@Param("names") Collection<String> names);
+
+    Page<FileMetadata> findByScopeAndFolder(FileScope scope, MediaFolder folder, Pageable pageable);
+
+    Page<FileMetadata> findByScopeAndFolderIsNull(FileScope scope, Pageable pageable);
+
+    boolean existsByFolder(MediaFolder folder);
 }

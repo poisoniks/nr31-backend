@@ -196,6 +196,13 @@ public class GlobalExceptionHandler {
         return new ErrorResponse("Requested endpoint is disabled", LocalDateTime.now());
     }
 
+    @ExceptionHandler(ConflictException.class)
+    @ResponseStatus(code = HttpStatus.CONFLICT)
+    public ErrorResponse handleConflictException(ConflictException e) {
+        log.debug("Conflict exception: {}", e.getMessage());
+        return new ErrorResponse(e.getMessage(), LocalDateTime.now());
+    }
+
     @ExceptionHandler(FileStorageException.class)
     @ResponseStatus(code = HttpStatus.BAD_REQUEST)
     public ErrorResponse handleFileStorageException(FileStorageException e) {

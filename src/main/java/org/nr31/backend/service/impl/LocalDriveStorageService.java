@@ -1,18 +1,24 @@
 package org.nr31.backend.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.nr31.backend.dto.FileMetadataDTO;
 import org.nr31.backend.dto.FileUploadResponse;
+import org.nr31.backend.dto.LibraryFileUpdateRequest;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.exception.FileStorageException;
 import org.nr31.backend.model.FileMetadata;
 import org.nr31.backend.model.FileScope;
+import org.nr31.backend.model.MediaFolder;
 import org.nr31.backend.model.User;
 import org.nr31.backend.repository.FileMetadataRepository;
+import org.nr31.backend.repository.MediaFolderRepository;
 import org.nr31.backend.repository.UserRepository;
 import org.nr31.backend.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -54,16 +60,19 @@ public class LocalDriveStorageService implements FileStorageService {
     private final Path uploadDir;
     private final FileMetadataRepository fileMetadataRepository;
     private final UserRepository userRepository;
+    private final MediaFolderRepository mediaFolderRepository;
 
     public LocalDriveStorageService(
             @Value("${app.uploads.dir:/app/uploads}") String uploadDir,
             FileMetadataRepository fileMetadataRepository,
             UserRepository userRepository,
+            MediaFolderRepository mediaFolderRepository,
             ObjectProvider<FileSystem> fileSystemProvider) {
         FileSystem fs = fileSystemProvider.getIfAvailable(FileSystems::getDefault);
         this.uploadDir = fs.getPath(uploadDir).toAbsolutePath().normalize();
         this.fileMetadataRepository = fileMetadataRepository;
         this.userRepository = userRepository;
+        this.mediaFolderRepository = mediaFolderRepository;
 
         try {
             Files.createDirectories(this.uploadDir);
@@ -183,6 +192,67 @@ public class LocalDriveStorageService implements FileStorageService {
 
     @Override
     @Transactional
+    public FileUploadResponse storeLibraryFile(MultipartFile file, String uploaderUsername, UUID folderId) {
+        MediaFolder folder = null;
+        if (folderId != null) {
+            folder = mediaFolderRepository.findById(folderId)
+                    .orElseThrow(() -> new ElementNotFoundException("Folder not found"));
+        }
+
+        FileUploadResponse response = storeFile(file, uploaderUsername, FileScope.LIBRARY);
+
+        if (folder != null) {
+            FileMetadata metadata = fileMetadataRepository.findById(response.getId())
+                    .orElseThrow(() -> new ElementNotFoundException("File not found after upload"));
+            metadata.setFolder(folder);
+            fileMetadataRepository.save(metadata);
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FileMetadataDTO> listLibraryFiles(UUID folderId, Pageable pageable) {
+        Page<FileMetadata> page;
+        if (folderId != null) {
+            MediaFolder folder = mediaFolderRepository.findById(folderId)
+                    .orElseThrow(() -> new ElementNotFoundException("Folder not found"));
+            page = fileMetadataRepository.findByScopeAndFolder(FileScope.LIBRARY, folder, pageable);
+        } else {
+            page = fileMetadataRepository.findByScopeAndFolderIsNull(FileScope.LIBRARY, pageable);
+        }
+        return page.map(this::toFileMetadataDTO);
+    }
+
+    @Override
+    @Transactional
+    public FileMetadataDTO updateLibraryFile(UUID id, LibraryFileUpdateRequest request) {
+        FileMetadata metadata = fileMetadataRepository.findById(id)
+                .orElseThrow(() -> new ElementNotFoundException("File not found"));
+
+        if (request.getName() != null) {
+            metadata.setOriginalName(request.getName());
+        }
+
+        if (request.getFolderId() != null) {
+            MediaFolder folder = mediaFolderRepository.findById(request.getFolderId())
+                    .orElseThrow(() -> new ElementNotFoundException("Target folder not found"));
+            metadata.setFolder(folder);
+        } else {
+            metadata.setFolder(null);
+        }
+
+        fileMetadataRepository.save(metadata);
+        log.info("Updated library file metadata: {} (name={}, folder={})",
+                id, metadata.getOriginalName(),
+                metadata.getFolder() != null ? metadata.getFolder().getId() : "root");
+
+        return toFileMetadataDTO(metadata);
+    }
+
+    @Override
+    @Transactional
     public void purgeOrphanedAttachments(Instant threshold) {
         log.info("Starting metadata purge of orphaned attachments older than {}...", threshold);
         List<FileMetadata> orphans = fileMetadataRepository.findOrphanedAttachments(threshold);
@@ -265,5 +335,18 @@ public class LocalDriveStorageService implements FileStorageService {
         } else {
             return sizeBytes + " B";
         }
+    }
+
+    private FileMetadataDTO toFileMetadataDTO(FileMetadata metadata) {
+        return FileMetadataDTO.builder()
+                .id(metadata.getId())
+                .name(metadata.getOriginalName())
+                .url(FILES_URL_PREFIX + metadata.getId())
+                .contentType(metadata.getContentType())
+                .sizeBytes(metadata.getSizeBytes())
+                .folderId(metadata.getFolder() != null ? metadata.getFolder().getId() : null)
+                .uploaderUsername(metadata.getUploader().getUsername())
+                .createdAt(metadata.getCreatedAt())
+                .build();
     }
 }

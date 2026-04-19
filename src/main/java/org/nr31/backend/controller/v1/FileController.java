@@ -69,30 +69,6 @@ public class FileController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Operation(summary = "Upload a library file",
-            description = "Uploads a file as a LIBRARY asset (immune to garbage collection, persists until explicitly deleted). " +
-                    "Allowed types: image/png, image/jpeg, image/webp. Max size: 5MB.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "File uploaded successfully",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = FileUploadResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid file (empty, wrong type, or too large)", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
-    })
-    @PostMapping(value = "/library", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasAuthority('file:upload:public')")
-    public ResponseEntity<FileUploadResponse> uploadLibraryFile(
-            @RequestParam("file") MultipartFile file,
-            Principal principal) {
-
-        if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        FileUploadResponse response = fileStorageService.storeFile(file, principal.getName(), FileScope.LIBRARY);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
 
     @Operation(summary = "Get a file", description = "Resolves a file by UUID and returns an X-Accel-Redirect response for nginx to serve the physical file")
     @ApiResponses(value = {

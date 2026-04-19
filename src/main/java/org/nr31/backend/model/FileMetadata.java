@@ -50,4 +50,8 @@ public class FileMetadata {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private FileScope scope;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "folder_id")
+    private MediaFolder folder;
 }
