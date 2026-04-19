@@ -15,12 +15,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.type.SqlTypes;
+import jakarta.persistence.Cacheable;
 
 import java.util.Map;
 
 @Entity
 @Table(name = "unit_types")
+@Cacheable
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @Data
 @Builder
 @NoArgsConstructor
