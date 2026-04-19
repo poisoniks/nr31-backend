@@ -63,6 +63,9 @@ public class AccessControlServiceImpl implements AccessControlService {
     @Override
     @Transactional
     public RoleDTO createRole(RoleRequest request) {
+        if (roleRepository.existsByName(request.getName())) {
+            throw new IllegalArgumentException("Role with name '" + request.getName() + "' already exists");
+        }
         Role role = new Role();
         role.setName(request.getName());
         role.setLocalizedName(request.getLocalizedName());
@@ -77,6 +80,10 @@ public class AccessControlServiceImpl implements AccessControlService {
 
         if (SUPER_ADMIN_ROLE_NAME.equals(role.getName()) && !SUPER_ADMIN_ROLE_NAME.equals(request.getName())) {
             throw new IllegalArgumentException("Cannot change the name of the system super admin role.");
+        }
+
+        if (!role.getName().equals(request.getName()) && roleRepository.existsByName(request.getName())) {
+            throw new IllegalArgumentException("Role with name '" + request.getName() + "' already exists");
         }
 
         role.setName(request.getName());

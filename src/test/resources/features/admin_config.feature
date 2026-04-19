@@ -146,6 +146,21 @@ Feature: App Config Management
       | en | Hacker |
     Then the response status code should be 403
 
+  Scenario: Prevent creation of role with existing name
+    Given I log in with user "admin" and password "testpass"
+    When I create a new role with name "ROLE_ADMIN" and localized name:
+      | en | Admin |
+    Then the response status code should be 400
+
+  Scenario: Prevent renaming role to an existing name
+    Given I log in with user "admin" and password "testpass"
+    When I create a new role with name "ROLE_TEMP" and localized name:
+      | en | Temp Role |
+    Then the response status code should be 201
+    When I update the role "ROLE_TEMP" to have name "ROLE_ADMIN" and localized name:
+      | en | Admin |
+    Then the response status code should be 400
+
   Scenario: Update permission successfully
     Given I log in with user "admin" and password "testpass"
     When I update the permission "cache:clear" with the following description:
