@@ -90,6 +90,9 @@ public class AccessControlServiceImpl implements AccessControlService {
 
         role.setName(request.getName());
         role.setLocalizedName(request.getLocalizedName());
+        if (request.getFilesUploadQuotaBytes() != null) {
+            role.setFilesUploadQuotaBytes(request.getFilesUploadQuotaBytes());
+        }
         return convertToDTO(roleRepository.save(role));
     }
 

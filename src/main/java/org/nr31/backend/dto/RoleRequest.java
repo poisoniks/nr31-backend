@@ -21,4 +21,7 @@ public class RoleRequest {
     @ValidLocalizedString
     @Schema(description = "Localized name of the role", example = "{\"en\": \"Admin\", \"uk\": \"Адміністратор\"}")
     private Map<String, String> localizedName;
+
+    @Schema(description = "File upload quota in bytes", example = "104857600", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Long filesUploadQuotaBytes;
 }
