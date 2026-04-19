@@ -26,4 +26,7 @@ public class RoleDTO {
 
     @Schema(description = "Permissions assigned to this role", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<PermissionDTO> permissions;
+
+    @Schema(description = "File upload quota in bytes", example = "104857600")
+    private Long filesUploadQuotaBytes;
 }

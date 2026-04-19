@@ -189,6 +189,7 @@ public class AccessControlServiceImpl implements AccessControlService {
                 .name(role.getName())
                 .localizedName(role.getLocalizedName())
                 .permissions(role.getPermissions().stream().filter(Objects::nonNull).map(this::convertToDTO).toList())
+                .filesUploadQuotaBytes(role.getFilesUploadQuotaBytes())
                 .build();
     }
 
