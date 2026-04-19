@@ -72,5 +72,7 @@ springdoc:
       description: This is the backend for Nr.31 FKR site.
 
 app:
+  uploads:
+    dir: ${APP_STORAGE_PATH}
   discord:
     bot-token: ${DISCORD_BOT_TOKEN}
