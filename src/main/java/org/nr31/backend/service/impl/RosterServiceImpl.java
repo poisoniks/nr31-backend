@@ -16,6 +16,7 @@ import org.nr31.backend.repository.EventTypeRepository;
 import org.nr31.backend.repository.FileMetadataRepository;
 import org.nr31.backend.repository.UnitTypeRepository;
 import org.nr31.backend.service.RosterService;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,6 +65,7 @@ public class RosterServiceImpl implements RosterService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "calendarEvents", allEntries = true)
     public UnitTypeDTO updateUnitType(Long id, UnitTypeRequest request) {
         UnitType unitType = unitTypeRepository.findById(id)
                 .orElseThrow(() -> new ElementNotFoundException("UnitType not found", ErrorCode.UNIT_TYPE_NOT_FOUND, Map.of("id", id)));
@@ -78,6 +80,7 @@ public class RosterServiceImpl implements RosterService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "calendarEvents", allEntries = true)
     public void deleteUnitType(Long id) {
         if (!unitTypeRepository.existsById(id)) {
             throw new ElementNotFoundException("UnitType not found", ErrorCode.UNIT_TYPE_NOT_FOUND, Map.of("id", id));
@@ -112,6 +115,7 @@ public class RosterServiceImpl implements RosterService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "calendarEvents", allEntries = true)
     public EventTypeDTO updateEventType(Long id, EventTypeRequest request) {
         EventType eventType = eventTypeRepository.findById(id)
                 .orElseThrow(() -> new ElementNotFoundException("EventType not found", ErrorCode.EVENT_TYPE_NOT_FOUND, Map.of("id", id)));
@@ -125,6 +129,7 @@ public class RosterServiceImpl implements RosterService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "calendarEvents", allEntries = true)
     public void deleteEventType(Long id) {
         if (!eventTypeRepository.existsById(id)) {
             throw new ElementNotFoundException("EventType not found", ErrorCode.EVENT_TYPE_NOT_FOUND, Map.of("id", id));
