@@ -87,7 +87,7 @@ public class FileController {
         String internalPath = "/internal-files/" + metadata.getStoredName();
 
         if (w != null && isResizableRasterImage(contentType)) {
-            internalPath = "/internal-resize/" + metadata.getStoredName() + "?w=" + w;
+            internalPath = "/internal-resize/" + w + "/" + metadata.getStoredName();
         }
 
         return ResponseEntity.ok()
