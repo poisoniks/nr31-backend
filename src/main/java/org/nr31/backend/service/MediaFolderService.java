@@ -3,6 +3,7 @@ package org.nr31.backend.service;
 import org.nr31.backend.dto.MediaFolderDTO;
 import org.nr31.backend.dto.MediaFolderRequest;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface MediaFolderService {
@@ -12,4 +13,6 @@ public interface MediaFolderService {
     MediaFolderDTO updateFolder(UUID id, MediaFolderRequest request);
 
     void deleteFolder(UUID id);
+
+    List<MediaFolderDTO> listFolders(UUID parentId);
 }

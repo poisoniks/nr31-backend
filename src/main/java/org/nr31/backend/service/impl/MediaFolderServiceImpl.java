@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -77,6 +79,20 @@ public class MediaFolderServiceImpl implements MediaFolderService {
 
         mediaFolderRepository.delete(folder);
         log.info("Deleted media folder id={}", id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MediaFolderDTO> listFolders(UUID parentId) {
+        List<MediaFolder> folders;
+        if (parentId == null) {
+            folders = mediaFolderRepository.findTopLevelFolders();
+        } else {
+            folders = mediaFolderRepository.findChildrenByParentId(parentId);
+        }
+        return folders.stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 
     private MediaFolder resolveParent(UUID parentId) {

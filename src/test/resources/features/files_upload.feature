@@ -188,6 +188,22 @@ Feature: File Management
     When I delete library folder "00000000-0000-0000-0000-000000000001"
     Then the response status code should be 403
 
+  Scenario: List library folders at root returns root-level folders
+    When I create a library folder with name "Folder1" and no parent
+    When I create a library folder with name "Folder2" and no parent
+    When I list library folders at root
+    Then the response status code should be 200
+    And the library folder list should contain an entry with name "Folder1"
+    And the library folder list should contain an entry with name "Folder2"
+
+  Scenario: List library folders in a folder returns its children
+    When I create a library folder with name "Parent" and no parent
+    And I save the created event "id" as "parentId"
+    When I create a library folder with name "Child" under parent "{parentId}"
+    When I list library folders in folder "{parentId}"
+    Then the response status code should be 200
+    And the library folder list should contain an entry with name "Child"
+
   # ---------------------------------------------------------------------------
   # Media Library — File Operations
   # ---------------------------------------------------------------------------

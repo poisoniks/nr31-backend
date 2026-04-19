@@ -17,13 +17,16 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -34,6 +37,23 @@ import java.util.UUID;
 public class LibraryFolderController {
 
     private final MediaFolderService mediaFolderService;
+
+    @Operation(summary = "List library folders",
+            description = "Returns a list of logical folders in the media library. " +
+                    "Pass parentId to list sub-folders; omit it to list root-level folders.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of folder metadata",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = List.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+    })
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAuthority('file:upload:public')")
+    public ResponseEntity<List<MediaFolderDTO>> listFolders(@RequestParam(required = false) UUID parentId) {
+        List<MediaFolderDTO> folders = mediaFolderService.listFolders(parentId);
+        return ResponseEntity.ok(folders);
+    }
 
     @Operation(summary = "Create a folder",
             description = "Creates a new logical directory in the media library. " +

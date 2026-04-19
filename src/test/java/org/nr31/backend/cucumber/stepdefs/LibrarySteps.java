@@ -58,6 +58,19 @@ public class LibrarySteps extends CommonStepDefs {
         contextHelper.addValue("response", response);
     }
 
+    @When("I list library folders at root")
+    public void i_list_library_folders_at_root() throws Exception {
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/files/library/folders", null);
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I list library folders in folder {string}")
+    public void i_list_library_folders_in_folder(String folderIdRef) throws Exception {
+        String folderId = resolveVariables(folderIdRef);
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/files/library/folders?parentId=" + folderId, null);
+        contextHelper.addValue("response", response);
+    }
+
     @When("I upload a PNG file {string} to library root")
     public void i_upload_a_png_file_to_library_root(String fileName) throws Exception {
         byte[] content = generatePngBytes();
@@ -163,6 +176,24 @@ public class LibrarySteps extends CommonStepDefs {
             }
         }
         assertFalse(found, "Did not expect file with name '" + unexpectedName + "' in list. Body: " + response.body());
+    }
+
+    @Then("the library folder list should contain an entry with name {string}")
+    public void the_library_folder_list_should_contain_an_entry_with_name(String expectedName) throws Exception {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        JsonNode root = objectMapper.readTree(response.body());
+
+        assertTrue(root.isArray(), "Response is not an array. Body: " + response.body());
+
+        boolean found = false;
+        for (JsonNode node : root) {
+            JsonNode nameNode = node.get("name");
+            if (nameNode != null && nameNode.asText().equals(expectedName)) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found, "Expected folder with name '" + expectedName + "' in list. Body: " + response.body());
     }
 
     private HttpResponse<String> uploadLibraryFile(String fileName, String contentType,
