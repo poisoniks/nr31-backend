@@ -9,9 +9,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.nr31.backend.dto.ErrorResponse;
 import org.nr31.backend.dto.FileMetadataDTO;
 import org.nr31.backend.dto.FileUploadResponse;
 import org.nr31.backend.dto.LibraryFileUpdateRequest;
+import org.nr31.backend.dto.ValidationErrorResponse;
 import org.nr31.backend.service.FileStorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,9 +50,15 @@ public class LibraryFileController {
                     "Pass ?folderId to list files in a specific folder; omit it to list root-level files.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Page of file metadata"),
-            @ApiResponse(responseCode = "404", description = "Folder not found", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Folder not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAuthority('file:upload:public')")
@@ -69,10 +77,18 @@ public class LibraryFileController {
             @ApiResponse(responseCode = "201", description = "File uploaded successfully",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = FileUploadResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid file (empty, wrong type, or too large)", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Folder not found", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Invalid file (empty, wrong type, or too large)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Folder not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAuthority('file:upload:public')")
@@ -96,10 +112,18 @@ public class LibraryFileController {
             @ApiResponse(responseCode = "200", description = "File metadata updated",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = FileMetadataDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
-            @ApiResponse(responseCode = "404", description = "File or target folder not found", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Validation error",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ValidationErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "File or target folder not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAuthority('file:upload:public')")
@@ -116,9 +140,15 @@ public class LibraryFileController {
                     "scheduled FileCleanupJob if no other metadata records reference the same hash.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "File deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "File not found", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+            @ApiResponse(responseCode = "404", description = "File not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping(value = "/{id}")
     @PreAuthorize("hasAuthority('file:delete')")

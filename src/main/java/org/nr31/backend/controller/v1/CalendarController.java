@@ -6,7 +6,9 @@ import org.nr31.backend.annotation.FeatureSwitch;
 import org.nr31.backend.dto.CalendarActionMode;
 import org.nr31.backend.dto.CalendarEventDTO;
 import org.nr31.backend.dto.CreateEventRequest;
+import org.nr31.backend.dto.ErrorResponse;
 import org.nr31.backend.dto.UpdateEventRequest;
+import org.nr31.backend.dto.ValidationErrorResponse;
 import org.nr31.backend.service.CalendarService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -51,7 +53,8 @@ public class CalendarController {
     @Operation(summary = "Get calendar events", description = "Retrieves a list of calendar events for a specific date range")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved events", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = CalendarEventDTO.class)))),
-            @ApiResponse(responseCode = "400", description = "Invalid date range parameters", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Invalid date range parameters",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping(produces = "application/json")
     public ResponseEntity<List<CalendarEventDTO>> getEvents(
@@ -71,7 +74,8 @@ public class CalendarController {
     @Operation(summary = "Get nearest event", description = "Retrieves the nearest calendar event to a provided datetime")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved nearest event", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CalendarEventDTO.class))),
-            @ApiResponse(responseCode = "404", description = "No event found")
+            @ApiResponse(responseCode = "404", description = "No event found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping(value = "/nearest", produces = "application/json")
     public ResponseEntity<CalendarEventDTO> getNearestEvent(
@@ -89,7 +93,8 @@ public class CalendarController {
     @Operation(summary = "Create calendar event", description = "Creates a new calendar event", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Successfully created event", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CalendarEventDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Invalid request body",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
     })
     @PostMapping(produces = "application/json", consumes = "application/json")
     @PreAuthorize("hasAuthority('event:write')")
@@ -101,8 +106,10 @@ public class CalendarController {
     @Operation(summary = "Update calendar event", description = "Updates an existing calendar event by ID", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully updated event", content = @Content(mediaType = "application/json", schema = @Schema(implementation = CalendarEventDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Invalid request body or path parameter", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Event not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request body or path parameter",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
     })
     @PutMapping(value = "/{id}", produces = "application/json", consumes = "application/json")
     @PreAuthorize("hasAuthority('event:write')")
@@ -116,8 +123,10 @@ public class CalendarController {
     @Operation(summary = "Delete calendar event", description = "Deletes a calendar event by ID", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully deleted event"),
-            @ApiResponse(responseCode = "404", description = "Event not found", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Invalid request parameters", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Event not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request parameters",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
     })
     @DeleteMapping(value = "/{id}", produces = "application/json")
     @PreAuthorize("hasAuthority('event:write')")

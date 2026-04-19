@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.nr31.backend.dto.ErrorResponse;
 import org.nr31.backend.dto.EventTypeDTO;
 import org.nr31.backend.dto.EventTypeRequest;
 import org.nr31.backend.dto.UnitTypeDTO;
@@ -50,7 +51,8 @@ public class RosterController {
         @Operation(summary = "Get unit type by ID", description = "Retrieves a specific unit type by ID")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Successfully retrieved unit type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UnitTypeDTO.class))),
-                        @ApiResponse(responseCode = "404", description = "Unit type not found")
+                        @ApiResponse(responseCode = "404", description = "Unit type not found",
+                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
         })
         @GetMapping(value = "/unit-types/{id}", produces = "application/json")
         public ResponseEntity<UnitTypeDTO> getUnitTypeById(@PathVariable Long id) {
@@ -73,7 +75,8 @@ public class RosterController {
         @Operation(summary = "Update unit type", description = "Updates an existing unit type", security = @SecurityRequirement(name = "Bearer Authentication"))
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Successfully updated unit type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UnitTypeDTO.class))),
-                        @ApiResponse(responseCode = "404", description = "Unit type not found")
+                        @ApiResponse(responseCode = "404", description = "Unit type not found",
+                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
         })
         @PutMapping(value = "/unit-types/{id}", produces = "application/json", consumes = "application/json")
         @PreAuthorize("hasAuthority('roster:write')")
@@ -86,7 +89,8 @@ public class RosterController {
         @Operation(summary = "Delete unit type", description = "Deletes a unit type by ID", security = @SecurityRequirement(name = "Bearer Authentication"))
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "204", description = "Successfully deleted unit type"),
-                        @ApiResponse(responseCode = "404", description = "Unit type not found")
+                        @ApiResponse(responseCode = "404", description = "Unit type not found",
+                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
         })
         @DeleteMapping(value = "/unit-types/{id}", produces = "application/json")
         @PreAuthorize("hasAuthority('roster:write')")
@@ -107,7 +111,8 @@ public class RosterController {
         @Operation(summary = "Get event type by ID", description = "Retrieves a specific event type by ID")
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Successfully retrieved event type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventTypeDTO.class))),
-                        @ApiResponse(responseCode = "404", description = "Event type not found")
+                        @ApiResponse(responseCode = "404", description = "Event type not found",
+                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
         })
         @GetMapping(value = "/event-types/{id}", produces = "application/json")
         public ResponseEntity<EventTypeDTO> getEventTypeById(@PathVariable Long id) {
@@ -130,7 +135,8 @@ public class RosterController {
         @Operation(summary = "Update event type", description = "Updates an existing event type", security = @SecurityRequirement(name = "Bearer Authentication"))
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Successfully updated event type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventTypeDTO.class))),
-                        @ApiResponse(responseCode = "404", description = "Event type not found")
+                        @ApiResponse(responseCode = "404", description = "Event type not found",
+                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
         })
         @PutMapping(value = "/event-types/{id}", produces = "application/json", consumes = "application/json")
         @PreAuthorize("hasAuthority('roster:write')")
@@ -143,7 +149,8 @@ public class RosterController {
         @Operation(summary = "Delete event type", description = "Deletes an event type by ID", security = @SecurityRequirement(name = "Bearer Authentication"))
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "204", description = "Successfully deleted event type"),
-                        @ApiResponse(responseCode = "404", description = "Event type not found")
+                        @ApiResponse(responseCode = "404", description = "Event type not found",
+                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
         })
         @DeleteMapping(value = "/event-types/{id}", produces = "application/json")
         @PreAuthorize("hasAuthority('roster:write')")

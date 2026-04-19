@@ -1,0 +1,45 @@
+package org.nr31.backend.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Standardized error codes for the application")
+public enum ErrorCode {
+    // Authentication & Authorization
+    UNAUTHORIZED,
+    FORBIDDEN,
+    INVALID_TOKEN,
+    TOKEN_EXPIRED,
+    BAD_CREDENTIALS,
+    ACCOUNT_LOCKED,
+    ACCOUNT_DISABLED,
+
+    // Resource errors
+    ELEMENT_NOT_FOUND,
+    FILE_NOT_FOUND,
+    FOLDER_NOT_FOUND,
+    PARENT_FOLDER_NOT_FOUND,
+    ROLE_NOT_FOUND,
+    PERMISSION_NOT_FOUND,
+    USER_NOT_FOUND,
+    EVENT_NOT_FOUND,
+    UNIT_TYPE_NOT_FOUND,
+    EVENT_TYPE_NOT_FOUND,
+    CONFIG_NOT_FOUND,
+    ENDPOINT_NOT_FOUND,
+
+    // File handling
+    INVALID_FILE_TYPE,
+    FILE_TOO_LARGE,
+    EMPTY_FILE,
+    QUOTA_EXCEEDED,
+    STORAGE_ERROR,
+
+    // Logic & Validation
+    VALIDATION_ERROR,
+    CONFLICT,
+    FOLDER_NOT_EMPTY,
+    FEATURE_DISABLED,
+    
+    // Server errors
+    INTERNAL_SERVER_ERROR
+}

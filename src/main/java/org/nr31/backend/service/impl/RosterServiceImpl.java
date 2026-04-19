@@ -7,6 +7,7 @@ import org.nr31.backend.dto.EventTypeDTO;
 import org.nr31.backend.dto.EventTypeRequest;
 import org.nr31.backend.dto.UnitTypeDTO;
 import org.nr31.backend.dto.UnitTypeRequest;
+import org.nr31.backend.dto.ErrorCode;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.model.EventType;
 import org.nr31.backend.model.FileMetadata;
@@ -22,6 +23,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -64,7 +66,7 @@ public class RosterServiceImpl implements RosterService {
     @Transactional
     public UnitTypeDTO updateUnitType(Long id, UnitTypeRequest request) {
         UnitType unitType = unitTypeRepository.findById(id)
-                .orElseThrow(() -> new ElementNotFoundException("UnitType not found"));
+                .orElseThrow(() -> new ElementNotFoundException("UnitType not found", ErrorCode.UNIT_TYPE_NOT_FOUND, Map.of("id", id)));
 
         unitType.setName(request.getName());
         unitType.setDescription(request.getDescription());
@@ -78,7 +80,7 @@ public class RosterServiceImpl implements RosterService {
     @Transactional
     public void deleteUnitType(Long id) {
         if (!unitTypeRepository.existsById(id)) {
-            throw new ElementNotFoundException("UnitType not found");
+            throw new ElementNotFoundException("UnitType not found", ErrorCode.UNIT_TYPE_NOT_FOUND, Map.of("id", id));
         }
         unitTypeRepository.deleteById(id);
     }
@@ -112,7 +114,7 @@ public class RosterServiceImpl implements RosterService {
     @Transactional
     public EventTypeDTO updateEventType(Long id, EventTypeRequest request) {
         EventType eventType = eventTypeRepository.findById(id)
-                .orElseThrow(() -> new ElementNotFoundException("EventType not found"));
+                .orElseThrow(() -> new ElementNotFoundException("EventType not found", ErrorCode.EVENT_TYPE_NOT_FOUND, Map.of("id", id)));
 
         eventType.setName(request.getName());
         eventType.setCustomIcon(resolveIcon(request.getCustomIcon()));
@@ -125,7 +127,7 @@ public class RosterServiceImpl implements RosterService {
     @Transactional
     public void deleteEventType(Long id) {
         if (!eventTypeRepository.existsById(id)) {
-            throw new ElementNotFoundException("EventType not found");
+            throw new ElementNotFoundException("EventType not found", ErrorCode.EVENT_TYPE_NOT_FOUND, Map.of("id", id));
         }
         eventTypeRepository.deleteById(id);
     }
@@ -135,7 +137,7 @@ public class RosterServiceImpl implements RosterService {
             return null;
         }
         return fileMetadataRepository.findById(iconId)
-                .orElseThrow(() -> new ElementNotFoundException("Icon file not found"));
+                .orElseThrow(() -> new ElementNotFoundException("Icon file not found", ErrorCode.FILE_NOT_FOUND, Map.of("id", iconId)));
     }
 
     private UnitTypeDTO mapToUnitTypeDTO(UnitType entity) {

@@ -1,6 +1,7 @@
 package org.nr31.backend.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.nr31.backend.dto.ErrorCode;
 import org.nr31.backend.dto.FileMetadataDTO;
 import org.nr31.backend.dto.FileUploadResponse;
 import org.nr31.backend.dto.LibraryFileUpdateRequest;
@@ -41,6 +42,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -85,17 +87,17 @@ public class LocalDriveStorageService implements FileStorageService {
     @Transactional
     public FileUploadResponse storeFile(MultipartFile file, String uploaderUsername, FileScope scope) {
         if (file.isEmpty()) {
-            throw new FileStorageException("Cannot upload an empty file");
+            throw new FileStorageException("Cannot upload an empty file", ErrorCode.EMPTY_FILE);
         }
 
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_MIME_TYPES.contains(contentType)) {
             throw new FileStorageException(
-                    "File type not allowed. Allowed types: " + ALLOWED_MIME_TYPES);
+                    "File type not allowed. Allowed types: " + ALLOWED_MIME_TYPES, ErrorCode.INVALID_FILE_TYPE);
         }
 
         User uploader = userRepository.findByUsername(uploaderUsername)
-                .orElseThrow(() -> new ElementNotFoundException("User not found"));
+                .orElseThrow(() -> new ElementNotFoundException("User not found", ErrorCode.USER_NOT_FOUND, Map.of("username", uploaderUsername)));
 
         long currentTotalSize = fileMetadataRepository.sumSizeBytesByUploaderId(uploader.getId());
         long maxQuotaBytes = uploader.getRoles().stream()
@@ -106,7 +108,9 @@ public class LocalDriveStorageService implements FileStorageService {
         if (currentTotalSize + file.getSize() > maxQuotaBytes) {
             throw new FileStorageException(
                     "User upload quota exceeded (max " + formatSize(maxQuotaBytes) + "). Currently used: " +
-                            formatSize(currentTotalSize));
+                            formatSize(currentTotalSize),
+                    ErrorCode.QUOTA_EXCEEDED,
+                    Map.of("currentSize", currentTotalSize, "maxQuota", maxQuotaBytes, "fileSize", file.getSize()));
         }
 
         String sha256Hash;
@@ -175,7 +179,7 @@ public class LocalDriveStorageService implements FileStorageService {
     @Transactional
     public void deleteFile(UUID fileId) {
         FileMetadata metadata = fileMetadataRepository.findById(fileId)
-                .orElseThrow(() -> new ElementNotFoundException("File not found"));
+                .orElseThrow(() -> new ElementNotFoundException("File not found", ErrorCode.FILE_NOT_FOUND, Map.of("id", fileId)));
 
         // Delete metadata only; physical file cleanup is deferred to the scheduled job
         fileMetadataRepository.delete(metadata);
@@ -187,7 +191,7 @@ public class LocalDriveStorageService implements FileStorageService {
     @Transactional(readOnly = true)
     public FileMetadata resolveFile(UUID fileId) {
         return fileMetadataRepository.findById(fileId)
-                .orElseThrow(() -> new ElementNotFoundException("File not found"));
+                .orElseThrow(() -> new ElementNotFoundException("File not found", ErrorCode.FILE_NOT_FOUND, Map.of("id", fileId)));
     }
 
     @Override
@@ -196,14 +200,14 @@ public class LocalDriveStorageService implements FileStorageService {
         MediaFolder folder = null;
         if (folderId != null) {
             folder = mediaFolderRepository.findById(folderId)
-                    .orElseThrow(() -> new ElementNotFoundException("Folder not found"));
+                    .orElseThrow(() -> new ElementNotFoundException("Folder not found", ErrorCode.FOLDER_NOT_FOUND, Map.of("id", folderId)));
         }
 
         FileUploadResponse response = storeFile(file, uploaderUsername, FileScope.LIBRARY);
 
         if (folder != null) {
             FileMetadata metadata = fileMetadataRepository.findById(response.getId())
-                    .orElseThrow(() -> new ElementNotFoundException("File not found after upload"));
+                    .orElseThrow(() -> new ElementNotFoundException("File not found after upload", ErrorCode.FILE_NOT_FOUND, Map.of("id", response.getId())));
             metadata.setFolder(folder);
             fileMetadataRepository.save(metadata);
         }
@@ -217,7 +221,7 @@ public class LocalDriveStorageService implements FileStorageService {
         Page<FileMetadata> page;
         if (folderId != null) {
             MediaFolder folder = mediaFolderRepository.findById(folderId)
-                    .orElseThrow(() -> new ElementNotFoundException("Folder not found"));
+                    .orElseThrow(() -> new ElementNotFoundException("Folder not found", ErrorCode.FOLDER_NOT_FOUND, Map.of("id", folderId)));
             page = fileMetadataRepository.findByScopeAndFolder(FileScope.LIBRARY, folder, pageable);
         } else {
             page = fileMetadataRepository.findByScopeAndFolderIsNull(FileScope.LIBRARY, pageable);
@@ -229,7 +233,7 @@ public class LocalDriveStorageService implements FileStorageService {
     @Transactional
     public FileMetadataDTO updateLibraryFile(UUID id, LibraryFileUpdateRequest request) {
         FileMetadata metadata = fileMetadataRepository.findById(id)
-                .orElseThrow(() -> new ElementNotFoundException("File not found"));
+                .orElseThrow(() -> new ElementNotFoundException("File not found", ErrorCode.FILE_NOT_FOUND, Map.of("id", id)));
 
         if (request.getName() != null) {
             metadata.setOriginalName(request.getName());
@@ -237,7 +241,7 @@ public class LocalDriveStorageService implements FileStorageService {
 
         if (request.getFolderId() != null) {
             MediaFolder folder = mediaFolderRepository.findById(request.getFolderId())
-                    .orElseThrow(() -> new ElementNotFoundException("Target folder not found"));
+                    .orElseThrow(() -> new ElementNotFoundException("Target folder not found", ErrorCode.FOLDER_NOT_FOUND, Map.of("id", request.getFolderId())));
             metadata.setFolder(folder);
         } else {
             metadata.setFolder(null);

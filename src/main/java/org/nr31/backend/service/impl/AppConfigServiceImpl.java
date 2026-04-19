@@ -10,6 +10,7 @@ import com.networknt.schema.SpecificationVersion;
 import com.networknt.schema.Error;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.dto.ErrorCode;
 import org.nr31.backend.exception.AppConfigException;
 import org.nr31.backend.exception.AppConfigValidationException;
 import org.nr31.backend.exception.ElementNotFoundException;
@@ -53,7 +54,7 @@ public class AppConfigServiceImpl implements AppConfigService {
     @Cacheable(value = "appConfig", key = "#name")
     public AppConfigDto getConfig(String name) {
         AppConfig appConfig = appConfigRepository.findByConfigKey(name)
-                .orElseThrow(() -> new ElementNotFoundException(String.format("AppConfig '%s' is not found ", name)));
+                .orElseThrow(() -> new ElementNotFoundException("Config not found", ErrorCode.CONFIG_NOT_FOUND, Map.of("name", name)));
 
         return AppConfigDto.builder()
                 .name(appConfig.getConfigKey())
@@ -68,7 +69,7 @@ public class AppConfigServiceImpl implements AppConfigService {
     @CacheEvict(value = "appConfig", key = "#appConfigDto.name")
     public AppConfigDto updateConfig(String name, AppConfigDto appConfigDto) {
         AppConfig appConfig = appConfigRepository.findByConfigKey(name)
-                .orElseThrow(() -> new ElementNotFoundException(String.format("AppConfig '%s' is not found ", name)));
+                .orElseThrow(() -> new ElementNotFoundException("Config not found", ErrorCode.CONFIG_NOT_FOUND, Map.of("name", name)));
 
         JsonNode schemaNode = appConfig.getConfigSchema();
         JsonNode valueNode;

@@ -28,10 +28,18 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         ErrorResponse errorResponse;
 
         if (authException instanceof InsufficientAuthenticationException) {
-            errorResponse = new ErrorResponse("Insufficient authentication", LocalDateTime.now());
+            errorResponse = ErrorResponse.builder()
+                    .message("Insufficient authentication")
+                    .code(org.nr31.backend.dto.ErrorCode.UNAUTHORIZED)
+                    .timestamp(LocalDateTime.now())
+                    .build();
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         } else {
-            errorResponse = new ErrorResponse("Access denied", LocalDateTime.now());
+            errorResponse = ErrorResponse.builder()
+                    .message("Access denied")
+                    .code(org.nr31.backend.dto.ErrorCode.FORBIDDEN)
+                    .timestamp(LocalDateTime.now())
+                    .build();
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
 

@@ -2,6 +2,7 @@ package org.nr31.backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.nr31.backend.dto.ErrorCode;
 import org.nr31.backend.dto.MediaFolderDTO;
 import org.nr31.backend.dto.MediaFolderRequest;
 import org.nr31.backend.exception.ConflictException;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -49,7 +51,7 @@ public class MediaFolderServiceImpl implements MediaFolderService {
     @Transactional
     public MediaFolderDTO updateFolder(UUID id, MediaFolderRequest request) {
         MediaFolder folder = mediaFolderRepository.findByIdWithParent(id)
-                .orElseThrow(() -> new ElementNotFoundException("Folder not found"));
+                .orElseThrow(() -> new ElementNotFoundException("Folder not found", ErrorCode.FOLDER_NOT_FOUND, Map.of("id", id)));
 
         MediaFolder parent = resolveParent(request.getParentId());
 
@@ -67,14 +69,14 @@ public class MediaFolderServiceImpl implements MediaFolderService {
     @Transactional
     public void deleteFolder(UUID id) {
         MediaFolder folder = mediaFolderRepository.findById(id)
-                .orElseThrow(() -> new ElementNotFoundException("Folder not found"));
+                .orElseThrow(() -> new ElementNotFoundException("Folder not found", ErrorCode.FOLDER_NOT_FOUND, Map.of("id", id)));
 
         if (mediaFolderRepository.existsByParentId(id)) {
-            throw new ConflictException("Cannot delete folder: it contains sub-folders");
+            throw new ConflictException("Cannot delete folder: it contains sub-folders", ErrorCode.FOLDER_NOT_EMPTY, Map.of("id", id));
         }
 
         if (fileMetadataRepository.existsByFolder(folder)) {
-            throw new ConflictException("Cannot delete folder: it contains files");
+            throw new ConflictException("Cannot delete folder: it contains files", ErrorCode.FOLDER_NOT_EMPTY, Map.of("id", id));
         }
 
         mediaFolderRepository.delete(folder);
@@ -101,7 +103,7 @@ public class MediaFolderServiceImpl implements MediaFolderService {
         }
 
         return mediaFolderRepository.findById(parentId)
-                .orElseThrow(() -> new ElementNotFoundException("Parent folder not found"));
+                .orElseThrow(() -> new ElementNotFoundException("Parent folder not found", ErrorCode.PARENT_FOLDER_NOT_FOUND, Map.of("parentId", parentId)));
     }
 
     private MediaFolderDTO toDTO(MediaFolder folder) {

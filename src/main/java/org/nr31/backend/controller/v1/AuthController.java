@@ -5,7 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.AuthCredentialsDTO;
 import org.nr31.backend.dto.AuthRequest;
 import org.nr31.backend.dto.AuthResponse;
+import org.nr31.backend.dto.ErrorResponse;
 import org.nr31.backend.dto.LogoutRequest;
+import org.nr31.backend.dto.ValidationErrorResponse;
 import org.nr31.backend.service.AuthenticationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,8 +41,10 @@ public class AuthController {
     @Operation(summary = "Authenticate user", description = "Validates user credentials and returns JWT access and refresh tokens")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully authenticated", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Invalid username or password", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content)
+            @ApiResponse(responseCode = "401", description = "Invalid username or password",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request body",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
     })
     @PostMapping(value = "/login", produces = "application/json", consumes = "application/json")
     public ResponseEntity<AuthResponse> createAuthenticationToken(@Valid @RequestBody AuthRequest authRequest) {
@@ -52,8 +56,10 @@ public class AuthController {
     @Operation(summary = "Refresh access token", description = "Generates a new JWT access token using a valid refresh token")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Access token successfully refreshed", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content)
+            @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request body",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
     })
     @PostMapping(value = "/refresh", produces = "application/json", consumes = "application/json")
     public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
@@ -64,8 +70,10 @@ public class AuthController {
     @Operation(summary = "Logout user", description = "Invalidates the provided refresh token", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully logged out"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
-            @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content)
+            @ApiResponse(responseCode = "401", description = "Unauthorized",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request body",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
     })
     @PostMapping(value = "/logout", produces = "application/json", consumes = "application/json")
     @PreAuthorize("isAuthenticated()")

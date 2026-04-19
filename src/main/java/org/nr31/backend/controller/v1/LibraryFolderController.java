@@ -9,8 +9,10 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.nr31.backend.dto.ErrorResponse;
 import org.nr31.backend.dto.MediaFolderDTO;
 import org.nr31.backend.dto.MediaFolderRequest;
+import org.nr31.backend.dto.ValidationErrorResponse;
 import org.nr31.backend.service.MediaFolderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -43,8 +45,12 @@ public class LibraryFolderController {
                     "Pass parentId to list sub-folders; omit it to list root-level folders.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "List of folder metadata"),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAuthority('file:upload:public')")
@@ -60,10 +66,18 @@ public class LibraryFolderController {
             @ApiResponse(responseCode = "201", description = "Folder created successfully",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = MediaFolderDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error (blank name, name too long)", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Parent folder not found", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Validation error (blank name, name too long)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ValidationErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Parent folder not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAuthority('file:upload:public')")
@@ -79,10 +93,18 @@ public class LibraryFolderController {
             @ApiResponse(responseCode = "200", description = "Folder updated successfully",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = MediaFolderDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Folder or parent folder not found", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Validation error",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ValidationErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Folder or parent folder not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAuthority('file:upload:public')")
@@ -98,10 +120,18 @@ public class LibraryFolderController {
                     "files or sub-folders to prevent accidental mass-deletion of production assets.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Folder deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Folder not found", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Folder is not empty", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Folder not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Folder is not empty",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping(value = "/{id}")
     @PreAuthorize("hasAuthority('file:delete')")

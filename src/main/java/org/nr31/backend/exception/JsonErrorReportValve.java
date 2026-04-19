@@ -1,4 +1,4 @@
-package org.nr31.backend.dto;
+package org.nr31.backend.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;

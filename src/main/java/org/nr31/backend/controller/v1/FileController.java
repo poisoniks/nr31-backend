@@ -1,6 +1,7 @@
 package org.nr31.backend.controller.v1;
 
 import lombok.RequiredArgsConstructor;
+import org.nr31.backend.dto.ErrorResponse;
 import org.nr31.backend.dto.FileUploadResponse;
 import org.nr31.backend.model.FileMetadata;
 import org.nr31.backend.model.FileScope;
@@ -51,9 +52,13 @@ public class FileController {
             @ApiResponse(responseCode = "201", description = "File uploaded successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = FileUploadResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid file (empty, wrong type, or too large)", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Invalid file (empty, wrong type, or too large)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping(value = "/attachment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAuthority('file:upload:attachment')")
@@ -65,14 +70,17 @@ public class FileController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        FileUploadResponse response = fileStorageService.storeFile(file, principal.getName(), FileScope.ATTACHMENT);
+        FileUploadResponse response = fileStorageService.storeFile(file, principal.getName(),
+                FileScope.ATTACHMENT);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @Operation(summary = "Get a file", description = "Resolves a file by UUID and returns an X-Accel-Redirect response for nginx to serve the physical file")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "File resolved, X-Accel-Redirect header set"),
-            @ApiResponse(responseCode = "404", description = "File not found", content = @Content)
+            @ApiResponse(responseCode = "404", description = "File not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping(value = "/{id}")
     public ResponseEntity<Void> getFile(
@@ -97,9 +105,15 @@ public class FileController {
     @Operation(summary = "Delete a file", description = "Deletes a file's metadata by UUID. Physical file cleanup is handled by the scheduled garbage collector.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "File deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "File not found", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Not authenticated", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content)
+            @ApiResponse(responseCode = "404", description = "File not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasAuthority('file:delete')")
@@ -111,8 +125,12 @@ public class FileController {
     @Operation(summary = "Update file upload quota for a role", description = "Updates the filesUploadQuotaBytes for a given role ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Quota updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Role not found"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "404", description = "Role not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PatchMapping("/quota/role/{id}")
     @PreAuthorize("hasAuthority('file:manage_quota')")

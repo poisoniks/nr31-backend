@@ -1,6 +1,8 @@
 package org.nr31.backend.controller.v1;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -10,11 +12,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.dto.ErrorResponse;
 import org.nr31.backend.dto.PermissionDTO;
 import org.nr31.backend.dto.PermissionUpdateRequest;
 import org.nr31.backend.dto.RoleDTO;
 import org.nr31.backend.dto.RoleRequest;
 import org.nr31.backend.dto.UserDTO;
+import org.nr31.backend.dto.ValidationErrorResponse;
 import org.nr31.backend.integration.discord.DiscordBotManager;
 import org.nr31.backend.integration.discord.dto.DiscordBotStatusResponse;
 import org.nr31.backend.service.AccessControlService;
@@ -89,8 +93,12 @@ public class AdminPanelController {
     @Operation(summary = "Get log file", description = "Retrieves the content of a specific log file")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved log file"),
-            @ApiResponse(responseCode = "403", description = "Invalid path"),
-            @ApiResponse(responseCode = "404", description = "Log file not found")
+            @ApiResponse(responseCode = "403", description = "Invalid path",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Log file not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/logs/{fileName}")
     @PreAuthorize("hasAuthority('logs:read')")
@@ -109,7 +117,9 @@ public class AdminPanelController {
     @Operation(summary = "Get application config", description = "Retrieves an application configuration by key")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved config"),
-            @ApiResponse(responseCode = "404", description = "Config not found")
+            @ApiResponse(responseCode = "404", description = "Config not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/config/{name}")
     @PreAuthorize("hasAuthority('config:read')")
@@ -130,7 +140,9 @@ public class AdminPanelController {
     @Operation(summary = "Update application config", description = "Updates or creates an application configuration")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully updated config"),
-            @ApiResponse(responseCode = "400", description = "Invalid configuration data")
+            @ApiResponse(responseCode = "400", description = "Invalid configuration data",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ValidationErrorResponse.class)))
     })
     @PutMapping("/config/{name}")
     @PreAuthorize("hasAuthority('config:write')")
@@ -176,7 +188,9 @@ public class AdminPanelController {
     @Operation(summary = "Assign permission to role", description = "Assigns a specific permission to a role")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully assigned permission"),
-            @ApiResponse(responseCode = "404", description = "Role or Permission not found")
+            @ApiResponse(responseCode = "404", description = "Role or Permission not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/roles/{roleId}/permissions/{permissionId}")
     @PreAuthorize("hasAuthority('access:manage')")
@@ -188,7 +202,9 @@ public class AdminPanelController {
     @Operation(summary = "Unassign permission from role", description = "Removes a specific permission from a role")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully unassigned permission"),
-            @ApiResponse(responseCode = "404", description = "Role or Permission not found")
+            @ApiResponse(responseCode = "404", description = "Role or Permission not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/roles/{roleId}/permissions/{permissionId}")
     @PreAuthorize("hasAuthority('access:manage')")
@@ -200,7 +216,9 @@ public class AdminPanelController {
     @Operation(summary = "Assign role to user", description = "Assigns a specific role to a user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully assigned role"),
-            @ApiResponse(responseCode = "404", description = "User or Role not found")
+            @ApiResponse(responseCode = "404", description = "User or Role not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/users/{userId}/roles/{roleId}")
     @PreAuthorize("hasAuthority('access:manage')")
@@ -212,7 +230,9 @@ public class AdminPanelController {
     @Operation(summary = "Unassign role from user", description = "Removes a specific role from a user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully unassigned role"),
-            @ApiResponse(responseCode = "404", description = "User or Role not found")
+            @ApiResponse(responseCode = "404", description = "User or Role not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/users/{userId}/roles/{roleId}")
     @PreAuthorize("hasAuthority('access:manage')")
@@ -234,7 +254,9 @@ public class AdminPanelController {
     @Operation(summary = "Get role by id", description = "Retrieves detailed information about a specific role")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved role"),
-            @ApiResponse(responseCode = "404", description = "Role not found")
+            @ApiResponse(responseCode = "404", description = "Role not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping("/roles/{id}")
     @PreAuthorize("hasAuthority('access:manage')")
@@ -255,8 +277,12 @@ public class AdminPanelController {
     @Operation(summary = "Update permission description", description = "Updates localized description of a permission")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully updated permission description"),
-            @ApiResponse(responseCode = "404", description = "Permission not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid request payload")
+            @ApiResponse(responseCode = "404", description = "Permission not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request payload",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ValidationErrorResponse.class)))
     })
     @PutMapping("/permissions/{id}")
     @PreAuthorize("hasAuthority('access:manage')")
@@ -269,7 +295,9 @@ public class AdminPanelController {
     @Operation(summary = "Create role", description = "Creates a new application role")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Successfully created role"),
-            @ApiResponse(responseCode = "400", description = "Invalid role data")
+            @ApiResponse(responseCode = "400", description = "Invalid role data",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ValidationErrorResponse.class)))
     })
     @PostMapping("/roles")
     @PreAuthorize("hasAuthority('access:manage')")
@@ -280,7 +308,9 @@ public class AdminPanelController {
     @Operation(summary = "Update role", description = "Updates an existing application role's information")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully updated role"),
-            @ApiResponse(responseCode = "404", description = "Role not found")
+            @ApiResponse(responseCode = "404", description = "Role not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PutMapping("/roles/{id}")
     @PreAuthorize("hasAuthority('access:manage')")
@@ -291,7 +321,9 @@ public class AdminPanelController {
     @Operation(summary = "Delete role", description = "Permanently removes a role from the application")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully deleted role"),
-            @ApiResponse(responseCode = "404", description = "Role not found")
+            @ApiResponse(responseCode = "404", description = "Role not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/roles/{id}")
     @PreAuthorize("hasAuthority('access:manage')")
