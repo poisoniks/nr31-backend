@@ -85,8 +85,8 @@ Feature: File Management
 
   Scenario: Upload exceeding quota returns 400
     Given I find role ID for "ROLE_ADMIN" as "adminRoleId"
-    When I update the quota for role "{adminRoleId}" to 10 bytes
-    Then the response status code should be 204
+    When I update the role quota for role ID "{adminRoleId}" to 10 bytes via admin API
+    Then the response status code should be 200
     When I upload a PNG file "icon.png" as "attachment"
     Then the response status code should be 400
     And the response body should contain "message" with value containing "quota"
@@ -348,13 +348,3 @@ Feature: File Management
     And I save the created event "id" as "fileId"
     When I patch library file "{fileId}" with name "" and no folder
     Then the response status code should be 400
-
-  Scenario: Error cases for quota management
-    Given I log in with user "admin" and password "testpass"
-
-    When I update the quota for role "99999" to 1000 bytes
-    Then the response status code should be 404
-
-    Given I log in with user "user" and password "testpass"
-    When I update the quota for role "1" to 1000 bytes
-    Then the response status code should be 403

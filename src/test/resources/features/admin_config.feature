@@ -137,6 +137,33 @@ Feature: App Config Management
     When I retrieve the role "ROLE_UPDATED_TEST"
     Then the response status code should be 404
 
+  Scenario: Update role quota via role update endpoint
+    Given I log in with user "admin" and password "testpass"
+    When I create a new role with name "ROLE_QUOTA_TEST" and localized name:
+      | en | Quota Test Role |
+    Then the response status code should be 201
+
+    When I update the role "ROLE_QUOTA_TEST" with quota 52428800 bytes
+    Then the response status code should be 200
+    And the response body should contain "filesUploadQuotaBytes" with value "52428800"
+
+    When I delete the role "ROLE_QUOTA_TEST"
+    Then the response status code should be 204
+
+  Scenario: Update role quota does not clear other fields
+    Given I log in with user "admin" and password "testpass"
+    When I create a new role with name "ROLE_QUOTA_PRESERVE" and localized name:
+      | en | Preserve Test |
+    Then the response status code should be 201
+
+    When I update the role "ROLE_QUOTA_PRESERVE" with quota 1048576 bytes
+    Then the response status code should be 200
+    And the response body should contain "name" with value "ROLE_QUOTA_PRESERVE"
+    And the response body should contain "filesUploadQuotaBytes" with value "1048576"
+
+    When I delete the role "ROLE_QUOTA_PRESERVE"
+    Then the response status code should be 204
+
   Scenario: Prevent unauthorized user from managing roles
     Given I log in with user "user" and password "testpass"
     When I retrieve all roles

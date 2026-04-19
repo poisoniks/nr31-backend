@@ -130,6 +130,25 @@ public class AdminConfigSteps extends CommonStepDefs {
         contextHelper.addValue("response", response);
     }
 
+    @When("I update the role {string} with quota {long} bytes")
+    public void i_update_the_role_with_quota(String roleName, Long quotaBytes) throws Exception {
+        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
+        String currentName = jdbcTemplate.queryForObject("SELECT name FROM roles WHERE id = ?", String.class, roleId);
+        String body = "{\"name\": \"" + currentName + "\", \"filesUploadQuotaBytes\": " + quotaBytes + "}";
+        HttpResponse<String> response = makeApiCall("PUT", "/api/v1/admin/roles/" + roleId, body);
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I update the role quota for role ID {string} to {long} bytes via admin API")
+    public void i_update_the_role_quota_for_role_id_via_admin_api(String roleIdRef, Long quotaBytes) throws Exception {
+        String roleId = resolveVariables(roleIdRef);
+        String currentName = jdbcTemplate.queryForObject("SELECT name FROM roles WHERE id = ?", String.class, Long.parseLong(roleId));
+        String body = "{\"name\": \"" + currentName + "\", \"filesUploadQuotaBytes\": " + quotaBytes + "}";
+        HttpResponse<String> response = makeApiCall("PUT", "/api/v1/admin/roles/" + roleId, body);
+        contextHelper.addValue("response", response);
+    }
+
+
     @And("the response body should contain localized name:")
     public void the_response_body_should_contain_localized_name(DataTable dataTable) throws Exception {
         HttpResponse<String> response = contextHelper.getValue("response");
