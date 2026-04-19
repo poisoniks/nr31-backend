@@ -104,6 +104,13 @@ public class FilesUploadSteps extends CommonStepDefs {
         contextHelper.addValue("response", response);
     }
 
+    @When("I get file {string} with width {int}")
+    public void i_get_file_with_width(String fileIdRef, int width) throws Exception {
+        String fileId = resolveVariables(fileIdRef);
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/files/" + fileId + "?w=" + width, null);
+        contextHelper.addValue("response", response);
+    }
+
     @When("I delete file {string}")
     public void i_delete_file(String fileIdRef) throws Exception {
         String fileId = resolveVariables(fileIdRef);

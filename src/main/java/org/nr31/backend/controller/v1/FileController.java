@@ -69,19 +69,28 @@ public class FileController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-
     @Operation(summary = "Get a file", description = "Resolves a file by UUID and returns an X-Accel-Redirect response for nginx to serve the physical file")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "File resolved, X-Accel-Redirect header set"),
             @ApiResponse(responseCode = "404", description = "File not found", content = @Content)
     })
     @GetMapping(value = "/{id}")
-    public ResponseEntity<Void> getFile(@PathVariable UUID id) {
+    public ResponseEntity<Void> getFile(
+            @PathVariable UUID id,
+            @RequestParam(required = false) Integer w) {
         FileMetadata metadata = fileStorageService.resolveFile(id);
 
+        String contentType = metadata.getContentType();
+        String internalPath = "/internal-files/" + metadata.getStoredName();
+
+        if (w != null && isResizableRasterImage(contentType)) {
+            internalPath = "/internal-resize/" + metadata.getStoredName() + "?w=" + w;
+        }
+
         return ResponseEntity.ok()
-                .header("X-Accel-Redirect", "/internal-files/" + metadata.getStoredName())
-                .header(HttpHeaders.CONTENT_TYPE, metadata.getContentType())
+                .header("X-Accel-Redirect", internalPath)
+                .header(HttpHeaders.CONTENT_TYPE, contentType)
+                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=31536000, immutable")
                 .build();
     }
 
@@ -113,5 +122,13 @@ public class FileController {
         role.setFilesUploadQuotaBytes(quotaBytes);
         roleRepository.save(role);
         return ResponseEntity.noContent().build();
+    }
+
+    private boolean isResizableRasterImage(String contentType) {
+        if (contentType == null)
+            return false;
+        return contentType.equals("image/jpeg") ||
+                contentType.equals("image/png") ||
+                contentType.equals("image/webp");
     }
 }

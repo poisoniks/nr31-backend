@@ -29,6 +29,16 @@ Feature: File Management
     Then the response status code should be 200
     And the response should have header "X-Accel-Redirect" starting with "/internal-files/"
     And the response should have header "Content-Type" with value "image/png"
+    And the response should have header "Cache-Control" with value "public, max-age=31536000, immutable"
+
+  Scenario: Get file with width parameter returns resize path
+    When I upload a PNG file "icon.png" as "attachment"
+    And I save the created event "id" as "fileId"
+    When I get file "{fileId}" with width 200
+    Then the response status code should be 200
+    And the response should have header "X-Accel-Redirect" starting with "/internal-resize/"
+    And the response should have header "Content-Type" with value "image/png"
+    And the response should have header "Cache-Control" with value "public, max-age=31536000, immutable"
 
   Scenario: Delete file returns 204 and GET returns 404
     When I upload a PNG file "icon.png" as "attachment"
