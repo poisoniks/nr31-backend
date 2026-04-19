@@ -538,6 +538,7 @@ public class CalendarServiceImpl implements CalendarService {
                 .id(entity.getId())
                 .name(new HashMap<>(entity.getName()))
                 .description(entity.getDescription() != null ? new HashMap<>(entity.getDescription()) : null)
+                .customIcon(entity.getCustomIcon() != null ? entity.getCustomIcon().getId() : null)
                 .build();
     }
 
