@@ -56,7 +56,7 @@ public class AuthController {
     @Operation(summary = "Refresh access token", description = "Generates a new JWT access token using a valid refresh token")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Access token successfully refreshed", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token",
+            @ApiResponse(responseCode = "400", description = "Invalid or expired refresh token",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request body",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
@@ -70,7 +70,7 @@ public class AuthController {
     @Operation(summary = "Logout user", description = "Invalidates the provided refresh token", security = @SecurityRequirement(name = "Bearer Authentication"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Successfully logged out"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized",
+            @ApiResponse(responseCode = "403", description = "Unauthorized",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request body",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))

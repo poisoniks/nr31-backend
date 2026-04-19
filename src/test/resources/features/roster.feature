@@ -54,3 +54,20 @@ Feature: Roster Management
     When I retrieve the unit type "{unitTypeId}"
     Then the response status code should be 404
 
+  Scenario: Error cases for unit types and event types
+    Given I log in with user "admin" and password "testpass"
+
+    When I update the unit type "99999" with the following details:
+      | name.en | Non-existent |
+    Then the response status code should be 404
+
+    When I delete the unit type "99999"
+    Then the response status code should be 404
+
+    When I update the event type "99999" with the following details:
+      | name.en | Non-existent |
+    Then the response status code should be 404
+
+    When I delete the event type "99999"
+    Then the response status code should be 404
+

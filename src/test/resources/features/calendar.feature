@@ -517,3 +517,32 @@ Feature: Calendar Events Management
       | mode | ALL |
     Then the response status code should be 204
     And I should not be able to retrieve event "{eventId}"
+
+  Scenario: Error cases for calendar events
+    Given I log in with user "admin" and password "testpass"
+
+    When I retrieve events with the following parameters:
+      | from | 2026-12-31 |
+      | to   | 2026-12-01 |
+    Then the response status code should be 400
+
+    When I retrieve the nearest event to "1990-01-01T00:00:00Z"
+    Then the response status code should be 404
+
+    When I create an event with the following details:
+      | title.en |      |
+      | start    | 2026-10-27T08:00:00Z |
+      | end      | 2026-10-27T09:00:00Z |
+    Then the response status code should be 400
+
+    When I update the event "99999" with the following details:
+      | mode     | SINGLE               |
+      | title.en | Non-existent         |
+      | start    | 2026-10-27T08:00:00Z |
+      | end      | 2026-10-27T09:00:00Z |
+      | type     | 1                    |
+    Then the response status code should be 404
+
+    When I delete the event "99999" with parameters:
+      | mode | ALL |
+    Then the response status code should be 404

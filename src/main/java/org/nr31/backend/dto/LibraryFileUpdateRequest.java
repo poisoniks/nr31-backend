@@ -1,6 +1,7 @@
 package org.nr31.backend.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @Schema(description = "Payload for patching a library file record (rename and/or move)")
 public class LibraryFileUpdateRequest {
 
+    @NotBlank(message = "File name cannot be empty")
     @Size(max = 255, message = "File name must not exceed 255 characters")
     @Schema(description = "New user-defined name for the file (renames original_name); omit to leave unchanged", example = "new-banner.png")
     private String name;

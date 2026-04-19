@@ -14,11 +14,13 @@ import org.nr31.backend.dto.CalendarEventDTO;
 import org.nr31.backend.dto.CreateEventRequest;
 import org.nr31.backend.dto.DiscordSyncEventDTO;
 import org.nr31.backend.dto.DiscordSyncExceptionDTO;
+import org.nr31.backend.dto.ErrorCode;
 import org.nr31.backend.dto.EventTypeDTO;
 import org.nr31.backend.dto.Recurrence;
 import org.nr31.backend.dto.UnitTypeDTO;
 import org.nr31.backend.dto.UpdateEventRequest;
 import org.nr31.backend.exception.CalendarException;
+import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.integration.discord.EventSource;
 import org.nr31.backend.model.CalendarEvent;
 import org.nr31.backend.model.CalendarEventException;
@@ -226,7 +228,7 @@ public class CalendarServiceImpl implements CalendarService {
     @CacheEvict(value = "calendarEvents", allEntries = true)
     public CalendarEventDTO updateEvent(Long id, UpdateEventRequest request) {
         CalendarEvent originalEvent = calendarEventRepository.findById(id)
-                .orElseThrow(() -> new CalendarException.UserError("Event not found"));
+                .orElseThrow(() -> new ElementNotFoundException("Event not found", ErrorCode.EVENT_NOT_FOUND));
 
         Instant requestStart = request.getStart() != null ? request.getStart().toInstant() : null;
         Instant requestEnd = request.getEnd() != null ? request.getEnd().toInstant() : null;
@@ -317,7 +319,7 @@ public class CalendarServiceImpl implements CalendarService {
                 originalEvent.setSeriesId(null);
             }
         }
-        
+
         originalEvent.setType(type);
         originalEvent.setServerName(request.getServerName());
         List<UnitType> unitTypes = request.getParticipatingUnits() != null
@@ -378,7 +380,7 @@ public class CalendarServiceImpl implements CalendarService {
     @CacheEvict(value = "calendarEvents", allEntries = true)
     public void deleteEvent(Long id, CalendarActionMode mode, Instant exceptionDate) {
         CalendarEvent originalEvent = calendarEventRepository.findById(id)
-                .orElseThrow(() -> new CalendarException.UserError("Event not found"));
+                .orElseThrow(() -> new ElementNotFoundException("Event not found", ErrorCode.EVENT_NOT_FOUND));
 
         if (originalEvent.getSource() == EventSource.DISCORD) {
             throw new CalendarException.UserError("Unable to delete event synced from Discord server");
@@ -490,15 +492,15 @@ public class CalendarServiceImpl implements CalendarService {
         dto.setDescription(ex.getNewDescription() != null ? ex.getNewDescription() : event.getDescription());
         dto.setStart(java.time.OffsetDateTime.ofInstant(start, targetZone));
         dto.setEnd(java.time.OffsetDateTime.ofInstant(end, targetZone));
-        
+
         EventType type = ex.getNewType() != null ? ex.getNewType() : event.getType();
         dto.setType(mapToEventTypeDTO(type));
-        
+
         dto.setServerName(ex.getNewServerName() != null ? ex.getNewServerName() : event.getServerName());
         List<UnitType> units = (ex.getNewParticipatingUnits() != null && !ex.getNewParticipatingUnits().isEmpty())
                 ? ex.getNewParticipatingUnits() : event.getParticipatingUnits();
         dto.setParticipatingUnits(mapToUnitTypeDTOList(units));
-        
+
         dto.setRecurring(true);
         dto.setSource(event.getSource());
         dto.setDiscordId(event.getDiscordId());
@@ -555,7 +557,7 @@ public class CalendarServiceImpl implements CalendarService {
 
         Map<String, String> names = new HashMap<>();
         Map<String, String> descriptions = new HashMap<>();
-        
+
         supportedLocaleRepository.findAll().forEach(locale -> {
             names.put(locale.getCode(), dto.getName());
             if (dto.getDescription() != null && !dto.getDescription().isEmpty()) {
@@ -567,7 +569,7 @@ public class CalendarServiceImpl implements CalendarService {
         event.setDescription(descriptions);
         event.setStart(dto.getStart());
         event.setEnd(dto.getEnd() != null ? dto.getEnd() : dto.getStart().plus(Duration.ofHours(1)));
-        
+
         event.setServerName(dto.getServerName() != null ? dto.getServerName() : "Discord");
         event.setRrule(dto.getRrule());
         event.setTimezone(dto.getTimezone() != null ? dto.getTimezone() : "Z");

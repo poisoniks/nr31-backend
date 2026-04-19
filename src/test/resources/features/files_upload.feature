@@ -332,3 +332,29 @@ Feature: File Management
     Then the response status code should be 200
     And the response body should contain "page.totalElements"
     And the response body should contain "content"
+
+  Scenario: Error cases for library folders and files
+    Given I log in with user "admin" and password "testpass"
+
+    When I create a library folder with name "ValidName" and no parent
+    And I save the created event "id" as "folderId"
+    When I patch library folder "{folderId}" with name "" and no parent
+    Then the response status code should be 400
+
+    When I list library files in folder "00000000-0000-0000-0000-000000000000"
+    Then the response status code should be 404
+
+    When I upload a PNG file "valid.png" to library root
+    And I save the created event "id" as "fileId"
+    When I patch library file "{fileId}" with name "" and no folder
+    Then the response status code should be 400
+
+  Scenario: Error cases for quota management
+    Given I log in with user "admin" and password "testpass"
+
+    When I update the quota for role "99999" to 1000 bytes
+    Then the response status code should be 404
+
+    Given I log in with user "user" and password "testpass"
+    When I update the quota for role "1" to 1000 bytes
+    Then the response status code should be 403

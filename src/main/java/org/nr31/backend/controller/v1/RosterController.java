@@ -13,6 +13,7 @@ import org.nr31.backend.dto.EventTypeDTO;
 import org.nr31.backend.dto.EventTypeRequest;
 import org.nr31.backend.dto.UnitTypeDTO;
 import org.nr31.backend.dto.UnitTypeRequest;
+import org.nr31.backend.dto.ValidationErrorResponse;
 import org.nr31.backend.service.RosterService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -63,7 +64,8 @@ public class RosterController {
 
         @Operation(summary = "Create unit type", description = "Creates a new unit type", security = @SecurityRequirement(name = "Bearer Authentication"))
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "201", description = "Successfully created unit type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UnitTypeDTO.class)))
+                        @ApiResponse(responseCode = "201", description = "Successfully created unit type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UnitTypeDTO.class))),
+                        @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
         })
         @PostMapping(value = "/unit-types", produces = "application/json", consumes = "application/json")
         @PreAuthorize("hasAuthority('roster:write')")
@@ -76,7 +78,8 @@ public class RosterController {
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Successfully updated unit type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UnitTypeDTO.class))),
                         @ApiResponse(responseCode = "404", description = "Unit type not found",
-                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
         })
         @PutMapping(value = "/unit-types/{id}", produces = "application/json", consumes = "application/json")
         @PreAuthorize("hasAuthority('roster:write')")
@@ -123,7 +126,8 @@ public class RosterController {
 
         @Operation(summary = "Create event type", description = "Creates a new event type", security = @SecurityRequirement(name = "Bearer Authentication"))
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "201", description = "Successfully created event type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventTypeDTO.class)))
+                        @ApiResponse(responseCode = "201", description = "Successfully created event type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventTypeDTO.class))),
+                        @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
         })
         @PostMapping(value = "/event-types", produces = "application/json", consumes = "application/json")
         @PreAuthorize("hasAuthority('roster:write')")
@@ -136,7 +140,8 @@ public class RosterController {
         @ApiResponses(value = {
                         @ApiResponse(responseCode = "200", description = "Successfully updated event type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventTypeDTO.class))),
                         @ApiResponse(responseCode = "404", description = "Event type not found",
-                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
         })
         @PutMapping(value = "/event-types/{id}", produces = "application/json", consumes = "application/json")
         @PreAuthorize("hasAuthority('roster:write')")

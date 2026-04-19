@@ -9,6 +9,7 @@ import org.nr31.backend.dto.CreateEventRequest;
 import org.nr31.backend.dto.ErrorResponse;
 import org.nr31.backend.dto.UpdateEventRequest;
 import org.nr31.backend.dto.ValidationErrorResponse;
+import org.nr31.backend.exception.CalendarException;
 import org.nr31.backend.service.CalendarService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -61,6 +62,10 @@ public class CalendarController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(required = false) String timezone) {
+
+        if (from.isAfter(to)) {
+            throw new CalendarException.UserError("Invalid date range: 'from' cannot be after 'to'");
+        }
 
         ZoneId targetZone = timezone != null ? ZoneId.of(timezone) : ZoneOffset.UTC;
 

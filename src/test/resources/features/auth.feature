@@ -43,3 +43,7 @@ Feature: Authentication and Token Management
     Given I log out
     When I log out using the token "some.token.value"
     Then the response status code should be 403
+
+  Scenario: Login with blank credentials returns 400 Bad Request
+    When I authenticate with username "" and password ""
+    Then the response status code should be 400
