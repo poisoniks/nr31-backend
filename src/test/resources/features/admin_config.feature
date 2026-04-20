@@ -75,7 +75,7 @@ Feature: App Config Management
     Then the response status code should be 200
     And the response body should contain "page.size" with value "20"
     And the response body should contain "page.number" with value "0"
-    And the response body should contain "page.totalElements" with value "6"
+    And the response body should contain "page.totalElements" with value "7"
     And the response body should contain "page.totalPages" with value "1"
 
   Scenario: Check pagination attributes in response from get all configs with query parameters
@@ -87,7 +87,7 @@ Feature: App Config Management
     Then the response status code should be 200
     And the response body should contain "page.size" with value "10"
     And the response body should contain "page.number" with value "0"
-    And the response body should contain "page.totalElements" with value "6"
+    And the response body should contain "page.totalElements" with value "7"
     And the response body should contain "page.totalPages" with value "1"
 
   Scenario: Assign permission to role successfully

@@ -7,7 +7,7 @@ INSERT INTO roles (name) VALUES ('ROLE_ADMIN') ON CONFLICT (name) DO NOTHING;
 INSERT INTO roles (name) VALUES ('ROLE_USER') ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO role_permissions (role_id, permission_id) 
-SELECT r.id, p.id FROM roles r, permissions p WHERE r.name = 'ROLE_ADMIN' AND p.name IN ('event:write', 'config:read', 'config:write', 'roster:write', 'file:manage_quota', 'access:manage', 'file:upload:public', 'file:upload:attachment', 'file:delete')
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name = 'ROLE_ADMIN' AND p.name IN ('event:write', 'config:read', 'config:write', 'roster:write', 'file:manage_quota', 'access:manage', 'file:upload:public', 'file:upload:attachment', 'file:delete', 'cms:write')
 ON CONFLICT (role_id, permission_id) DO NOTHING;
 
 UPDATE roles SET files_upload_quota_bytes = 10485760 WHERE name = 'ROLE_ADMIN';
