@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.nr31.backend.validation.ValidLocalizedString;
+
+import java.util.Map;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -14,6 +17,7 @@ public class ImageWidgetDto extends WidgetDto {
     @Schema(description = "URL of the image", example = "https://example.com/image.jpg", requiredMode = Schema.RequiredMode.REQUIRED)
     private String url;
     
-    @Schema(description = "Alt text for accessibility", example = "Regiment banner", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private String alt;
+    @ValidLocalizedString
+    @Schema(description = "Localized alt text for accessibility", example = "{\"en\": \"Regiment banner\", \"uk\": \"Банер полку\"}", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Map<String, String> alt;
 }

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.nr31.backend.model.RevisionStatus;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -20,8 +21,8 @@ public class PageResponseDto {
     @Schema(description = "URL-friendly page identifier", example = "home", requiredMode = Schema.RequiredMode.REQUIRED)
     private String slug;
     
-    @Schema(description = "Page title", example = "Home Page", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String title;
+    @Schema(description = "Localized page title", example = "{\"en\": \"Home Page\", \"uk\": \"Головна сторінка\"}", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Map<String, String> title;
     
     @Schema(description = "Current version number for optimistic locking", example = "5", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer version;

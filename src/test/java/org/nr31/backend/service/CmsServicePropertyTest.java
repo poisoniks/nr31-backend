@@ -51,7 +51,7 @@ class CmsServicePropertyTest {
         Page page = Page.builder()
             .id(1L)
             .slug(slug)
-            .title("Test Page")
+            .title(Map.of("en", "Test Page"))
             .version(currentVersion)
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
@@ -113,7 +113,7 @@ class CmsServicePropertyTest {
         Page page = Page.builder()
             .id(1L)
             .slug(slug)
-            .title("Test Page")
+            .title(Map.of("en", "Test Page"))
             .version(currentVersion)
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
@@ -141,7 +141,7 @@ class CmsServicePropertyTest {
         Page savedPage = Page.builder()
             .id(1L)
             .slug(slug)
-            .title("Test Page")
+            .title(Map.of("en", "Test Page"))
             .version(currentVersion + 1)
             .createdAt(page.getCreatedAt())
             .updatedAt(Instant.now())
@@ -180,7 +180,7 @@ class CmsServicePropertyTest {
         Page page = Page.builder()
             .id(1L)
             .slug(slug)
-            .title("Test Page")
+            .title(Map.of("en", "Test Page"))
             .version(version)
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
@@ -232,10 +232,11 @@ class CmsServicePropertyTest {
         CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
 
         // Setup page with published revision
+        Map<String, String> localizedTitle = Map.of("en", title);
         Page page = Page.builder()
             .id(1L)
             .slug(slug)
-            .title(title)
+            .title(localizedTitle)
             .version(version)
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
@@ -264,7 +265,7 @@ class CmsServicePropertyTest {
             .isNotNull();
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getSlug()).isEqualTo(slug);
-        assertThat(response.getTitle()).isEqualTo(title);
+        assertThat(response.getTitle()).isEqualTo(localizedTitle);
         assertThat(response.getVersion()).isEqualTo(version);
         assertThat(response.getLayoutData()).isNotNull();
         assertThat(response.getStatus()).isEqualTo(RevisionStatus.PUBLISHED);
@@ -325,7 +326,7 @@ class CmsServicePropertyTest {
         Page page = Page.builder()
             .id(1L)
             .slug(slug)
-            .title(title)
+            .title(Map.of("en", title))
             .version(version)
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
@@ -393,10 +394,11 @@ class CmsServicePropertyTest {
         CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
 
         // Setup page with draft revision
+        Map<String, String> localizedTitle = Map.of("en", title);
         Page page = Page.builder()
             .id(1L)
             .slug(slug)
-            .title(title)
+            .title(localizedTitle)
             .version(version)
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
@@ -425,7 +427,7 @@ class CmsServicePropertyTest {
             .isNotNull();
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getSlug()).isEqualTo(slug);
-        assertThat(response.getTitle()).isEqualTo(title);
+        assertThat(response.getTitle()).isEqualTo(localizedTitle);
         assertThat(response.getVersion())
             .as("Response should include current page version")
             .isEqualTo(version);
@@ -456,7 +458,7 @@ class CmsServicePropertyTest {
         Page page = Page.builder()
             .id(1L)
             .slug(slug)
-            .title("Test Page")
+            .title(Map.of("en", "Test Page"))
             .version(version)
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
@@ -517,7 +519,7 @@ class CmsServicePropertyTest {
         Page page = Page.builder()
             .id(1L)
             .slug(slug)
-            .title("Test Page")
+            .title(Map.of("en", "Test Page"))
             .version(version)
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
@@ -660,7 +662,7 @@ class CmsServicePropertyTest {
 
     private LayoutDataDto createSimpleLayout() {
         TextWidgetDto textWidget = new TextWidgetDto();
-        textWidget.setContent("<p>Sample content</p>");
+        textWidget.setContent(Map.of("en", "<p>Sample content</p>"));
 
         SlotDto slot = new SlotDto("content", List.of(textWidget));
         return new LayoutDataDto(List.of(slot));

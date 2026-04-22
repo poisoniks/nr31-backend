@@ -26,9 +26,9 @@ public class CmsSteps extends CommonStepDefs {
 
         jdbcTemplate.update(
             "INSERT INTO pages (slug, title, version, created_at, updated_at) " +
-            "VALUES (?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+            "VALUES (?, ?::jsonb, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
             "ON CONFLICT (slug) DO NOTHING",
-            slug, title
+            slug, String.format("{\"en\": \"%s\"}", title)
         );
 
         Long pageId = jdbcTemplate.queryForObject(
@@ -225,6 +225,23 @@ public class CmsSteps extends CommonStepDefs {
         assertEquals(expectedValue, fieldNode.asText());
     }
 
+    @And("the response body should contain nested field {string} with value {string}")
+    public void the_response_body_should_contain_nested_field_with_value(String jsonPath, String expectedValue) throws Exception {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        JsonNode root = objectMapper.readTree(response.body());
+        String[] pathParts = jsonPath.split("\\.");
+        JsonNode current = root;
+        for (String part : pathParts) {
+            if (current != null && current.isArray()) {
+                current = current.get(Integer.parseInt(part));
+            } else {
+                current = current.get(part);
+            }
+            assertNotNull(current, "Path " + jsonPath + " not found in " + response.body());
+        }
+        assertEquals(expectedValue, current.asText());
+    }
+
     @And("the response body should contain slot restriction for {string} with widgets {string}")
     public void the_response_body_should_contain_slot_restriction_for_with_widgets(String slotType, String widgets) throws Exception {
         HttpResponse<String> response = contextHelper.getValue("response");
@@ -306,7 +323,11 @@ public class CmsSteps extends CommonStepDefs {
             ArrayNode widgets = objectMapper.createArrayNode();
             ObjectNode widget = objectMapper.createObjectNode();
             widget.put("type", "text");
-            widget.put("content", "<h1>Test Content</h1>");
+            
+            ObjectNode content = objectMapper.createObjectNode();
+            content.put("en", "<h1>Test Content</h1>");
+            widget.set("content", content);
+            
             widgets.add(widget);
             
             slot.set("widgets", widgets);
@@ -334,16 +355,23 @@ public class CmsSteps extends CommonStepDefs {
 
             switch (widgetType) {
                 case "text":
-                    widget.put("content", "<p>Test content</p>");
+                    ObjectNode textContent = objectMapper.createObjectNode();
+                    textContent.put("en", "<p>Test content</p>");
+                    widget.set("content", textContent);
                     break;
                 case "image":
                     widget.put("url", "https://example.com/image.jpg");
+                    ObjectNode imageAlt = objectMapper.createObjectNode();
+                    imageAlt.put("en", "Test image");
+                    widget.set("alt", imageAlt);
                     break;
                 case "video":
                     widget.put("url", "https://example.com/video.mp4");
                     break;
                 case "embed":
-                    widget.put("embedCode", "<iframe></iframe>");
+                    ObjectNode embedCode = objectMapper.createObjectNode();
+                    embedCode.put("en", "<iframe></iframe>");
+                    widget.set("embedCode", embedCode);
                     break;
             }
             

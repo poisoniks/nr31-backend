@@ -119,14 +119,14 @@ class SlotRestrictionValidationPropertyTest {
 
     private TextWidgetDto createTextWidget(String content) {
         TextWidgetDto widget = new TextWidgetDto();
-        widget.setContent("<p>" + content + "</p>");
+        widget.setContent(Map.of("en", "<p>" + content + "</p>"));
         return widget;
     }
 
     private ImageWidgetDto createImageWidget(String filename) {
         ImageWidgetDto widget = new ImageWidgetDto();
         widget.setUrl("https://example.com/" + filename);
-        widget.setAlt("Sample image");
+        widget.setAlt(Map.of("en", "Sample image"));
         return widget;
     }
 
@@ -138,7 +138,7 @@ class SlotRestrictionValidationPropertyTest {
 
     private EmbedWidgetDto createEmbedWidget(String url) {
         EmbedWidgetDto widget = new EmbedWidgetDto();
-        widget.setEmbedCode("<iframe src='" + url + "'></iframe>");
+        widget.setEmbedCode(Map.of("en", "<iframe src='" + url + "'></iframe>"));
         return widget;
     }
 

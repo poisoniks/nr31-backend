@@ -37,7 +37,7 @@ Feature: CMS Page Management
     When I retrieve the published page "public-page" as a public user
     Then the response status code should be 200
     And the response body should contain "slug" with value "public-page"
-    And the response body should contain "title" with value "Public Page"
+    And the response body should contain nested field "title.en" with value "Public Page"
     And the response body should contain "status" with value "PUBLISHED"
     And the response body should contain "layoutData"
 

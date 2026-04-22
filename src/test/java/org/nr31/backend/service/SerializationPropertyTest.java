@@ -11,6 +11,7 @@ import org.nr31.backend.service.impl.CmsServiceImpl;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -112,7 +113,7 @@ class SerializationPropertyTest {
             Page page = Page.builder()
                 .id(1L)
                 .slug("test-page")
-                .title("Test Page")
+                .title(Map.of("en", "Test Page"))
                 .version(1)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -135,8 +136,11 @@ class SerializationPropertyTest {
             switch (widgetData.widgetType) {
                 case "text":
                     assertThat(((TextWidgetDto) widget).getContent())
-                        .as("Text widget content should be null or blank")
-                        .isNullOrEmpty();
+                        .as("Text widget content should be null or empty")
+                        .satisfiesAnyOf(
+                            content -> assertThat(content).isNull(),
+                            content -> assertThat(content).isEmpty()
+                        );
                     break;
                 case "image":
                     assertThat(((ImageWidgetDto) widget).getUrl())
@@ -150,8 +154,11 @@ class SerializationPropertyTest {
                     break;
                 case "embed":
                     assertThat(((EmbedWidgetDto) widget).getEmbedCode())
-                        .as("Embed widget code should be null or blank")
-                        .isNullOrEmpty();
+                        .as("Embed widget code should be null or empty")
+                        .satisfiesAnyOf(
+                            code -> assertThat(code).isNull(),
+                            code -> assertThat(code).isEmpty()
+                        );
                     break;
             }
             
@@ -175,7 +182,7 @@ class SerializationPropertyTest {
         // Create a new page entity
         Page newPage = Page.builder()
             .slug(slug)
-            .title(title)
+            .title(Map.of("en", title))
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
             .build();
@@ -226,7 +233,7 @@ class SerializationPropertyTest {
     Arbitrary<WidgetWithMissingProperty> widgetTypeWithMissingProperty() {
         return Arbitraries.of(
             new WidgetWithMissingProperty("text", 
-                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"text\",\"content\":\"\"}]}]}"),
+                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"text\",\"content\":{}}]}]}"),
             new WidgetWithMissingProperty("text", 
                 "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"text\"}]}]}"),
             new WidgetWithMissingProperty("image", 
@@ -238,7 +245,7 @@ class SerializationPropertyTest {
             new WidgetWithMissingProperty("video", 
                 "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"video\"}]}]}"),
             new WidgetWithMissingProperty("embed", 
-                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"embed\",\"embedCode\":\"\"}]}]}"),
+                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"embed\",\"embedCode\":{}}]}]}"),
             new WidgetWithMissingProperty("embed", 
                 "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"embed\"}]}]}")
         );
@@ -267,7 +274,7 @@ class SerializationPropertyTest {
 
     private LayoutDataDto createLayoutWithTextWidget() {
         TextWidgetDto textWidget = new TextWidgetDto();
-        textWidget.setContent("<p>Sample text content</p>");
+        textWidget.setContent(Map.of("en", "<p>Sample text content</p>"));
 
         SlotDto slot = new SlotDto("content", List.of(textWidget));
         return new LayoutDataDto(List.of(slot));
@@ -276,7 +283,7 @@ class SerializationPropertyTest {
     private LayoutDataDto createLayoutWithImageWidget() {
         ImageWidgetDto imageWidget = new ImageWidgetDto();
         imageWidget.setUrl("https://example.com/image.jpg");
-        imageWidget.setAlt("Sample image");
+        imageWidget.setAlt(Map.of("en", "Sample image"));
 
         SlotDto slot = new SlotDto("hero", List.of(imageWidget));
         return new LayoutDataDto(List.of(slot));
@@ -292,7 +299,7 @@ class SerializationPropertyTest {
 
     private LayoutDataDto createLayoutWithEmbedWidget() {
         EmbedWidgetDto embedWidget = new EmbedWidgetDto();
-        embedWidget.setEmbedCode("<iframe src='https://example.com'></iframe>");
+        embedWidget.setEmbedCode(Map.of("en", "<iframe src='https://example.com'></iframe>"));
 
         SlotDto slot = new SlotDto("content", List.of(embedWidget));
         return new LayoutDataDto(List.of(slot));
@@ -300,11 +307,11 @@ class SerializationPropertyTest {
 
     private LayoutDataDto createLayoutWithMixedWidgets() {
         TextWidgetDto textWidget = new TextWidgetDto();
-        textWidget.setContent("<h1>Title</h1>");
+        textWidget.setContent(Map.of("en", "<h1>Title</h1>"));
 
         ImageWidgetDto imageWidget = new ImageWidgetDto();
         imageWidget.setUrl("https://example.com/banner.jpg");
-        imageWidget.setAlt("Banner");
+        imageWidget.setAlt(Map.of("en", "Banner"));
 
         VideoWidgetDto videoWidget = new VideoWidgetDto();
         videoWidget.setUrl("https://example.com/intro.mp4");
@@ -315,19 +322,19 @@ class SerializationPropertyTest {
 
     private LayoutDataDto createLayoutWithMultipleSlots() {
         TextWidgetDto heroText = new TextWidgetDto();
-        heroText.setContent("<h1>Welcome</h1>");
+        heroText.setContent(Map.of("en", "<h1>Welcome</h1>"));
 
         ImageWidgetDto heroImage = new ImageWidgetDto();
         heroImage.setUrl("https://example.com/hero.jpg");
 
         TextWidgetDto sidebarText = new TextWidgetDto();
-        sidebarText.setContent("<p>Sidebar content</p>");
+        sidebarText.setContent(Map.of("en", "<p>Sidebar content</p>"));
 
         VideoWidgetDto contentVideo = new VideoWidgetDto();
         contentVideo.setUrl("https://example.com/content.mp4");
 
         EmbedWidgetDto contentEmbed = new EmbedWidgetDto();
-        contentEmbed.setEmbedCode("<iframe src='https://example.com/embed'></iframe>");
+        contentEmbed.setEmbedCode(Map.of("en", "<iframe src='https://example.com/embed'></iframe>"));
 
         SlotDto heroSlot = new SlotDto("hero", List.of(heroText, heroImage));
         SlotDto sidebarSlot = new SlotDto("sidebar", List.of(sidebarText));
