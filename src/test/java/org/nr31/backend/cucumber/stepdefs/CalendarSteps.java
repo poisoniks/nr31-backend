@@ -12,9 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
@@ -42,23 +40,6 @@ public class CalendarSteps extends CommonStepDefs {
     @After
     public void tearDown() {
         contextHelper.release();
-    }
-
-    @Given("I log in with user {string} and password {string}")
-    public void i_log_in_with_user_and_password(String username, String password) throws Exception {
-        String body = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", username, password);
-
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + port + "/api/v1/auth/login"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body));
-
-        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, response.statusCode(), "Login failed: " + response.body());
-
-        JsonNode root = objectMapper.readTree(response.body());
-        String token = root.get("accessToken").asText();
-        contextHelper.addValue("jwt_token", token);
     }
 
     @Given("I log out")

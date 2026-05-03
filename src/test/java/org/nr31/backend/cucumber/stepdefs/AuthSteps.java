@@ -2,16 +2,25 @@ package org.nr31.backend.cucumber.stepdefs;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.cucumber.java.en.And;
+import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
+
 import java.net.http.HttpResponse;
 
 public class AuthSteps extends CommonStepDefs {
 
-    @When("I authenticate with username {string} and password {string}")
-    public void i_authenticate_with_username_and_password(String username, String password) throws Exception {
+    @Given("I log in with user {string} and password {string}")
+    public void i_log_in_with_user_and_password(String username, String password) throws Exception {
         String body = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", username, password);
+
         HttpResponse<String> response = makeApiCall("POST", "/api/v1/auth/login", body);
         contextHelper.addValue("response", response);
+
+        if (response.statusCode() == 200) {
+            JsonNode root = objectMapper.readTree(response.body());
+            String token = root.get("accessToken").asText();
+            contextHelper.addValue("jwt_token", token);
+        }
     }
 
     @When("I refresh the token with {string}")

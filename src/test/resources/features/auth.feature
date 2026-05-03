@@ -4,17 +4,17 @@ Feature: Authentication and Token Management
   So that my data and session are secure
 
   Scenario: Successful login returns access and refresh tokens
-    When I authenticate with username "admin" and password "testpass"
+    When I log in with user "admin" and password "testpass"
     Then the response status code should be 200
     And the response body should contain "accessToken"
     And the response body should contain "refreshToken"
 
   Scenario: Unsuccessful login returns 401 Unauthorized
-    When I authenticate with username "admin" and password "wrongpass"
+    When I log in with user "admin" and password "wrongpass"
     Then the response status code should be 401
 
   Scenario: Successful token refresh
-    When I authenticate with username "admin" and password "testpass"
+    When I log in with user "admin" and password "testpass"
     And I save the response value "refreshToken" as "savedRefreshToken"
     When I refresh the token with "{savedRefreshToken}"
     Then the response status code should be 200
@@ -27,7 +27,6 @@ Feature: Authentication and Token Management
 
   Scenario: Successful logout
     Given I log in with user "admin" and password "testpass"
-    When I authenticate with username "admin" and password "testpass"
     And I save the response value "refreshToken" as "savedRefreshTokenForLogout"
     When I log out using the token "{savedRefreshTokenForLogout}"
     Then the response status code should be 204
@@ -45,5 +44,5 @@ Feature: Authentication and Token Management
     Then the response status code should be 403
 
   Scenario: Login with blank credentials returns 400 Bad Request
-    When I authenticate with username "" and password ""
+    When I log in with user "" and password ""
     Then the response status code should be 400
