@@ -8,7 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
@@ -19,6 +21,10 @@ import java.util.UUID;
 
 @Repository
 public interface FileMetadataRepository extends JpaRepository<FileMetadata, UUID> {
+    @Override
+    @QueryHints(@QueryHint(name = "org.hibernate.cacheable", value = "true"))
+    boolean existsById(UUID id);
+
     @Query("SELECT COALESCE(SUM(f.sizeBytes), 0) FROM FileMetadata f WHERE f.uploader.id = :userId")
     long sumSizeBytesByUploaderId(@Param("userId") Long userId);
 
