@@ -3,27 +3,36 @@ package org.nr31.backend.config;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.cache.caffeine.CaffeineCache;
+import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
+import java.util.List;
 
 @Configuration
 @EnableCaching
 public class CacheConfig {
+
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager(
-            "slotRestrictions", 
-            "publishedPages",
-            "calendarEvents",
-            "fileResolution",
-            "appConfig"
-        );
-        cacheManager.setCaffeine(Caffeine.newBuilder()
-            .maximumSize(100)
-            .expireAfterWrite(Duration.ofHours(24)));
+        SimpleCacheManager cacheManager = new SimpleCacheManager();
+        cacheManager.setCaches(List.of(
+            cache("slotRestrictions",    Duration.ofHours(24),  100),
+            cache("publishedPages",      Duration.ofHours(24),  100),
+            cache("calendarEvents",      Duration.ofHours(24),  100),
+            cache("fileResolution",      Duration.ofHours(24),  100),
+            cache("appConfig",           Duration.ofHours(24),  100),
+            cache("youtubeLatestVideo",  Duration.ofMinutes(25), 50)
+        ));
         return cacheManager;
+    }
+
+    private CaffeineCache cache(String name, Duration ttl, long maxSize) {
+        return new CaffeineCache(name, Caffeine.newBuilder()
+                .maximumSize(maxSize)
+                .expireAfterWrite(ttl)
+                .build());
     }
 }

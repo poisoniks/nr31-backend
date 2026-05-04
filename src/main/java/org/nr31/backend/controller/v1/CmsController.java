@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.nr31.backend.dto.YoutubeVideoDto;
 import org.nr31.backend.dto.cms.PageResponseDto;
 import org.nr31.backend.dto.cms.PublishDraftRequest;
 import org.nr31.backend.dto.cms.SlotRestrictionsDto;
@@ -14,6 +15,7 @@ import org.nr31.backend.dto.cms.UpdateDraftRequest;
 import org.nr31.backend.dto.cms.UpdateSlotRestrictionsRequest;
 import org.nr31.backend.service.CmsService;
 import org.nr31.backend.service.ValidationService;
+import org.nr31.backend.service.YouTubeService;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +30,7 @@ public class CmsController {
 
     private final CmsService cmsService;
     private final ValidationService validationService;
+    private final YouTubeService youTubeService;
 
     @Operation(summary = "Get published page by slug", description = "Retrieves the published revision of a page by its slug")
     @ApiResponses(value = {
@@ -118,5 +121,19 @@ public class CmsController {
         validationService.updateSlotRestrictions(request);
         SlotRestrictionsDto updated = validationService.getSlotRestrictions();
         return ResponseEntity.ok(updated);
+    }
+
+    @Operation(summary = "Get latest YouTube video", description = "Returns the cached latest video for a given YouTube channel ID. Data is refreshed every 20 minutes by a background job.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved cached video"),
+            @ApiResponse(responseCode = "404", description = "No cached video found for the given channel ID")
+    })
+    @GetMapping(value = "/youtube/{channelId}", produces = "application/json")
+    public ResponseEntity<YoutubeVideoDto> getLatestYoutubeVideo(
+            @Parameter(description = "YouTube channel ID", example = "UCbU41G2hhiwdn-gFFRqZN4w")
+            @PathVariable String channelId) {
+        return youTubeService.getLatestVideo(channelId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

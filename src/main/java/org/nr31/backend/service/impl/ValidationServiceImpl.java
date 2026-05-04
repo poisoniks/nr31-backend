@@ -9,6 +9,7 @@ import org.nr31.backend.dto.cms.LayoutDataDto;
 import org.nr31.backend.dto.cms.NewsFeedWidgetDto;
 import org.nr31.backend.dto.cms.NextEventWidgetDto;
 import org.nr31.backend.dto.cms.RichTextWidgetDto;
+import org.nr31.backend.dto.cms.YoutubeWidgetDto;
 import org.nr31.backend.dto.cms.SlotDto;
 import org.nr31.backend.dto.cms.SlotRestrictionsDto;
 import org.nr31.backend.dto.cms.UpdateSlotRestrictionsRequest;
@@ -165,6 +166,8 @@ public class ValidationServiceImpl implements ValidationService {
             return "nextevent";
         } else if (widget instanceof NewsFeedWidgetDto) {
             return "newsfeed";
+        } else if (widget instanceof YoutubeWidgetDto) {
+            return "youtube";
         }
         throw new IllegalArgumentException("Unknown widget type: " + widget.getClass().getName());
     }
