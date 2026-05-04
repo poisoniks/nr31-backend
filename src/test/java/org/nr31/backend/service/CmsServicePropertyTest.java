@@ -661,10 +661,16 @@ class CmsServicePropertyTest {
     }
 
     private LayoutDataDto createSimpleLayout() {
-        TextWidgetDto textWidget = new TextWidgetDto();
-        textWidget.setContent(Map.of("en", "<p>Sample content</p>"));
+        RichTextWidgetDto richTextWidget = new RichTextWidgetDto();
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode content = mapper.readTree("{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Sample content\"}]}]}");
+            richTextWidget.setBodyContent(Map.of("en", content));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create test layout", e);
+        }
 
-        SlotDto slot = new SlotDto("content", List.of(textWidget));
+        SlotDto slot = new SlotDto("content", List.of(richTextWidget));
         return new LayoutDataDto(List.of(slot));
     }
 }

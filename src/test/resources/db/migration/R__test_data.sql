@@ -44,3 +44,8 @@ VALUES ('test_config_3', CAST('{"en": "Test Config 3"}' AS JSON), CAST('{"retrie
 
 INSERT INTO app_config (config_key, description, config_value, config_schema) 
 VALUES ('disabled_endpoints', CAST('{"en": "Disabled endpoints"}' AS JSON), CAST('["one","two"]' AS JSON), CAST('{"type": "array","items": {"type": "string","minLength": 1}}' AS JSON)) ON CONFLICT (config_key) DO NOTHING;
+
+-- Default File Metadata for Tests
+INSERT INTO files_metadata (id, original_name, stored_name, content_type, size_bytes, scope, uploader_id, created_at)
+VALUES ('550e8400-e29b-41d4-a716-446655440000'::uuid, 'test-background.jpg', 'test-background.jpg', 'image/jpeg', 1024, 'LIBRARY', 1, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO NOTHING;

@@ -13,10 +13,10 @@ import lombok.Data;
     property = "type"
 )
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = TextWidgetDto.class, name = "text"),
-    @JsonSubTypes.Type(value = ImageWidgetDto.class, name = "image"),
-    @JsonSubTypes.Type(value = VideoWidgetDto.class, name = "video"),
-    @JsonSubTypes.Type(value = EmbedWidgetDto.class, name = "embed")
+    @JsonSubTypes.Type(value = HeroWidgetDto.class, name = "hero"),
+    @JsonSubTypes.Type(value = RichTextWidgetDto.class, name = "richtext"),
+    @JsonSubTypes.Type(value = NextEventWidgetDto.class, name = "nextevent"),
+    @JsonSubTypes.Type(value = NewsFeedWidgetDto.class, name = "newsfeed")
 })
 public abstract class WidgetDto {
     // Note: The 'type' field is managed automatically by Jackson's @JsonTypeInfo

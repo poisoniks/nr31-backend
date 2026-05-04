@@ -1,5 +1,6 @@
 package org.nr31.backend.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jqwik.api.*;
 import org.nr31.backend.dto.AppConfigDto;
@@ -9,6 +10,7 @@ import org.nr31.backend.service.impl.ValidationServiceImpl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,9 +37,9 @@ class SlotRestrictionValidationPropertyTest {
     ) throws Exception {
         // Setup slot restrictions for this test
         Map<String, List<String>> restrictions = Map.of(
-            "hero", List.of("text", "image"),
-            "sidebar", List.of("text"),
-            "content", List.of("text", "image", "video", "embed")
+            "hero-slot", List.of("hero"),
+            "sidebar", List.of("nextevent", "newsfeed"),
+            "content", List.of("richtext", "nextevent", "newsfeed")
         );
         
         String restrictionsJson = objectMapper.writeValueAsString(restrictions);
@@ -75,15 +77,15 @@ class SlotRestrictionValidationPropertyTest {
     Arbitrary<LayoutDataDto> invalidWidgetSlotCombinations() {
         // Define slot types and their restrictions
         Map<String, List<String>> slotRestrictions = Map.of(
-            "hero", List.of("text", "image"),
-            "sidebar", List.of("text"),
-            "content", List.of("text", "image", "video", "embed")
+            "hero-slot", List.of("hero"),
+            "sidebar", List.of("nextevent", "newsfeed"),
+            "content", List.of("richtext", "nextevent", "newsfeed")
         );
         
         // Generate combinations where widget type is NOT in the allowed list
         return Combinators.combine(
-            Arbitraries.of("hero", "sidebar", "content"),
-            Arbitraries.of("text", "image", "video", "embed"),
+            Arbitraries.of("hero-slot", "sidebar", "content"),
+            Arbitraries.of("hero", "richtext", "nextevent", "newsfeed"),
             Arbitraries.strings().alpha().ofMinLength(5).ofMaxLength(50)
         ).as((slotType, widgetType, randomContent) -> {
             List<String> allowedTypes = slotRestrictions.get(slotType);
@@ -93,7 +95,7 @@ class SlotRestrictionValidationPropertyTest {
             }
             // If widget is allowed, return a different invalid combination
             // This ensures we always return an invalid combination
-            return createLayoutWithWidget("sidebar", "video", randomContent);
+            return createLayoutWithWidget("sidebar", "hero", randomContent);
         }).filter(layout -> {
             // Verify this is actually an invalid combination
             SlotDto slot = layout.getSlots().get(0);
@@ -106,10 +108,10 @@ class SlotRestrictionValidationPropertyTest {
 
     private LayoutDataDto createLayoutWithWidget(String slotType, String widgetType, String randomContent) {
         WidgetDto widget = switch (widgetType) {
-            case "text" -> createTextWidget(randomContent);
-            case "image" -> createImageWidget(randomContent);
-            case "video" -> createVideoWidget(randomContent);
-            case "embed" -> createEmbedWidget(randomContent);
+            case "hero" -> createHeroWidget(randomContent);
+            case "richtext" -> createRichTextWidget(randomContent);
+            case "nextevent" -> createNextEventWidget(randomContent);
+            case "newsfeed" -> createNewsFeedWidget(randomContent);
             default -> throw new IllegalArgumentException("Unknown widget type: " + widgetType);
         };
 
@@ -117,28 +119,43 @@ class SlotRestrictionValidationPropertyTest {
         return new LayoutDataDto(List.of(slot));
     }
 
-    private TextWidgetDto createTextWidget(String content) {
-        TextWidgetDto widget = new TextWidgetDto();
-        widget.setContent(Map.of("en", "<p>" + content + "</p>"));
+    private HeroWidgetDto createHeroWidget(String content) {
+        HeroWidgetDto widget = new HeroWidgetDto();
+        widget.setBadgeText(Map.of("en", content));
+        widget.setTitleMain("Nr.31");
+        widget.setTitleSub("FKR");
+        widget.setDescription(Map.of("en", "Description " + content));
+        widget.setCtaText(Map.of("en", "Join"));
+        widget.setCtaTargetId("join-section");
+        widget.setBackgroundImageId(UUID.randomUUID());
         return widget;
     }
 
-    private ImageWidgetDto createImageWidget(String filename) {
-        ImageWidgetDto widget = new ImageWidgetDto();
-        widget.setUrl("https://example.com/" + filename);
-        widget.setAlt(Map.of("en", "Sample image"));
+    private RichTextWidgetDto createRichTextWidget(String content) {
+        RichTextWidgetDto widget = new RichTextWidgetDto();
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonContent = mapper.readTree(
+                "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"" + content + "\"}]}]}"
+            );
+            widget.setBodyContent(Map.of("en", jsonContent));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create RichTextWidget", e);
+        }
         return widget;
     }
 
-    private VideoWidgetDto createVideoWidget(String filename) {
-        VideoWidgetDto widget = new VideoWidgetDto();
-        widget.setUrl("https://example.com/" + filename);
+    private NextEventWidgetDto createNextEventWidget(String content) {
+        NextEventWidgetDto widget = new NextEventWidgetDto();
+        widget.setTitleOverride(Map.of("en", "Event " + content));
         return widget;
     }
 
-    private EmbedWidgetDto createEmbedWidget(String url) {
-        EmbedWidgetDto widget = new EmbedWidgetDto();
-        widget.setEmbedCode(Map.of("en", "<iframe src='" + url + "'></iframe>"));
+    private NewsFeedWidgetDto createNewsFeedWidget(String content) {
+        NewsFeedWidgetDto widget = new NewsFeedWidgetDto();
+        widget.setSectionTitle(Map.of("en", "News " + content));
+        widget.setItemCount(3);
+        widget.setTagFilter(null);
         return widget;
     }
 
@@ -147,14 +164,14 @@ class SlotRestrictionValidationPropertyTest {
      * Maps concrete widget classes to their @JsonTypeName values.
      */
     private String getWidgetType(WidgetDto widget) {
-        if (widget instanceof TextWidgetDto) {
-            return "text";
-        } else if (widget instanceof ImageWidgetDto) {
-            return "image";
-        } else if (widget instanceof VideoWidgetDto) {
-            return "video";
-        } else if (widget instanceof EmbedWidgetDto) {
-            return "embed";
+        if (widget instanceof HeroWidgetDto) {
+            return "hero";
+        } else if (widget instanceof RichTextWidgetDto) {
+            return "richtext";
+        } else if (widget instanceof NextEventWidgetDto) {
+            return "nextevent";
+        } else if (widget instanceof NewsFeedWidgetDto) {
+            return "newsfeed";
         }
         throw new IllegalArgumentException("Unknown widget type: " + widget.getClass().getName());
     }

@@ -1,6 +1,7 @@
 package org.nr31.backend.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jqwik.api.*;
 import org.nr31.backend.dto.cms.*;
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -65,7 +67,7 @@ class SerializationPropertyTest {
 
     /**
      * For any layout data containing a widget with a type that is not defined in the 
-     * system's widget type registry (text, image, video, embed), the system SHALL 
+     * system's widget type registry (hero, richtext, nextevent, newsfeed), the system SHALL 
      * reject the layout data with HTTP 400 Bad Request.
      */
     @Property(tries = 100)
@@ -134,31 +136,32 @@ class SerializationPropertyTest {
             // Verify the specific required property is missing/null
             WidgetDto widget = layoutData.getSlots().get(0).getWidgets().get(0);
             switch (widgetData.widgetType) {
-                case "text":
-                    assertThat(((TextWidgetDto) widget).getContent())
-                        .as("Text widget content should be null or empty")
+                case "hero":
+                    HeroWidgetDto heroWidget = (HeroWidgetDto) widget;
+                    assertThat(heroWidget.getBadgeText() == null || 
+                              heroWidget.getTitleMain() == null || 
+                              heroWidget.getTitleSub() == null ||
+                              heroWidget.getDescription() == null ||
+                              heroWidget.getCtaText() == null ||
+                              heroWidget.getCtaTargetId() == null ||
+                              heroWidget.getBackgroundImageId() == null)
+                        .as("Hero widget should have at least one null required property")
+                        .isTrue();
+                    break;
+                case "richtext":
+                    assertThat(((RichTextWidgetDto) widget).getBodyContent())
+                        .as("RichText widget body content should be null or empty")
                         .satisfiesAnyOf(
                             content -> assertThat(content).isNull(),
                             content -> assertThat(content).isEmpty()
                         );
                     break;
-                case "image":
-                    assertThat(((ImageWidgetDto) widget).getUrl())
-                        .as("Image widget URL should be null or blank")
-                        .isNullOrEmpty();
-                    break;
-                case "video":
-                    assertThat(((VideoWidgetDto) widget).getUrl())
-                        .as("Video widget URL should be null or blank")
-                        .isNullOrEmpty();
-                    break;
-                case "embed":
-                    assertThat(((EmbedWidgetDto) widget).getEmbedCode())
-                        .as("Embed widget code should be null or empty")
-                        .satisfiesAnyOf(
-                            code -> assertThat(code).isNull(),
-                            code -> assertThat(code).isEmpty()
-                        );
+                case "newsfeed":
+                    NewsFeedWidgetDto newsFeedWidget = (NewsFeedWidgetDto) widget;
+                    assertThat(newsFeedWidget.getSectionTitle() == null || 
+                              newsFeedWidget.getItemCount() == null)
+                        .as("NewsFeed widget should have at least one null required property")
+                        .isTrue();
                     break;
             }
             
@@ -206,10 +209,10 @@ class SerializationPropertyTest {
     @Provide
     Arbitrary<LayoutDataDto> validLayoutData() {
         return Arbitraries.of(
-            createLayoutWithTextWidget(),
-            createLayoutWithImageWidget(),
-            createLayoutWithVideoWidget(),
-            createLayoutWithEmbedWidget(),
+            createLayoutWithHeroWidget(),
+            createLayoutWithRichTextWidget(),
+            createLayoutWithNextEventWidget(),
+            createLayoutWithNewsFeedWidget(),
             createLayoutWithMixedWidgets(),
             createLayoutWithMultipleSlots()
         );
@@ -225,29 +228,29 @@ class SerializationPropertyTest {
             "newtype",
             "undefined",
             "random",
-            "fake"
+            "fake",
+            "text",
+            "image",
+            "video",
+            "embed"
         );
     }
 
     @Provide
     Arbitrary<WidgetWithMissingProperty> widgetTypeWithMissingProperty() {
         return Arbitraries.of(
-            new WidgetWithMissingProperty("text", 
-                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"text\",\"content\":{}}]}]}"),
-            new WidgetWithMissingProperty("text", 
-                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"text\"}]}]}"),
-            new WidgetWithMissingProperty("image", 
-                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"image\",\"url\":\"\"}]}]}"),
-            new WidgetWithMissingProperty("image", 
-                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"image\"}]}]}"),
-            new WidgetWithMissingProperty("video", 
-                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"video\",\"url\":\"\"}]}]}"),
-            new WidgetWithMissingProperty("video", 
-                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"video\"}]}]}"),
-            new WidgetWithMissingProperty("embed", 
-                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"embed\",\"embedCode\":{}}]}]}"),
-            new WidgetWithMissingProperty("embed", 
-                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"embed\"}]}]}")
+            new WidgetWithMissingProperty("hero", 
+                "{\"slots\":[{\"slotType\":\"hero\",\"widgets\":[{\"type\":\"hero\"}]}]}"),
+            new WidgetWithMissingProperty("hero", 
+                "{\"slots\":[{\"slotType\":\"hero\",\"widgets\":[{\"type\":\"hero\",\"badgeText\":{\"en\":\"Test\"}}]}]}"),
+            new WidgetWithMissingProperty("richtext", 
+                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"richtext\",\"bodyContent\":{}}]}]}"),
+            new WidgetWithMissingProperty("richtext", 
+                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"richtext\"}]}]}"),
+            new WidgetWithMissingProperty("newsfeed", 
+                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"newsfeed\"}]}]}"),
+            new WidgetWithMissingProperty("newsfeed", 
+                "{\"slots\":[{\"slotType\":\"content\",\"widgets\":[{\"type\":\"newsfeed\",\"sectionTitle\":{\"en\":\"News\"}}]}]}")
         );
     }
 
@@ -272,73 +275,84 @@ class SerializationPropertyTest {
             .ofMaxLength(100);
     }
 
-    private LayoutDataDto createLayoutWithTextWidget() {
-        TextWidgetDto textWidget = new TextWidgetDto();
-        textWidget.setContent(Map.of("en", "<p>Sample text content</p>"));
+    private LayoutDataDto createLayoutWithHeroWidget() {
+        HeroWidgetDto heroWidget = new HeroWidgetDto();
+        heroWidget.setBadgeText(Map.of("en", "M&B Bannerlord Regiment", "uk", "Полк M&B Bannerlord"));
+        heroWidget.setTitleMain("Nr.31");
+        heroWidget.setTitleSub("Feldkanonenregiment");
+        heroWidget.setDescription(Map.of("en", "Join the elite artillery regiment", "uk", "Приєднуйтесь до елітного артилерійського полку"));
+        heroWidget.setCtaText(Map.of("en", "Join Now", "uk", "Приєднатися зараз"));
+        heroWidget.setCtaTargetId("how-to-join");
+        heroWidget.setBackgroundImageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
 
-        SlotDto slot = new SlotDto("content", List.of(textWidget));
+        SlotDto slot = new SlotDto("hero", List.of(heroWidget));
         return new LayoutDataDto(List.of(slot));
     }
 
-    private LayoutDataDto createLayoutWithImageWidget() {
-        ImageWidgetDto imageWidget = new ImageWidgetDto();
-        imageWidget.setUrl("https://example.com/image.jpg");
-        imageWidget.setAlt(Map.of("en", "Sample image"));
+    private LayoutDataDto createLayoutWithRichTextWidget() {
+        RichTextWidgetDto richTextWidget = new RichTextWidgetDto();
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode enContent = mapper.readTree("{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Sample text content\"}]}]}");
+            JsonNode ukContent = mapper.readTree("{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Зразок текстового вмісту\"}]}]}");
+            richTextWidget.setBodyContent(Map.of("en", enContent, "uk", ukContent));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to create test layout", e);
+        }
 
-        SlotDto slot = new SlotDto("hero", List.of(imageWidget));
+        SlotDto slot = new SlotDto("content", List.of(richTextWidget));
         return new LayoutDataDto(List.of(slot));
     }
 
-    private LayoutDataDto createLayoutWithVideoWidget() {
-        VideoWidgetDto videoWidget = new VideoWidgetDto();
-        videoWidget.setUrl("https://example.com/video.mp4");
+    private LayoutDataDto createLayoutWithNextEventWidget() {
+        NextEventWidgetDto nextEventWidget = new NextEventWidgetDto();
+        nextEventWidget.setTitleOverride(Map.of("en", "Upcoming Official Match", "uk", "Наступний офіційний матч"));
 
-        SlotDto slot = new SlotDto("content", List.of(videoWidget));
+        SlotDto slot = new SlotDto("content", List.of(nextEventWidget));
         return new LayoutDataDto(List.of(slot));
     }
 
-    private LayoutDataDto createLayoutWithEmbedWidget() {
-        EmbedWidgetDto embedWidget = new EmbedWidgetDto();
-        embedWidget.setEmbedCode(Map.of("en", "<iframe src='https://example.com'></iframe>"));
+    private LayoutDataDto createLayoutWithNewsFeedWidget() {
+        NewsFeedWidgetDto newsFeedWidget = new NewsFeedWidgetDto();
+        newsFeedWidget.setSectionTitle(Map.of("en", "Latest News", "uk", "Останні новини"));
+        newsFeedWidget.setItemCount(3);
+        newsFeedWidget.setTagFilter("announcements");
 
-        SlotDto slot = new SlotDto("content", List.of(embedWidget));
+        SlotDto slot = new SlotDto("content", List.of(newsFeedWidget));
         return new LayoutDataDto(List.of(slot));
     }
 
     private LayoutDataDto createLayoutWithMixedWidgets() {
-        TextWidgetDto textWidget = new TextWidgetDto();
-        textWidget.setContent(Map.of("en", "<h1>Title</h1>"));
+        NextEventWidgetDto nextEventWidget = new NextEventWidgetDto();
+        nextEventWidget.setTitleOverride(Map.of("en", "Next Event"));
 
-        ImageWidgetDto imageWidget = new ImageWidgetDto();
-        imageWidget.setUrl("https://example.com/banner.jpg");
-        imageWidget.setAlt(Map.of("en", "Banner"));
+        NewsFeedWidgetDto newsFeedWidget = new NewsFeedWidgetDto();
+        newsFeedWidget.setSectionTitle(Map.of("en", "News"));
+        newsFeedWidget.setItemCount(5);
 
-        VideoWidgetDto videoWidget = new VideoWidgetDto();
-        videoWidget.setUrl("https://example.com/intro.mp4");
-
-        SlotDto slot = new SlotDto("hero", List.of(textWidget, imageWidget, videoWidget));
+        SlotDto slot = new SlotDto("content", List.of(nextEventWidget, newsFeedWidget));
         return new LayoutDataDto(List.of(slot));
     }
 
     private LayoutDataDto createLayoutWithMultipleSlots() {
-        TextWidgetDto heroText = new TextWidgetDto();
-        heroText.setContent(Map.of("en", "<h1>Welcome</h1>"));
+        HeroWidgetDto heroWidget = new HeroWidgetDto();
+        heroWidget.setBadgeText(Map.of("en", "Welcome"));
+        heroWidget.setTitleMain("Nr.31");
+        heroWidget.setTitleSub("FKR");
+        heroWidget.setDescription(Map.of("en", "Description"));
+        heroWidget.setCtaText(Map.of("en", "Join"));
+        heroWidget.setCtaTargetId("join");
+        heroWidget.setBackgroundImageId(UUID.fromString("550e8400-e29b-41d4-a716-446655440001"));
 
-        ImageWidgetDto heroImage = new ImageWidgetDto();
-        heroImage.setUrl("https://example.com/hero.jpg");
+        NextEventWidgetDto nextEventWidget = new NextEventWidgetDto();
+        
+        NewsFeedWidgetDto newsFeedWidget = new NewsFeedWidgetDto();
+        newsFeedWidget.setSectionTitle(Map.of("en", "News"));
+        newsFeedWidget.setItemCount(3);
 
-        TextWidgetDto sidebarText = new TextWidgetDto();
-        sidebarText.setContent(Map.of("en", "<p>Sidebar content</p>"));
-
-        VideoWidgetDto contentVideo = new VideoWidgetDto();
-        contentVideo.setUrl("https://example.com/content.mp4");
-
-        EmbedWidgetDto contentEmbed = new EmbedWidgetDto();
-        contentEmbed.setEmbedCode(Map.of("en", "<iframe src='https://example.com/embed'></iframe>"));
-
-        SlotDto heroSlot = new SlotDto("hero", List.of(heroText, heroImage));
-        SlotDto sidebarSlot = new SlotDto("sidebar", List.of(sidebarText));
-        SlotDto contentSlot = new SlotDto("content", List.of(contentVideo, contentEmbed));
+        SlotDto heroSlot = new SlotDto("hero", List.of(heroWidget));
+        SlotDto sidebarSlot = new SlotDto("sidebar", List.of(nextEventWidget));
+        SlotDto contentSlot = new SlotDto("content", List.of(newsFeedWidget));
 
         return new LayoutDataDto(List.of(heroSlot, sidebarSlot, contentSlot));
     }

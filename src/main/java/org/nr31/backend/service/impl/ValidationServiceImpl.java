@@ -4,14 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.AppConfigDto;
-import org.nr31.backend.dto.cms.EmbedWidgetDto;
-import org.nr31.backend.dto.cms.ImageWidgetDto;
+import org.nr31.backend.dto.cms.HeroWidgetDto;
 import org.nr31.backend.dto.cms.LayoutDataDto;
+import org.nr31.backend.dto.cms.NewsFeedWidgetDto;
+import org.nr31.backend.dto.cms.NextEventWidgetDto;
+import org.nr31.backend.dto.cms.RichTextWidgetDto;
 import org.nr31.backend.dto.cms.SlotDto;
 import org.nr31.backend.dto.cms.SlotRestrictionsDto;
-import org.nr31.backend.dto.cms.TextWidgetDto;
 import org.nr31.backend.dto.cms.UpdateSlotRestrictionsRequest;
-import org.nr31.backend.dto.cms.VideoWidgetDto;
 import org.nr31.backend.dto.cms.WidgetDto;
 import org.nr31.backend.exception.AppConfigValidationException;
 import org.nr31.backend.exception.ElementNotFoundException;
@@ -157,14 +157,14 @@ public class ValidationServiceImpl implements ValidationService {
     }
 
     private String getWidgetType(WidgetDto widget) {
-        if (widget instanceof TextWidgetDto) {
-            return "text";
-        } else if (widget instanceof ImageWidgetDto) {
-            return "image";
-        } else if (widget instanceof VideoWidgetDto) {
-            return "video";
-        } else if (widget instanceof EmbedWidgetDto) {
-            return "embed";
+        if (widget instanceof HeroWidgetDto) {
+            return "hero";
+        } else if (widget instanceof RichTextWidgetDto) {
+            return "richtext";
+        } else if (widget instanceof NextEventWidgetDto) {
+            return "nextevent";
+        } else if (widget instanceof NewsFeedWidgetDto) {
+            return "newsfeed";
         }
         throw new IllegalArgumentException("Unknown widget type: " + widget.getClass().getName());
     }
