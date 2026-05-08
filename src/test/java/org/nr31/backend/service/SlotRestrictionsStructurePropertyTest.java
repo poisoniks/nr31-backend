@@ -1,6 +1,6 @@
 package org.nr31.backend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import net.jqwik.api.*;
 import org.nr31.backend.dto.cms.UpdateSlotRestrictionsRequest;
 import org.nr31.backend.exception.AppConfigValidationException;

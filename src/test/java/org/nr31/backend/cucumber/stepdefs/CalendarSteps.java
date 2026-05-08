@@ -8,7 +8,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.cucumber.datatable.DataTable;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -75,7 +75,7 @@ public class CalendarSteps extends CommonStepDefs {
     }
 
     @Then("the response body should contain {string} with value {string}")
-    public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) throws Exception {
+    public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
         String[] pathParts = jsonPath.split("\\.");
@@ -88,11 +88,11 @@ public class CalendarSteps extends CommonStepDefs {
             }
             assertNotNull(current, "Path " + jsonPath + " not found in " + response.body());
         }
-        assertEquals(resolveVariables(expectedValue), current.asText());
+        assertEquals(resolveVariables(expectedValue), current.asString());
     }
 
     @Then("the response body should indicate {string} is true")
-    public void the_response_body_should_indicate_is_true(String fieldName) throws Exception {
+    public void the_response_body_should_indicate_is_true(String fieldName) {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
         assertTrue(root.has(fieldName));
@@ -193,7 +193,7 @@ public class CalendarSteps extends CommonStepDefs {
         JsonNode root = objectMapper.readTree(response.body());
         assertTrue(root.isArray());
         for (JsonNode node : root) {
-            String actId = node.get("id").asText();
+            String actId = node.get("id").asString();
             String actSeriesId = actId.split("_")[0];
             assertNotEquals(seriesId, actSeriesId, "Found event that should have been deleted: " + actId);
         }
@@ -208,8 +208,8 @@ public class CalendarSteps extends CommonStepDefs {
 
         boolean timeAdjusted = false;
         for (JsonNode node : root) {
-            if (node.get("title").get("en").asText().equals("Timezone check event")) {
-                String localStart = node.get("start").asText();
+            if (node.get("title").get("en").asString().equals("Timezone check event")) {
+                String localStart = node.get("start").asString();
                 // UTC: 10:00 -> Kyiv: 12:00
                 assertTrue(localStart.contains("12:00"), "Expected adjusted time to be 12:00 but was " + localStart);
                 timeAdjusted = true;
@@ -219,14 +219,14 @@ public class CalendarSteps extends CommonStepDefs {
     }
 
     @Then("the list should contain an event with title {string}")
-    public void the_list_should_contain_an_event_with_title(String expectedTitle) throws Exception {
+    public void the_list_should_contain_an_event_with_title(String expectedTitle) {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
         assertTrue(root.isArray());
 
         boolean found = false;
         for (JsonNode node : root) {
-            if (expectedTitle.equals(node.get("title").get("en").asText())) {
+            if (expectedTitle.equals(node.get("title").get("en").asString())) {
                 found = true;
                 break;
             }
@@ -235,10 +235,10 @@ public class CalendarSteps extends CommonStepDefs {
     }
 
     @Then("the response body should match the new start time {string}")
-    public void the_response_body_should_match_the_new_start_time(String expectedTime) throws Exception {
+    public void the_response_body_should_match_the_new_start_time(String expectedTime) {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
-        assertEquals(expectedTime, root.get("start").asText());
+        assertEquals(expectedTime, root.get("start").asString());
     }
 
     @When("I retrieve the nearest event to {string}")
@@ -276,20 +276,20 @@ public class CalendarSteps extends CommonStepDefs {
         JsonNode root = objectMapper.readTree(response.body());
         assertTrue(root.isArray());
         for (JsonNode node : root) {
-            assertEquals(expectedTitle, node.get("title").get("en").asText());
+            assertEquals(expectedTitle, node.get("title").get("en").asString());
         }
     }
 
     @And("I save the created event {string} as {string}")
-    public void iSaveTheCreatedEventAs(String field, String varName) throws Exception {
+    public void iSaveTheCreatedEventAs(String field, String varName) {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
-        contextHelper.addValue(varName, root.get(field).asText());
+        contextHelper.addValue(varName, root.get(field).asString());
     }
 
     @And("the response list should contain exactly the following state for the series:")
     public void theResponseListShouldContainExactlyTheFollowingStateForTheSeries(
-            io.cucumber.datatable.DataTable dataTable) throws Exception {
+            io.cucumber.datatable.DataTable dataTable) {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
 
@@ -310,9 +310,9 @@ public class CalendarSteps extends CommonStepDefs {
         for (Map<String, String> expectedRow : expectedPresentList) {
             boolean found = false;
             for (JsonNode node : activeNodes) {
-                String title = node.get("title").get("en").asText();
-                String start = node.get("start").asText();
-                String server = node.get("serverName").asText();
+                String title = node.get("title").get("en").asString();
+                String start = node.get("start").asString();
+                String server = node.get("serverName").asString();
 
                 if (title.equals(expectedRow.get("Expected Title")) &&
                         start.equals(expectedRow.get("Expected Start Time (Kyiv Time)")) &&

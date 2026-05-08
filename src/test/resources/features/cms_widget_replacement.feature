@@ -88,7 +88,7 @@ Feature: CMS Widget Replacement
     And a page exists with slug "restricted" and title "Restricted Page"
     And the page has a draft revision with layout data
     And slot restrictions allow only "hero" in "hero" slots
-    When I update the draft for page "restricted" with version 1 and a RichTextWidget in a "hero" slot
+    When I update the draft for page "restricted" with version 1 and a "richtext" widget in a "hero" slot
     Then the response status code should be 400
     And the response body should contain error message mentioning "richtext" and "hero"
 

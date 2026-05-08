@@ -1,7 +1,7 @@
 package org.nr31.backend.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import net.jqwik.api.*;
 import org.nr31.backend.dto.cms.*;
 import org.nr31.backend.exception.ConflictException;
@@ -120,7 +120,10 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        JsonNode layoutJson = objectMapper.valueToTree(layoutData);
+        com.fasterxml.jackson.databind.JsonNode layoutJson;
+        try {
+            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
+        } catch(Exception e) { throw new RuntimeException(e); }
 
         PageRevision draftRevision = PageRevision.builder()
             .id(1L)
@@ -187,7 +190,10 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        JsonNode layoutJson = objectMapper.valueToTree(layoutData);
+        com.fasterxml.jackson.databind.JsonNode layoutJson;
+        try {
+            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
+        } catch(Exception e) { throw new RuntimeException(e); }
 
         PageRevision draftRevision = PageRevision.builder()
             .id(1L)
@@ -243,7 +249,10 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        JsonNode layoutJson = objectMapper.valueToTree(layoutData);
+        com.fasterxml.jackson.databind.JsonNode layoutJson;
+        try {
+            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
+        } catch(Exception e) { throw new RuntimeException(e); }
 
         PageRevision publishedRevision = PageRevision.builder()
             .id(1L)
@@ -333,7 +342,10 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        JsonNode layoutJson = objectMapper.valueToTree(layoutData);
+        com.fasterxml.jackson.databind.JsonNode layoutJson;
+        try {
+            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
+        } catch(Exception e) { throw new RuntimeException(e); }
 
         PageRevision publishedRevision = PageRevision.builder()
             .id(1L)
@@ -405,7 +417,10 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        JsonNode layoutJson = objectMapper.valueToTree(layoutData);
+        com.fasterxml.jackson.databind.JsonNode layoutJson;
+        try {
+            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
+        } catch(Exception e) { throw new RuntimeException(e); }
 
         PageRevision draftRevision = PageRevision.builder()
             .id(1L)
@@ -465,7 +480,10 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        JsonNode layoutJson = objectMapper.valueToTree(layoutData);
+        com.fasterxml.jackson.databind.JsonNode layoutJson;
+        try {
+            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
+        } catch(Exception e) { throw new RuntimeException(e); }
 
         PageRevision draftRevision = PageRevision.builder()
             .id(1L)
@@ -526,7 +544,10 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        JsonNode layoutJson = objectMapper.valueToTree(layoutData);
+        com.fasterxml.jackson.databind.JsonNode layoutJson;
+        try {
+            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
+        } catch(Exception e) { throw new RuntimeException(e); }
 
         PageRevision draftRevision = PageRevision.builder()
             .id(1L)

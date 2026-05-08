@@ -1,7 +1,7 @@
 package org.nr31.backend.integration.discord;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -186,7 +186,7 @@ public class CalendarUpdateDiscordListener extends UpdatedListenerAdapter {
             JsonNode configNode = objectMapper.readTree(config.getConfigValue());
             JsonNode valueNode = configNode.get(GUILD_ID_PROPERTY_KEY);
             if (valueNode != null && !valueNode.isNull()) {
-                return valueNode.asText();
+                return valueNode.asString();
             }
             return null;
         } catch (ElementNotFoundException e) {

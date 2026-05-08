@@ -1,6 +1,6 @@
 package org.nr31.backend.cucumber.stepdefs;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
@@ -31,7 +31,7 @@ public class PublicSteps extends CommonStepDefs {
         JsonNode contentNode = root.isArray() ? root : root.get("content");
         boolean found = false;
         for (JsonNode node : contentNode) {
-            if (expectedCode.equals(node.get("code").asText())) {
+            if (expectedCode.equals(node.get("code").asString())) {
                 found = true;
                 break;
             }

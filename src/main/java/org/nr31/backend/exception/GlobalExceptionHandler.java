@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.nr31.backend.dto.ErrorCode;
 import org.nr31.backend.dto.ErrorResponse;
 import org.nr31.backend.dto.ValidationErrorResponse;
+import org.nr31.backend.dto.cms.WidgetDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import tools.jackson.databind.exc.InvalidTypeIdException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -115,6 +117,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        if (e.getCause() instanceof InvalidTypeIdException) {
+            return handleInvalidTypeIdException((InvalidTypeIdException) e.getCause());
+        }
         String message = "Invalid request body";
         log.debug(message, e);
         return ErrorResponse.builder()
@@ -296,6 +301,31 @@ public class GlobalExceptionHandler {
                 .message("File size exceeds the maximum allowed limit of 5MB")
                 .code(ErrorCode.FILE_TOO_LARGE)
                 .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @ExceptionHandler(InvalidTypeIdException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleInvalidTypeIdException(InvalidTypeIdException e) {
+        String message;
+        ErrorCode code;
+        Map<String, Object> metadata = new HashMap<>();
+
+        if (e.getBaseType().getRawClass().equals(WidgetDto.class)) {
+            message = String.format("Widget type '%s' does not exist", e.getTypeId());
+            code = ErrorCode.INVALID_WIDGET_TYPE;
+            metadata.put("type", e.getTypeId());
+        } else {
+            message = "Invalid cms component";
+            code = ErrorCode.VALIDATION_ERROR;
+        }
+        log.debug(message, e);
+
+        return ErrorResponse.builder()
+                .message(message)
+                .code(code)
+                .timestamp(LocalDateTime.now())
+                .metadata(metadata)
                 .build();
     }
 

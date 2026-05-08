@@ -1,8 +1,8 @@
 package org.nr31.backend.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import net.jqwik.api.*;
 import org.nr31.backend.dto.cms.*;
 import org.nr31.backend.model.Page;
@@ -33,7 +33,7 @@ class SerializationPropertyTest {
     @Property(tries = 100)
     @Label("Property 7: Layout Data Round-Trip Preservation")
     void layoutDataRoundTripPreservation(@ForAll("validLayoutData") LayoutDataDto original) 
-        throws JsonProcessingException {
+        throws JacksonException {
         
         // Serialize to JSON
         String json = objectMapper.writeValueAsString(original);
@@ -165,7 +165,7 @@ class SerializationPropertyTest {
                     break;
             }
             
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             // If Jackson rejects it, that's also acceptable
             assertThat(e.getMessage())
                 .as("Error should indicate missing or invalid property")
@@ -296,7 +296,7 @@ class SerializationPropertyTest {
             JsonNode enContent = mapper.readTree("{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Sample text content\"}]}]}");
             JsonNode ukContent = mapper.readTree("{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Зразок текстового вмісту\"}]}]}");
             richTextWidget.setBodyContent(Map.of("en", enContent, "uk", ukContent));
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException("Failed to create test layout", e);
         }
 

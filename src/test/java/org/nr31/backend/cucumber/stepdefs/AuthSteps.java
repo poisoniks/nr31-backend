@@ -1,6 +1,6 @@
 package org.nr31.backend.cucumber.stepdefs;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
@@ -18,7 +18,7 @@ public class AuthSteps extends CommonStepDefs {
 
         if (response.statusCode() == 200) {
             JsonNode root = objectMapper.readTree(response.body());
-            String token = root.get("accessToken").asText();
+            String token = root.get("accessToken").asString();
             contextHelper.addValue("jwt_token", token);
         }
     }
@@ -43,6 +43,6 @@ public class AuthSteps extends CommonStepDefs {
     public void i_save_the_response_value_as(String field, String varName) throws Exception {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
-        contextHelper.addValue(varName, root.get(field).asText());
+        contextHelper.addValue(varName, root.get(field).asString());
     }
 }

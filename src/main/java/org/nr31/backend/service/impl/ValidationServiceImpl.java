@@ -1,7 +1,7 @@
 package org.nr31.backend.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.AppConfigDto;
 import org.nr31.backend.dto.cms.HeroWidgetDto;
@@ -93,7 +93,7 @@ public class ValidationServiceImpl implements ValidationService {
             return new SlotRestrictionsDto(restrictions);
         } catch (ElementNotFoundException e) {
             return new SlotRestrictionsDto(Collections.emptyMap());
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new AppConfigValidationException(
                 "Failed to parse slot restrictions configuration",
                 Map.of("configValue", "Invalid JSON format")
@@ -149,7 +149,7 @@ public class ValidationServiceImpl implements ValidationService {
                 .build();
 
             appConfigService.updateConfig(SLOT_RESTRICTIONS_CONFIG_KEY, configDto);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new AppConfigValidationException(
                 "Failed to serialize slot restrictions",
                 Map.of("restrictions", "Serialization error")

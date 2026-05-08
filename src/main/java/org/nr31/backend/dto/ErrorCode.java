@@ -36,6 +36,9 @@ public enum ErrorCode {
     CONFLICT,
     FOLDER_NOT_EMPTY,
     FEATURE_DISABLED,
+
+    //CMS
+    INVALID_WIDGET_TYPE,
     
     // Server errors
     INTERNAL_SERVER_ERROR

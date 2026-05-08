@@ -1,8 +1,9 @@
 package org.nr31.backend.cucumber.stepdefs;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.springframework.cache.CacheManager;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -12,13 +13,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.net.http.HttpResponse;
 import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CmsSteps extends CommonStepDefs {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     @Given("a page exists with slug {string} and title {string}")
     public void a_page_exists_with_slug_and_title(String slug, String title) {
@@ -176,7 +179,7 @@ public class CmsSteps extends CommonStepDefs {
         contextHelper.addValue("response", response);
     }
 
-    @When("I update the draft for page {string} with version {int} and a text widget missing the {string} property")
+    @When("I update the draft for page {string} with version {int} and a richtext widget missing the {string} property")
     public void i_update_the_draft_with_missing_property(String slug, Integer version, String property) throws Exception {
         String layoutData = createLayoutDataWithMissingProperty();
         String body = String.format("{\"version\": %d, \"layoutData\": %s}", version, layoutData);
@@ -222,7 +225,7 @@ public class CmsSteps extends CommonStepDefs {
         assertNotNull(metadata, "metadata field is missing");
         JsonNode fieldNode = metadata.get(field);
         assertNotNull(fieldNode, "metadata." + field + " is missing");
-        assertEquals(expectedValue, fieldNode.asText());
+        assertEquals(expectedValue, fieldNode.asString());
     }
 
     @And("the response body should contain nested field {string} with value {string}")
@@ -239,7 +242,7 @@ public class CmsSteps extends CommonStepDefs {
             }
             assertNotNull(current, "Path " + jsonPath + " not found in " + response.body());
         }
-        assertEquals(expectedValue, current.asText());
+        assertEquals(expectedValue, current.asString());
     }
 
     @And("the response body should contain slot restriction for {string} with widgets {string}")
@@ -318,15 +321,15 @@ public class CmsSteps extends CommonStepDefs {
             ArrayNode slots = objectMapper.createArrayNode();
 
             ObjectNode slot = objectMapper.createObjectNode();
-            slot.put("slotType", "hero");
+            slot.put("slotType", "content");
 
             ArrayNode widgets = objectMapper.createArrayNode();
             ObjectNode widget = objectMapper.createObjectNode();
-            widget.put("type", "text");
+            widget.put("type", "richtext");
 
-            ObjectNode content = objectMapper.createObjectNode();
-            content.put("en", "<h1>Test Content</h1>");
-            widget.set("content", content);
+            ObjectNode bodyContent = objectMapper.createObjectNode();
+            bodyContent.set("en", objectMapper.readTree("{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Test Content\"}]}]}"));
+            widget.set("bodyContent", bodyContent);
 
             widgets.add(widget);
 
@@ -354,24 +357,36 @@ public class CmsSteps extends CommonStepDefs {
             widget.put("type", widgetType);
 
             switch (widgetType) {
-                case "text":
-                    ObjectNode textContent = objectMapper.createObjectNode();
-                    textContent.put("en", "<p>Test content</p>");
-                    widget.set("content", textContent);
+                case "richtext":
+                    ObjectNode bodyContent = objectMapper.createObjectNode();
+                    bodyContent.set("en", objectMapper.readTree("{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Test content\"}]}]}"));
+                    widget.set("bodyContent", bodyContent);
                     break;
-                case "image":
-                    widget.put("url", "https://example.com/image.jpg");
-                    ObjectNode imageAlt = objectMapper.createObjectNode();
-                    imageAlt.put("en", "Test image");
-                    widget.set("alt", imageAlt);
+                case "hero":
+                    ObjectNode badgeText = objectMapper.createObjectNode();
+                    badgeText.put("en", "Test badge");
+                    widget.set("badgeText", badgeText);
+                    widget.put("titleMain", "Nr.31");
+                    widget.put("titleSub", "FKR");
+                    ObjectNode description = objectMapper.createObjectNode();
+                    description.put("en", "Test description");
+                    widget.set("description", description);
+                    ObjectNode ctaText = objectMapper.createObjectNode();
+                    ctaText.put("en", "Join");
+                    widget.set("ctaText", ctaText);
+                    widget.put("ctaTargetId", "test-target");
+                    widget.put("backgroundImageId", "550e8400-e29b-41d4-a716-446655440000");
                     break;
-                case "video":
-                    widget.put("url", "https://example.com/video.mp4");
+                case "youtube":
+                    widget.put("channelId", "UCbU41G2hhiwdn-gFFRqZN4w");
                     break;
-                case "embed":
-                    ObjectNode embedCode = objectMapper.createObjectNode();
-                    embedCode.put("en", "<iframe></iframe>");
-                    widget.set("embedCode", embedCode);
+                case "newsfeed":
+                    ObjectNode sectionTitle = objectMapper.createObjectNode();
+                    sectionTitle.put("en", "Latest News");
+                    widget.set("sectionTitle", sectionTitle);
+                    widget.put("itemCount", 3);
+                    break;
+                case "nextevent":
                     break;
             }
 
@@ -397,8 +412,8 @@ public class CmsSteps extends CommonStepDefs {
 
             ArrayNode widgets = objectMapper.createArrayNode();
             ObjectNode widget = objectMapper.createObjectNode();
-            widget.put("type", "text");
-            // Intentionally missing "content" property
+            widget.put("type", "richtext");
+            // Intentionally missing "bodyContent" property
 
             widgets.add(widget);
             slot.set("widgets", widgets);
@@ -492,8 +507,8 @@ public class CmsSteps extends CommonStepDefs {
     @And("the AppConfig key {string} is set to {int}")
     public void the_appconfig_key_is_set_to(String key, Integer value) {
         jdbcTemplate.update(
-                "INSERT INTO app_config (config_key, config_value, description) " +
-                        "VALUES (?, ?, 'Test config') " +
+                "INSERT INTO app_config (config_key, config_value) " +
+                        "VALUES (?, ?::jsonb) " +
                         "ON CONFLICT (config_key) DO UPDATE SET config_value = EXCLUDED.config_value",
                 key, value.toString());
     }
@@ -505,10 +520,13 @@ public class CmsSteps extends CommonStepDefs {
         jdbcTemplate.update(
                 "UPDATE app_config SET config_value = ?::jsonb WHERE config_key = 'cms_slot_restrictions'",
                 restrictions);
+        if (cacheManager.getCache("appConfig") != null) {
+            cacheManager.getCache("appConfig").clear();
+        }
     }
 
     @And("the draft should contain a widget of type {string}")
-    public void the_draft_should_contain_a_widget_of_type(String widgetType) throws Exception {
+    public void the_draft_should_contain_a_widget_of_type(String widgetType) {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
         JsonNode layoutData = root.get("layoutData");
@@ -524,7 +542,7 @@ public class CmsSteps extends CommonStepDefs {
             if (widgets != null && widgets.isArray()) {
                 for (JsonNode widget : widgets) {
                     JsonNode typeNode = widget.get("type");
-                    if (typeNode != null && typeNode.asText().equals(widgetType)) {
+                    if (typeNode != null && typeNode.asString().equals(widgetType)) {
                         found = true;
                         break;
                     }

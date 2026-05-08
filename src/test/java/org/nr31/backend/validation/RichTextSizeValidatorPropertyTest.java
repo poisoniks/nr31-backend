@@ -1,7 +1,7 @@
 package org.nr31.backend.validation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintValidatorContext;
 import net.jqwik.api.*;
 import org.nr31.backend.dto.AppConfigDto;
@@ -215,7 +215,7 @@ class RichTextSizeValidatorPropertyTest {
             sb.append(sample);
         }
         
-        return sb.substring(0, Math.min(targetSize, sb.length()));
+        return sb.substring(0, targetSize);
     }
 
     private String escapeJson(String text) {

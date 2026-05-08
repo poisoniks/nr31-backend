@@ -1,6 +1,6 @@
 package org.nr31.backend.validation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintValidatorContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +11,7 @@ import org.nr31.backend.dto.AppConfigDto;
 import org.nr31.backend.service.AppConfigService;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -96,28 +97,24 @@ class NewsFeedItemCountValidatorTest {
         when(appConfigService.getConfig("cms.newsfeed.max_items")).thenReturn(config);
 
         // Test that it throws RuntimeException
-        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () ->
+        assertThrows(RuntimeException.class, () ->
                 validator.isValid(5, context),
                 "Unable to parse cms.newsfeed.max_items config");
     }
 
     @Test
-    void shouldReturnFalseWhenConfigValueIsNonNumericString() {
-        // Setup: config value is valid JSON string but not a number (Jackson's asInt() returns 0 for non-numeric strings)
+    void shouldThrowExceptionWhenConfigValueIsNonNumericString() {
+        // Setup: config value is valid JSON string but not a number
         AppConfigDto config = AppConfigDto.builder()
                 .name("cms.newsfeed.max_items")
                 .configValue("\"not-a-number\"")
                 .build();
         when(appConfigService.getConfig("cms.newsfeed.max_items")).thenReturn(config);
 
-        when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
-
-        // Test with itemCount - will fail because asInt() on non-numeric string returns 0
-        boolean result = validator.isValid(8, context);
-        assertThat(result).isFalse();
-        verify(context).disableDefaultConstraintViolation();
-        verify(context).buildConstraintViolationWithTemplate(
-                "Item count exceeds maximum allowed of 0 (actual: 8)");
+        // Test that it throws RuntimeException
+        assertThrows(RuntimeException.class, () ->
+                validator.isValid(8, context),
+                "Unable to parse cms.newsfeed.max_items config");
     }
 
     @Test
@@ -126,7 +123,7 @@ class NewsFeedItemCountValidatorTest {
         when(appConfigService.getConfig("cms.newsfeed.max_items")).thenReturn(null);
 
         // Test that it throws NullPointerException when accessing config.getConfigValue()
-        org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(RuntimeException.class, () -> {
             validator.isValid(5, context);
         });
     }

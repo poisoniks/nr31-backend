@@ -1,6 +1,6 @@
 package org.nr31.backend.cucumber.stepdefs;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -140,7 +140,7 @@ public class FilesUploadSteps extends CommonStepDefs {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
         assertNotNull(root.get(field), "Field '" + field + "' not found in: " + response.body());
-        String value = root.get(field).asText();
+        String value = root.get(field).asString();
         assertTrue(value.toLowerCase().contains(substring.toLowerCase()),
                 "Expected field '" + field + "' to contain '" + substring + "' but was: " + value);
     }

@@ -26,10 +26,10 @@ Feature: CMS Page Management
     Given I log in with user "admin" and password "testpass"
     And a page exists with slug "restricted-page" and title "Restricted Page"
     And the page has a draft revision with layout data
-    And slot restrictions allow only "text" and "image" in "sidebar" slots
-    When I update the draft for page "restricted-page" with version 1 and a "video" widget in a "sidebar" slot
+    And slot restrictions allow only "richtext" and "hero" in "sidebar" slots
+    When I update the draft for page "restricted-page" with version 1 and a "youtube" widget in a "sidebar" slot
     Then the response status code should be 400
-    And the response body should contain error message mentioning "video" and "sidebar"
+    And the response body should contain error message mentioning "youtube" and "sidebar"
 
   Scenario: Retrieve published page as public user
     Given a page exists with slug "public-page" and title "Public Page"
@@ -64,12 +64,12 @@ Feature: CMS Page Management
   Scenario: Update slot restrictions
     Given I log in with user "admin" and password "testpass"
     When I update slot restrictions with the following configuration:
-      | hero    | text,image,video |
-      | sidebar | text,image       |
-      | content | text,image,video,embed |
+      | hero    | richtext,hero,youtube |
+      | sidebar | richtext,hero       |
+      | content | richtext,hero,youtube,newsfeed |
     Then the response status code should be 200
-    And the response body should contain slot restriction for "hero" with widgets "text,image,video"
-    And the response body should contain slot restriction for "sidebar" with widgets "text,image"
+    And the response body should contain slot restriction for "hero" with widgets "richtext,hero,youtube"
+    And the response body should contain slot restriction for "sidebar" with widgets "richtext,hero"
 
   Scenario: Draft creation from published
     Given I log in with user "admin" and password "testpass"
@@ -85,9 +85,9 @@ Feature: CMS Page Management
     Given I log in with user "admin" and password "testpass"
     And a page exists with slug "invalid-page" and title "Invalid Page"
     And the page has a draft revision with layout data
-    When I update the draft for page "invalid-page" with version 1 and a text widget missing the "content" property
+    When I update the draft for page "invalid-page" with version 1 and a richtext widget missing the "bodyContent" property
     Then the response status code should be 400
-    And the response body should contain validation error for "content"
+    And the response body should contain validation error for "bodyContent"
 
   Scenario: Retrieve draft page as admin
     Given I log in with user "admin" and password "testpass"

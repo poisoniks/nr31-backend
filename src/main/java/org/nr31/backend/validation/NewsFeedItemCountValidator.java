@@ -1,8 +1,7 @@
 package org.nr31.backend.validation;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +27,12 @@ public class NewsFeedItemCountValidator implements ConstraintValidator<ValidNews
 
         try {
             JsonNode configValueNode = objectMapper.readTree(config.getConfigValue());
-            maxItems = configValueNode.asInt();
-        } catch (JsonProcessingException e) {
+            if (configValueNode.isNumber()) {
+                maxItems = configValueNode.asInt();
+            } else {
+                throw new IllegalArgumentException("Config is not a number");
+            }
+        } catch (Exception e) {
             throw new RuntimeException("Unable to parse cms.newsfeed.max_items config", e);
         }
 

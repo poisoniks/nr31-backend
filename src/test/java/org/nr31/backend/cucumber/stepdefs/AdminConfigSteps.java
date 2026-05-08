@@ -3,13 +3,14 @@ package org.nr31.backend.cucumber.stepdefs;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.When;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import java.net.http.HttpResponse;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -63,7 +64,7 @@ public class AdminConfigSteps extends CommonStepDefs {
         boolean found = false;
         for (JsonNode node : contentNode) {
             JsonNode nameNode = node.get("name");
-            if (nameNode != null && nameNode.asText().equals(configName)) {
+            if (nameNode != null && nameNode.asString().equals(configName)) {
                 found = true;
                 break;
             }
@@ -82,7 +83,7 @@ public class AdminConfigSteps extends CommonStepDefs {
     public void the_updated_config_value_should_be(String expectedValue) throws Exception {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
-        assertEquals(expectedValue, root.get("configValue").asText());
+        assertEquals(expectedValue, root.get("configValue").asString());
     }
 
     @When("I assign permission {string} to role {string}")
@@ -159,8 +160,8 @@ public class AdminConfigSteps extends CommonStepDefs {
         Map<String, String> expectedLocalizedName = dataTable.asMap(String.class, String.class);
         for (Map.Entry<String, String> entry : expectedLocalizedName.entrySet()) {
             JsonNode val = localizedNameNode.get(entry.getKey());
-            assertTrue(val != null, "Missing localized name for key: " + entry.getKey());
-            assertEquals(entry.getValue(), val.asText());
+            assertNotNull(val, "Missing localized name for key: " + entry.getKey());
+            assertEquals(entry.getValue(), val.asString());
         }
     }
 
@@ -191,8 +192,8 @@ public class AdminConfigSteps extends CommonStepDefs {
         Map<String, String> expectedDescription = dataTable.asMap(String.class, String.class);
         for (Map.Entry<String, String> entry : expectedDescription.entrySet()) {
             JsonNode val = descriptionNode.get(entry.getKey());
-            assertTrue(val != null, "Missing description for key: " + entry.getKey());
-            assertEquals(entry.getValue(), val.asText());
+            assertNotNull(val, "Missing description for key: " + entry.getKey());
+            assertEquals(entry.getValue(), val.asString());
         }
     }
 
@@ -218,7 +219,7 @@ public class AdminConfigSteps extends CommonStepDefs {
         boolean found = false;
         for (JsonNode node : contentNode) {
             JsonNode usernameNode = node.get("username");
-            if (usernameNode != null && usernameNode.asText().equals(expectedUsername)) {
+            if (usernameNode != null && usernameNode.asString().equals(expectedUsername)) {
                 found = true;
                 break;
             }
@@ -260,7 +261,7 @@ public class AdminConfigSteps extends CommonStepDefs {
         boolean found = false;
         for (JsonNode node : permissionsNode) {
             JsonNode nameNode = node.get("name");
-            if (nameNode != null && nameNode.asText().equals(expectedPermissionName)) {
+            if (nameNode != null && nameNode.asString().equals(expectedPermissionName)) {
                 found = true;
                 break;
             }

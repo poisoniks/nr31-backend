@@ -1,8 +1,8 @@
 package org.nr31.backend.validation;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +32,7 @@ public class RichTextSizeValidator implements ConstraintValidator<ValidRichTextS
         try {
             JsonNode configValueNode = objectMapper.readTree(config.getConfigValue());
             maxSizeBytes = configValueNode.asLong();
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             // If config is invalid, use default of 1MB
             maxSizeBytes = 1048576L;
         }
@@ -54,7 +54,7 @@ public class RichTextSizeValidator implements ConstraintValidator<ValidRichTextS
                     ).addConstraintViolation();
                     return false;
                 }
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 context.disableDefaultConstraintViolation();
                 context.buildConstraintViolationWithTemplate(
                     String.format("Failed to serialize rich text content for locale '%s'", locale)

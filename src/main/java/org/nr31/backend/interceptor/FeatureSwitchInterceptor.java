@@ -1,7 +1,7 @@
 package org.nr31.backend.interceptor;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -49,13 +49,13 @@ public class FeatureSwitchInterceptor implements HandlerInterceptor {
             
             if (configNode.isArray()) {
                 for (JsonNode element : configNode) {
-                    if (element.has("name") && featureName.equals(element.get("name").asText())) {
+                    if (element.has("name") && featureName.equals(element.get("name").asString())) {
                         JsonNode enabledNode = element.get("enabled");
                         if (enabledNode != null) {
                             if (enabledNode.isBoolean()) {
                                 return enabledNode.asBoolean();
-                            } else if (enabledNode.isTextual()) {
-                                return Boolean.parseBoolean(enabledNode.asText());
+                            } else if (enabledNode.isString()) {
+                                return Boolean.parseBoolean(enabledNode.asString());
                             }
                         }
                     }

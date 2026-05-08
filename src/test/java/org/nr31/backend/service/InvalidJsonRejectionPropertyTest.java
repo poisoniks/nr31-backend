@@ -1,6 +1,6 @@
 package org.nr31.backend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import net.jqwik.api.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.nr31.backend.dto.cms.LayoutDataDto;
@@ -27,7 +27,7 @@ class InvalidJsonRejectionPropertyTest {
         // When/Then: Attempting to deserialize malformed JSON should throw exception
         assertThatThrownBy(() -> objectMapper.readValue(malformedJson, LayoutDataDto.class))
             .satisfies(exception -> {
-                // Should throw JsonProcessingException or its subclasses
+                // Should throw JacksonException or its subclasses
                 // Spring will wrap this in HttpMessageNotReadableException
                 assertThat(exception)
                     .as("Malformed JSON should cause deserialization exception")

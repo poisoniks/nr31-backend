@@ -1,8 +1,8 @@
 package org.nr31.backend.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import net.jqwik.api.*;
 import org.nr31.backend.dto.cms.*;
 
@@ -23,7 +23,7 @@ class WidgetSerializationPropertyTest {
     @Property(tries = 100)
     @Label("Widget Type Preservation - HeroWidget")
     void heroWidgetTypePreservation(@ForAll("heroWidgets") HeroWidgetDto widget) 
-        throws JsonProcessingException {
+        throws JacksonException {
         
         // Serialize to JSON
         String json = objectMapper.writeValueAsString(widget);
@@ -49,7 +49,7 @@ class WidgetSerializationPropertyTest {
     @Property(tries = 100)
     @Label("Widget Type Preservation - RichTextWidget")
     void richTextWidgetTypePreservation(@ForAll("richTextWidgets") RichTextWidgetDto widget) 
-        throws JsonProcessingException {
+        throws JacksonException {
         
         // Serialize to JSON
         String json = objectMapper.writeValueAsString(widget);
@@ -75,7 +75,7 @@ class WidgetSerializationPropertyTest {
     @Property(tries = 100)
     @Label("Widget Type Preservation - NextEventWidget")
     void nextEventWidgetTypePreservation(@ForAll("nextEventWidgets") NextEventWidgetDto widget) 
-        throws JsonProcessingException {
+        throws JacksonException {
         
         // Serialize to JSON
         String json = objectMapper.writeValueAsString(widget);
@@ -101,7 +101,7 @@ class WidgetSerializationPropertyTest {
     @Property(tries = 100)
     @Label("Property 1: Widget Type Preservation - NewsFeedWidget")
     void newsFeedWidgetTypePreservation(@ForAll("newsFeedWidgets") NewsFeedWidgetDto widget) 
-        throws JsonProcessingException {
+        throws JacksonException {
         
         // Serialize to JSON
         String json = objectMapper.writeValueAsString(widget);
@@ -173,7 +173,7 @@ class WidgetSerializationPropertyTest {
                     content.replace("\"", "\\\"")
                 );
                 return mapper.readTree(json);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 throw new RuntimeException("Failed to create TipTap JSON", e);
             }
         });
@@ -251,7 +251,7 @@ class WidgetSerializationPropertyTest {
                 .as("TipTap JSON for locale '%s' should have 'type' field", locale)
                 .isTrue();
             
-            assertThat(content.get("type").asText())
+            assertThat(content.get("type").asString())
                 .as("TipTap JSON for locale '%s' should have type='doc'", locale)
                 .isEqualTo("doc");
             
@@ -280,7 +280,7 @@ class WidgetSerializationPropertyTest {
             // 4. "content" field is not an array
             
             boolean isInvalid = !content.has("type") 
-                || !content.get("type").asText().equals("doc")
+                || !content.get("type").asString().equals("doc")
                 || !content.has("content")
                 || !content.get("content").isArray();
             
@@ -293,7 +293,7 @@ class WidgetSerializationPropertyTest {
     @Property(tries = 100)
     @Label("Property 6: TipTap JSON Validity - Valid TipTap content round-trips correctly")
     void validTipTapContentRoundTrips(@ForAll("validTipTapContent") Map<String, JsonNode> bodyContent) 
-        throws JsonProcessingException {
+        throws JacksonException {
         
         // Create widget with valid TipTap content
         RichTextWidgetDto widget = new RichTextWidgetDto();
@@ -317,7 +317,7 @@ class WidgetSerializationPropertyTest {
             String locale = entry.getKey();
             JsonNode content = entry.getValue();
             
-            assertThat(content.has("type") && content.get("type").asText().equals("doc"))
+            assertThat(content.has("type") && content.get("type").asString().equals("doc"))
                 .as("Round-tripped TipTap JSON for locale '%s' should maintain type='doc'", locale)
                 .isTrue();
             
@@ -422,7 +422,7 @@ class WidgetSerializationPropertyTest {
                 };
                 
                 return mapper.readTree(json);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 throw new RuntimeException("Failed to create valid TipTap JSON", e);
             }
         });
@@ -509,7 +509,7 @@ class WidgetSerializationPropertyTest {
                 };
                 
                 return mapper.readTree(json);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 throw new RuntimeException("Failed to create invalid TipTap JSON", e);
             }
         });

@@ -1,7 +1,7 @@
 package org.nr31.backend.cucumber.stepdefs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import io.cucumber.datatable.DataTable;
 import org.nr31.backend.cucumber.ScenarioContextHelper;
 import org.springframework.beans.factory.annotation.Autowired;
