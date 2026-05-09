@@ -7,7 +7,7 @@ Feature: Roster Management
     When I create an event type with the following details:
       | name.en    | Skirmish |
     Then the response status code should be 201
-    And I save the created event "id" as "eventTypeId"
+    And I save the response field "id" as "eventTypeId"
 
     When I retrieve the event type "{eventTypeId}"
     Then the response status code should be 200
@@ -33,7 +33,7 @@ Feature: Roster Management
       | name.en        | 31st Regiment |
       | description.en | Line Infantry |
     Then the response status code should be 201
-    And I save the created event "id" as "unitTypeId"
+    And I save the response field "id" as "unitTypeId"
 
     When I retrieve the unit type "{unitTypeId}"
     Then the response status code should be 200

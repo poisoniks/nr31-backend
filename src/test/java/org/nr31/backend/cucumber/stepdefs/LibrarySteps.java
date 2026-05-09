@@ -4,20 +4,19 @@ import tools.jackson.databind.JsonNode;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-import javax.imageio.ImageIO;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LibrarySteps extends CommonStepDefs {
+
     @When("I create a library folder with name {string} and no parent")
     public void i_create_a_library_folder_with_name_and_no_parent(String name) throws Exception {
         String body = String.format("{\"name\":\"%s\"}", name);
@@ -150,7 +149,7 @@ public class LibrarySteps extends CommonStepDefs {
         boolean found = false;
         for (JsonNode node : content) {
             JsonNode nameNode = node.get("name");
-            if (nameNode != null && nameNode.asText().equals(expectedName)) {
+            if (nameNode != null && nameNode.asString().equals(expectedName)) {
                 found = true;
                 break;
             }
@@ -170,7 +169,7 @@ public class LibrarySteps extends CommonStepDefs {
         boolean found = false;
         for (JsonNode node : content) {
             JsonNode nameNode = node.get("name");
-            if (nameNode != null && nameNode.asText().equals(unexpectedName)) {
+            if (nameNode != null && nameNode.asString().equals(unexpectedName)) {
                 found = true;
                 break;
             }
@@ -188,7 +187,7 @@ public class LibrarySteps extends CommonStepDefs {
         boolean found = false;
         for (JsonNode node : root) {
             JsonNode nameNode = node.get("name");
-            if (nameNode != null && nameNode.asText().equals(expectedName)) {
+            if (nameNode != null && nameNode.asString().equals(expectedName)) {
                 found = true;
                 break;
             }
@@ -235,13 +234,6 @@ public class LibrarySteps extends CommonStepDefs {
         }
 
         baos.write(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
-        return baos.toByteArray();
-    }
-
-    private byte[] generatePngBytes() throws Exception {
-        BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(img, "png", baos);
         return baos.toByteArray();
     }
 }

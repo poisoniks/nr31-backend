@@ -49,3 +49,49 @@ VALUES ('disabled_endpoints', CAST('{"en": "Disabled endpoints"}' AS JSON), CAST
 INSERT INTO files_metadata (id, original_name, stored_name, content_type, size_bytes, scope, uploader_id, created_at)
 VALUES ('550e8400-e29b-41d4-a716-446655440000'::uuid, 'test-background.jpg', 'test-background.jpg', 'image/jpeg', 1024, 'LIBRARY', 1, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO NOTHING;
+
+-- CMS Pages for Cucumber tests
+-- version=1 so that the first PUT /draft call uses version=1 (no conflict).
+INSERT INTO pages (slug, title, version, created_at, updated_at) VALUES
+    ('home',            '{"en": "Home Page"}',              1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('about',           '{"en": "About Page"}',             1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('events',          '{"en": "Events Page"}',            1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('news',            '{"en": "News Page"}',              1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('large-content',   '{"en": "Large Content Page"}',     1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('news-feed',       '{"en": "News Feed Page"}',         1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('hero-page',       '{"en": "Hero Page"}',              1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('restricted',      '{"en": "Restricted Page"}',        1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('publish-test',    '{"en": "Publish Test Page"}',      1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('public-widgets',  '{"en": "Public Widgets Page"}',    1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('test-page',       '{"en": "Test Page"}',              1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('conflict-page',   '{"en": "Conflict Page"}',          1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('restricted-page', '{"en": "Restricted Page"}',        1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('public-page',     '{"en": "Public Page"}',            1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('admin-page',      '{"en": "Admin Page"}',             1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('permission-page', '{"en": "Permission Page"}',        1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('copy-page',       '{"en": "Copy Page"}',              1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('invalid-page',    '{"en": "Invalid Page"}',           1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('draft-page',      '{"en": "Draft Page"}',             1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('update-page',     '{"en": "Update Page"}',            1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('archive-page',    '{"en": "Archive Page"}',           1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('draft-only-page', '{"en": "Draft Only Page"}',        1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (slug) DO NOTHING;
+
+-- Seed a minimal PUBLISHED revision for every test page.
+-- Required so that GET /draft can auto-create a draft by copying from published.
+-- Without this, both GET /draft and PUT /draft return 404 for fresh pages.
+INSERT INTO page_revisions (page_id, layout_data, status, created_at)
+SELECT p.id,
+       '{"slots": [{"slotType": "content", "widgets": [{"type": "richtext", "bodyContent": {"en": {"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Initial content"}]}]}}}]}]}'::jsonb,
+       'PUBLISHED',
+       CURRENT_TIMESTAMP
+FROM pages p
+WHERE p.slug IN (
+    'home', 'about', 'events', 'news', 'large-content', 'news-feed', 'hero-page',
+    'restricted', 'publish-test', 'public-widgets', 'test-page', 'conflict-page',
+    'restricted-page', 'public-page', 'admin-page', 'permission-page', 'copy-page',
+    'invalid-page', 'draft-page', 'update-page', 'archive-page'
+)
+AND NOT EXISTS (
+    SELECT 1 FROM page_revisions pr WHERE pr.page_id = p.id
+);

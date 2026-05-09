@@ -15,6 +15,9 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
 
 public abstract class CommonStepDefs {
 
@@ -99,5 +102,51 @@ public abstract class CommonStepDefs {
         }
 
         return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    /**
+     * Makes an API call using admin credentials, regardless of the current user context.
+     * Used in setup steps (e.g. "the page has a draft revision") that must use admin auth
+     * even in scenarios that test unauthorized or public access.
+     */
+    protected HttpResponse<String> makeAdminApiCall(String method, String url, String body) throws Exception {
+        String adminToken = getOrFetchAdminToken();
+        String resolvedUrl = resolveVariables(url);
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + resolvedUrl))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + adminToken);
+
+        if (body != null && !body.isEmpty()) {
+            builder.method(method, HttpRequest.BodyPublishers.ofString(body));
+        } else {
+            builder.method(method, HttpRequest.BodyPublishers.noBody());
+        }
+
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    protected String getOrFetchAdminToken() throws Exception {
+        String cached = contextHelper.getValue("_admin_token_cache");
+        if (cached != null) {
+            return cached;
+        }
+        String loginBody = "{\"username\": \"admin\", \"password\": \"testpass\"}";
+        HttpRequest loginReq = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/api/v1/auth/login"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(loginBody))
+                .build();
+        HttpResponse<String> loginResp = httpClient.send(loginReq, HttpResponse.BodyHandlers.ofString());
+        String token = objectMapper.readTree(loginResp.body()).get("accessToken").asString();
+        contextHelper.addValue("_admin_token_cache", token);
+        return token;
+    }
+
+    protected byte[] generatePngBytes() throws Exception {
+        BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(img, "png", baos);
+        return baos.toByteArray();
     }
 }

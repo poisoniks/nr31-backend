@@ -1,7 +1,6 @@
 package org.nr31.backend.cucumber.stepdefs;
 
 import tools.jackson.databind.JsonNode;
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 
@@ -37,12 +36,5 @@ public class AuthSteps extends CommonStepDefs {
         String body = String.format("{\"refreshToken\":\"%s\"}", token);
         HttpResponse<String> response = makeApiCall("POST", "/api/v1/auth/logout", body);
         contextHelper.addValue("response", response);
-    }
-
-    @And("I save the response value {string} as {string}")
-    public void i_save_the_response_value_as(String field, String varName) throws Exception {
-        HttpResponse<String> response = contextHelper.getValue("response");
-        JsonNode root = objectMapper.readTree(response.body());
-        contextHelper.addValue(varName, root.get(field).asString());
     }
 }

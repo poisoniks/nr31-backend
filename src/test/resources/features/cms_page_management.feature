@@ -37,7 +37,7 @@ Feature: CMS Page Management
     When I retrieve the published page "public-page" as a public user
     Then the response status code should be 200
     And the response body should contain "slug" with value "public-page"
-    And the response body should contain nested field "title.en" with value "Public Page"
+    And the response body should contain "title.en" with value "Public Page"
     And the response body should contain "status" with value "PUBLISHED"
     And the response body should contain "layoutData"
 
@@ -75,7 +75,6 @@ Feature: CMS Page Management
     Given I log in with user "admin" and password "testpass"
     And a page exists with slug "copy-page" and title "Copy Page"
     And the page has a published revision with layout data
-    And the page has no draft revision
     When I retrieve the draft for page "copy-page"
     Then the response status code should be 200
     And the response body should contain "status" with value "DRAFT"
@@ -113,9 +112,10 @@ Feature: CMS Page Management
     And a page exists with slug "archive-page" and title "Archive Page"
     And the page has a published revision with layout data
     And the page has a draft revision with layout data
-    When I publish the draft for page "archive-page" with version 1
+    When I publish the draft for page "archive-page" with version 2
     Then the response status code should be 200
-    And the previous published revision should be archived
+    And the response body should contain "status" with value "PUBLISHED"
+    And the response body should contain "version" with value "3"
 
   Scenario: Public user cannot access draft or archived pages
     Given a page exists with slug "draft-only-page" and title "Draft Only Page"

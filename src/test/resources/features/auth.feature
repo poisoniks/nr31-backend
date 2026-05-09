@@ -15,7 +15,7 @@ Feature: Authentication and Token Management
 
   Scenario: Successful token refresh
     When I log in with user "admin" and password "testpass"
-    And I save the response value "refreshToken" as "savedRefreshToken"
+    And I save the response field "refreshToken" as "savedRefreshToken"
     When I refresh the token with "{savedRefreshToken}"
     Then the response status code should be 200
     And the response body should contain "accessToken"
@@ -27,7 +27,7 @@ Feature: Authentication and Token Management
 
   Scenario: Successful logout
     Given I log in with user "admin" and password "testpass"
-    And I save the response value "refreshToken" as "savedRefreshTokenForLogout"
+    And I save the response field "refreshToken" as "savedRefreshTokenForLogout"
     When I log out using the token "{savedRefreshTokenForLogout}"
     Then the response status code should be 204
     When I refresh the token with "{savedRefreshTokenForLogout}"

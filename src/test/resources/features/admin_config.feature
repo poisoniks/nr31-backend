@@ -111,7 +111,7 @@ Feature: App Config Management
     Given I log in with user "admin" and password "testpass"
     When I retrieve the role "ROLE_ADMIN"
     Then the response status code should be 200
-    And the response body should contain name "ROLE_ADMIN"
+    And the response body should contain "name" with value "ROLE_ADMIN"
 
   Scenario: Create, update and delete role successfully
     Given I log in with user "admin" and password "testpass"

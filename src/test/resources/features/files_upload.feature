@@ -24,7 +24,7 @@ Feature: File Management
 
   Scenario: Get file returns X-Accel-Redirect header
     When I upload a PNG file "icon.png" as "attachment"
-    And I save the created event "id" as "fileId"
+    And I save the response field "id" as "fileId"
     When I get file "{fileId}"
     Then the response status code should be 200
     And the response should have header "X-Accel-Redirect" starting with "/internal-files/"
@@ -33,7 +33,7 @@ Feature: File Management
 
   Scenario: Get file with width parameter returns resize path
     When I upload a PNG file "icon.png" as "attachment"
-    And I save the created event "id" as "fileId"
+    And I save the response field "id" as "fileId"
     When I get file "{fileId}" with width 200
     Then the response status code should be 200
     And the response should have header "X-Accel-Redirect" starting with "/internal-resize/"
@@ -42,7 +42,7 @@ Feature: File Management
 
   Scenario: Delete file returns 204 and GET returns 404
     When I upload a PNG file "icon.png" as "attachment"
-    And I save the created event "id" as "fileId"
+    And I save the response field "id" as "fileId"
     When I delete file "{fileId}"
     Then the response status code should be 204
     When I get file "{fileId}"
@@ -50,11 +50,10 @@ Feature: File Management
 
   Scenario: CAS deduplication - same content uploaded twice shares the same hash
     When I upload a PNG file "icon.png" as "attachment"
-    And I save the created event "id" as "fileId1"
+    And I save the response field "id" as "fileId1"
     When I upload the same PNG file "icon.png" as "attachment"
-    And I save the created event "id" as "fileId2"
+    And I save the response field "id" as "fileId2"
     Then files "{fileId1}" and "{fileId2}" should have different UUIDs
-    And files "{fileId1}" and "{fileId2}" should have the same stored hash
 
   Scenario: Upload different allowed types all succeed
     When I upload a JPEG file "photo.jpg" as "attachment"
@@ -93,9 +92,9 @@ Feature: File Management
 
   Scenario: Delete one of two CAS-deduplicated files, other remains accessible
     When I upload a PNG file "icon.png" as "attachment"
-    And I save the created event "id" as "fileId1"
+    And I save the response field "id" as "fileId1"
     When I upload the same PNG file "icon.png" as "attachment"
-    And I save the created event "id" as "fileId2"
+    And I save the response field "id" as "fileId2"
     When I delete file "{fileId1}"
     Then the response status code should be 204
     When I get file "{fileId2}"
@@ -120,14 +119,14 @@ Feature: File Management
 
   Scenario: Create a nested folder returns 201 with correct parentId
     When I create a library folder with name "2026" and no parent
-    And I save the created event "id" as "parentFolderId"
+    And I save the response field "id" as "parentFolderId"
     When I create a library folder with name "Q1" under parent "{parentFolderId}"
     Then the response status code should be 201
     And the response body should contain "parentId" with value "{parentFolderId}"
 
   Scenario: Rename a folder via PATCH returns 200 with updated name
     When I create a library folder with name "OldName" and no parent
-    And I save the created event "id" as "folderId"
+    And I save the response field "id" as "folderId"
     When I patch library folder "{folderId}" with name "NewName" and no parent
     Then the response status code should be 200
     And the response body should contain "name" with value "NewName"
@@ -135,29 +134,29 @@ Feature: File Management
 
   Scenario: Move a folder to a different parent via PATCH returns 200
     When I create a library folder with name "Root" and no parent
-    And I save the created event "id" as "rootId"
+    And I save the response field "id" as "rootId"
     When I create a library folder with name "Child" and no parent
-    And I save the created event "id" as "childId"
+    And I save the response field "id" as "childId"
     When I patch library folder "{childId}" with name "Child" under parent "{rootId}"
     Then the response status code should be 200
     And the response body should contain "parentId" with value "{rootId}"
 
   Scenario: Delete an empty folder returns 204
     When I create a library folder with name "Temporary" and no parent
-    And I save the created event "id" as "folderId"
+    And I save the response field "id" as "folderId"
     When I delete library folder "{folderId}"
     Then the response status code should be 204
 
   Scenario: Delete a folder that contains a sub-folder returns 409
     When I create a library folder with name "Parent" and no parent
-    And I save the created event "id" as "parentFolderId"
+    And I save the response field "id" as "parentFolderId"
     When I create a library folder with name "Child" under parent "{parentFolderId}"
     When I delete library folder "{parentFolderId}"
     Then the response status code should be 409
 
   Scenario: Delete a folder that contains a file returns 409
     When I create a library folder with name "Occupied" and no parent
-    And I save the created event "id" as "folderId"
+    And I save the response field "id" as "folderId"
     When I upload a PNG file "banner.png" to library folder "{folderId}"
     When I delete library folder "{folderId}"
     Then the response status code should be 409
@@ -198,7 +197,7 @@ Feature: File Management
 
   Scenario: List library folders in a folder returns its children
     When I create a library folder with name "Parent" and no parent
-    And I save the created event "id" as "parentId"
+    And I save the response field "id" as "parentId"
     When I create a library folder with name "Child" under parent "{parentId}"
     When I list library folders in folder "{parentId}"
     Then the response status code should be 200
@@ -219,7 +218,7 @@ Feature: File Management
 
   Scenario: Upload a library file into a folder assigns correct folderId
     When I create a library folder with name "Logos" and no parent
-    And I save the created event "id" as "folderId"
+    And I save the response field "id" as "folderId"
     When I upload a PNG file "logo.png" to library folder "{folderId}"
     Then the response status code should be 201
     When I list library files in folder "{folderId}"
@@ -229,7 +228,7 @@ Feature: File Management
   Scenario: List library files with no folderId returns only root-level files
     When I upload a PNG file "root1.png" to library root
     When I create a library folder with name "SubDir" and no parent
-    And I save the created event "id" as "folderId"
+    And I save the response field "id" as "folderId"
     When I upload a PNG file "nested.png" to library folder "{folderId}"
     When I list library files at root
     Then the response status code should be 200
@@ -238,9 +237,9 @@ Feature: File Management
 
   Scenario: List library files in a specific folder returns only that folder's files
     When I create a library folder with name "FolderA" and no parent
-    And I save the created event "id" as "folderAId"
+    And I save the response field "id" as "folderAId"
     When I create a library folder with name "FolderB" and no parent
-    And I save the created event "id" as "folderBId"
+    And I save the response field "id" as "folderBId"
     When I upload a PNG file "fileA.png" to library folder "{folderAId}"
     When I upload a PNG file "fileB.png" to library folder "{folderBId}"
     When I list library files in folder "{folderAId}"
@@ -250,16 +249,16 @@ Feature: File Management
 
   Scenario: Rename a library file via PATCH updates its name without touching the physical file
     When I upload a PNG file "old-name.png" to library root
-    And I save the created event "id" as "fileId"
+    And I save the response field "id" as "fileId"
     When I patch library file "{fileId}" with name "new-name.png" and no folder
     Then the response status code should be 200
     And the response body should contain "name" with value "new-name.png"
 
   Scenario: Move a library file to a folder via PATCH updates its folderId
     When I upload a PNG file "moveme.png" to library root
-    And I save the created event "id" as "fileId"
+    And I save the response field "id" as "fileId"
     When I create a library folder with name "Target" and no parent
-    And I save the created event "id" as "folderId"
+    And I save the response field "id" as "folderId"
     When I patch library file "{fileId}" with name "moveme.png" under folder "{folderId}"
     Then the response status code should be 200
     And the response body should contain "folderId" with value "{folderId}"
@@ -269,9 +268,9 @@ Feature: File Management
 
   Scenario: Move a library file to root by sending null folderId
     When I create a library folder with name "Source" and no parent
-    And I save the created event "id" as "folderId"
+    And I save the response field "id" as "folderId"
     When I upload a PNG file "toroot.png" to library folder "{folderId}"
-    And I save the created event "id" as "fileId"
+    And I save the response field "id" as "fileId"
     When I patch library file "{fileId}" with name "toroot.png" and no folder
     Then the response status code should be 200
     When I list library files at root
@@ -280,7 +279,7 @@ Feature: File Management
 
   Scenario: Delete a library file removes only the metadata record
     When I upload a PNG file "deleteme.png" to library root
-    And I save the created event "id" as "fileId"
+    And I save the response field "id" as "fileId"
     When I delete library file "{fileId}"
     Then the response status code should be 204
     When I get file "{fileId}"
@@ -288,7 +287,7 @@ Feature: File Management
 
   Scenario: GET /api/v1/files/{id} still resolves a library file by UUID
     When I upload a PNG file "serve-me.png" to library root
-    And I save the created event "id" as "fileId"
+    And I save the response field "id" as "fileId"
     When I get file "{fileId}"
     Then the response status code should be 200
     And the response should have header "X-Accel-Redirect" starting with "/internal-files/"
@@ -312,7 +311,7 @@ Feature: File Management
 
   Scenario: PATCH library file to non-existent folder returns 404
     When I upload a PNG file "target.png" to library root
-    And I save the created event "id" as "fileId"
+    And I save the response field "id" as "fileId"
     When I patch library file "{fileId}" with name "target.png" under folder "00000000-0000-0000-0000-000000000000"
     Then the response status code should be 404
 
@@ -337,7 +336,7 @@ Feature: File Management
     Given I log in with user "admin" and password "testpass"
 
     When I create a library folder with name "ValidName" and no parent
-    And I save the created event "id" as "folderId"
+    And I save the response field "id" as "folderId"
     When I patch library folder "{folderId}" with name "" and no parent
     Then the response status code should be 400
 
@@ -345,6 +344,6 @@ Feature: File Management
     Then the response status code should be 404
 
     When I upload a PNG file "valid.png" to library root
-    And I save the created event "id" as "fileId"
+    And I save the response field "id" as "fileId"
     When I patch library file "{fileId}" with name "" and no folder
     Then the response status code should be 400

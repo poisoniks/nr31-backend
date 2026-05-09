@@ -13,14 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
-
 public class AdminConfigSteps extends CommonStepDefs {
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @When("I retrieve the config {string}")
     public void i_retrieve_the_config(String configName) throws Exception {
@@ -72,13 +65,6 @@ public class AdminConfigSteps extends CommonStepDefs {
         assertTrue(found, "Expected to find an item with name: " + configName);
     }
 
-    @And("the response body should contain name {string}")
-    public void the_response_body_should_contain_name(String expectedName) throws Exception {
-        HttpResponse<String> response = contextHelper.getValue("response");
-        assertTrue(response.body().contains("\"name\":\"" + expectedName + "\""), 
-                "Expected response to contain name: " + expectedName + "\nBody: " + response.body());
-    }
-
     @And("the updated config value should be {string}")
     public void the_updated_config_value_should_be(String expectedValue) throws Exception {
         HttpResponse<String> response = contextHelper.getValue("response");
@@ -88,10 +74,16 @@ public class AdminConfigSteps extends CommonStepDefs {
 
     @When("I assign permission {string} to role {string}")
     public void i_assign_permission_to_role(String permissionName, String roleName) throws Exception {
-        Long permissionId = jdbcTemplate.queryForObject("SELECT id FROM permissions WHERE name = ?", Long.class, permissionName);
-        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
-        HttpResponse<String> response = makeApiCall("POST", "/api/v1/admin/roles/" + roleId + "/permissions/" + permissionId, "");
-        contextHelper.addValue("response", response);
+        try {
+            Long permissionId = resolvePermissionIdByName(permissionName);
+            Long roleId = resolveRoleIdByName(roleName);
+            HttpResponse<String> response = makeApiCall("POST", "/api/v1/admin/roles/" + roleId + "/permissions/" + permissionId, "");
+            contextHelper.addValue("response", response);
+        } catch (IllegalStateException e) {
+            // Caller lacks access:manage - attempt with placeholder IDs so Spring Security returns 403
+            HttpResponse<String> response = makeApiCall("POST", "/api/v1/admin/roles/0/permissions/0", "");
+            contextHelper.addValue("response", response);
+        }
     }
 
     @When("I retrieve all roles")
@@ -103,10 +95,11 @@ public class AdminConfigSteps extends CommonStepDefs {
     @When("I retrieve the role {string}")
     public void i_retrieve_the_role(String roleName) throws Exception {
         try {
-            Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
+            Long roleId = resolveRoleIdByName(roleName);
             HttpResponse<String> response = makeApiCall("GET", "/api/v1/admin/roles/" + roleId, null);
             contextHelper.addValue("response", response);
-        } catch (EmptyResultDataAccessException e) {
+        } catch (IllegalStateException e) {
+            // Role not found via API — call with a non-existent ID so callers get a 404
             HttpResponse<String> response = makeApiCall("GET", "/api/v1/admin/roles/99999", null);
             contextHelper.addValue("response", response);
         }
@@ -123,7 +116,7 @@ public class AdminConfigSteps extends CommonStepDefs {
 
     @When("I update the role {string} to have name {string} and localized name:")
     public void i_update_the_role(String oldName, String newName, DataTable dataTable) throws Exception {
-        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, oldName);
+        Long roleId = resolveRoleIdByName(oldName);
         Map<String, String> localizedName = dataTable.asMap(String.class, String.class);
         String localizedNameJson = objectMapper.writeValueAsString(localizedName);
         String body = "{\"name\": \"" + newName + "\", \"localizedName\": " + localizedNameJson + "}";
@@ -133,9 +126,8 @@ public class AdminConfigSteps extends CommonStepDefs {
 
     @When("I update the role {string} with quota {long} bytes")
     public void i_update_the_role_with_quota(String roleName, Long quotaBytes) throws Exception {
-        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
-        String currentName = jdbcTemplate.queryForObject("SELECT name FROM roles WHERE id = ?", String.class, roleId);
-        String body = "{\"name\": \"" + currentName + "\", \"filesUploadQuotaBytes\": " + quotaBytes + "}";
+        Long roleId = resolveRoleIdByName(roleName);
+        String body = "{\"name\": \"" + roleName + "\", \"filesUploadQuotaBytes\": " + quotaBytes + "}";
         HttpResponse<String> response = makeApiCall("PUT", "/api/v1/admin/roles/" + roleId, body);
         contextHelper.addValue("response", response);
     }
@@ -143,7 +135,7 @@ public class AdminConfigSteps extends CommonStepDefs {
     @When("I update the role quota for role ID {string} to {long} bytes via admin API")
     public void i_update_the_role_quota_for_role_id_via_admin_api(String roleIdRef, Long quotaBytes) throws Exception {
         String roleId = resolveVariables(roleIdRef);
-        String currentName = jdbcTemplate.queryForObject("SELECT name FROM roles WHERE id = ?", String.class, Long.parseLong(roleId));
+        String currentName = resolveRoleNameById(roleId);
         String body = "{\"name\": \"" + currentName + "\", \"filesUploadQuotaBytes\": " + quotaBytes + "}";
         HttpResponse<String> response = makeApiCall("PUT", "/api/v1/admin/roles/" + roleId, body);
         contextHelper.addValue("response", response);
@@ -167,14 +159,14 @@ public class AdminConfigSteps extends CommonStepDefs {
 
     @When("I delete the role {string}")
     public void i_delete_the_role(String roleName) throws Exception {
-        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
+        Long roleId = resolveRoleIdByName(roleName);
         HttpResponse<String> response = makeApiCall("DELETE", "/api/v1/admin/roles/" + roleId, null);
         contextHelper.addValue("response", response);
     }
 
     @When("I update the permission {string} with the following description:")
     public void i_update_permission_description(String permissionName, DataTable dataTable) throws Exception {
-        Long permissionId = jdbcTemplate.queryForObject("SELECT id FROM permissions WHERE name = ?", Long.class, permissionName);
+        Long permissionId = resolvePermissionIdByName(permissionName);
         Map<String, String> description = dataTable.asMap(String.class, String.class);
         String descriptionJson = objectMapper.writeValueAsString(description);
         String body = "{\"description\": " + descriptionJson + "}";
@@ -229,24 +221,24 @@ public class AdminConfigSteps extends CommonStepDefs {
 
     @When("I unassign permission {string} from role {string}")
     public void i_unassign_permission_from_role(String permissionName, String roleName) throws Exception {
-        Long permissionId = jdbcTemplate.queryForObject("SELECT id FROM permissions WHERE name = ?", Long.class, permissionName);
-        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
+        Long permissionId = resolvePermissionIdByName(permissionName);
+        Long roleId = resolveRoleIdByName(roleName);
         HttpResponse<String> response = makeApiCall("DELETE", "/api/v1/admin/roles/" + roleId + "/permissions/" + permissionId, null);
         contextHelper.addValue("response", response);
     }
 
     @When("I assign role {string} to user {string}")
     public void i_assign_role_to_user(String roleName, String username) throws Exception {
-        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
-        Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE username = ?", Long.class, username);
+        Long roleId = resolveRoleIdByName(roleName);
+        Long userId = resolveUserIdByUsername(username);
         HttpResponse<String> response = makeApiCall("POST", "/api/v1/admin/users/" + userId + "/roles/" + roleId, "");
         contextHelper.addValue("response", response);
     }
 
     @When("I unassign role {string} from user {string}")
     public void i_unassign_role_from_user(String roleName, String username) throws Exception {
-        Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE name = ?", Long.class, roleName);
-        Long userId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE username = ?", Long.class, username);
+        Long roleId = resolveRoleIdByName(roleName);
+        Long userId = resolveUserIdByUsername(username);
         HttpResponse<String> response = makeApiCall("DELETE", "/api/v1/admin/users/" + userId + "/roles/" + roleId, null);
         contextHelper.addValue("response", response);
     }
@@ -268,4 +260,56 @@ public class AdminConfigSteps extends CommonStepDefs {
         }
         assertTrue(found, "Expected to find permission with name: " + expectedPermissionName);
     }
+
+    private Long resolveRoleIdByName(String roleName) throws Exception {
+        HttpResponse<String> resp = makeApiCall("GET", "/api/v1/admin/roles?size=200", null);
+        if (resp.statusCode() != 200) {
+            throw new IllegalStateException("Cannot list roles (status " + resp.statusCode() + "): " + resp.body());
+        }
+        JsonNode content = objectMapper.readTree(resp.body()).get("content");
+        for (JsonNode node : content) {
+            if (roleName.equals(node.get("name").asString())) {
+                return node.get("id").asLong();
+            }
+        }
+        throw new IllegalStateException("Role not found via API: " + roleName);
+    }
+
+    private Long resolvePermissionIdByName(String permissionName) throws Exception {
+        HttpResponse<String> resp = makeApiCall("GET", "/api/v1/admin/permissions?size=200", null);
+        if (resp.statusCode() != 200) {
+            throw new IllegalStateException("Cannot list permissions (status " + resp.statusCode() + "): " + resp.body());
+        }
+        JsonNode content = objectMapper.readTree(resp.body()).get("content");
+        for (JsonNode node : content) {
+            if (permissionName.equals(node.get("name").asString())) {
+                return node.get("id").asLong();
+            }
+        }
+        throw new IllegalStateException("Permission not found via API: " + permissionName);
+    }
+
+    private Long resolveUserIdByUsername(String username) throws Exception {
+        String encoded = URLEncoder.encode(username, StandardCharsets.UTF_8);
+        HttpResponse<String> resp = makeApiCall("GET", "/api/v1/admin/users/search?username=" + encoded, null);
+        if (resp.statusCode() != 200) {
+            throw new IllegalStateException("Cannot search users (status " + resp.statusCode() + "): " + resp.body());
+        }
+        JsonNode content = objectMapper.readTree(resp.body()).get("content");
+        for (JsonNode node : content) {
+            if (username.equals(node.get("username").asString())) {
+                return node.get("id").asLong();
+            }
+        }
+        throw new IllegalStateException("User not found via API: " + username);
+    }
+
+    private String resolveRoleNameById(String roleId) throws Exception {
+        HttpResponse<String> resp = makeApiCall("GET", "/api/v1/admin/roles/" + roleId, null);
+        if (resp.statusCode() != 200) {
+            throw new IllegalStateException("Cannot get role " + roleId + " (status " + resp.statusCode() + "): " + resp.body());
+        }
+        return objectMapper.readTree(resp.body()).get("name").asString();
+    }
+
 }

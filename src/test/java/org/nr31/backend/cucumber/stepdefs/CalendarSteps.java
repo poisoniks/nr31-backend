@@ -1,51 +1,28 @@
 package org.nr31.backend.cucumber.stepdefs;
 
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
+import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import io.cucumber.datatable.DataTable;
 import org.springframework.beans.factory.annotation.Autowired;
-import tools.jackson.databind.JsonNode;
-
 import org.springframework.jdbc.core.JdbcTemplate;
+import tools.jackson.databind.JsonNode;
 
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CalendarSteps extends CommonStepDefs {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-
-    @Before
-    public void setup() {
-        contextHelper.initialize();
-    }
-
-    @After
-    public void tearDown() {
-        contextHelper.release();
-    }
-
-    @Given("I log out")
-    public void i_log_out() {
-        contextHelper.addValue("jwt_token", null);
-    }
 
     @Given("the event {string} has source {string}")
     public void the_event_has_source(String eventIdRef, String source) {
@@ -66,51 +43,6 @@ public class CalendarSteps extends CommonStepDefs {
         String body = dataTableToJson(dataTable);
         HttpResponse<String> response = makeApiCall("PUT", "/api/v1/calendar/events/" + eventId, body);
         contextHelper.addValue("response", response);
-    }
-
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer expectedStatusCode) {
-        HttpResponse<String> response = contextHelper.getValue("response");
-        assertEquals(expectedStatusCode, response.statusCode(), "Body was: " + response.body());
-    }
-
-    @Then("the response body should contain {string} with value {string}")
-    public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
-        HttpResponse<String> response = contextHelper.getValue("response");
-        JsonNode root = objectMapper.readTree(response.body());
-        String[] pathParts = jsonPath.split("\\.");
-        JsonNode current = root;
-        for (String part : pathParts) {
-            if (current != null && current.isArray()) {
-                current = current.get(Integer.parseInt(part));
-            } else {
-                current = current.get(part);
-            }
-            assertNotNull(current, "Path " + jsonPath + " not found in " + response.body());
-        }
-        assertEquals(resolveVariables(expectedValue), current.asString());
-    }
-
-    @Then("the response body should indicate {string} is true")
-    public void the_response_body_should_indicate_is_true(String fieldName) {
-        HttpResponse<String> response = contextHelper.getValue("response");
-        JsonNode root = objectMapper.readTree(response.body());
-        assertTrue(root.has(fieldName));
-        assertTrue(root.get(fieldName).asBoolean());
-    }
-
-    @Then("the response body should contain array {string} with length {int}")
-    public void the_response_body_should_contain_array_with_length(String jsonPath, int expectedLength) throws Exception {
-        HttpResponse<String> response = contextHelper.getValue("response");
-        JsonNode root = objectMapper.readTree(response.body());
-        String[] pathParts = jsonPath.split("\\.");
-        JsonNode current = root;
-        for (String part : pathParts) {
-            current = current.get(part);
-            assertNotNull(current, "Path " + jsonPath + " not found in " + response.body());
-        }
-        assertTrue(current.isArray(), "Path " + jsonPath + " is not an array");
-        assertEquals(expectedLength, current.size());
     }
 
     @When("I retrieve events with the following parameters:")
@@ -144,14 +76,6 @@ public class CalendarSteps extends CommonStepDefs {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
         assertTrue(root.isArray());
-    }
-
-    @Then("the response list should have size {int}")
-    public void the_response_list_should_have_size(int expectedSize) throws Exception {
-        HttpResponse<String> response = contextHelper.getValue("response");
-        JsonNode root = objectMapper.readTree(response.body());
-        assertTrue(root.isArray());
-        assertEquals(expectedSize, root.size());
     }
 
     @Then("each event in the list should have a valid {string} and {string} date")
@@ -247,25 +171,6 @@ public class CalendarSteps extends CommonStepDefs {
         contextHelper.addValue("response", res);
     }
 
-
-
-    @Then("the response body should contain {string}")
-    public void the_response_body_should_contain(String jsonPath) throws Exception {
-        HttpResponse<String> response = contextHelper.getValue("response");
-        JsonNode root = objectMapper.readTree(response.body());
-        String[] pathParts = jsonPath.split("\\.");
-        JsonNode current = root;
-        for (String part : pathParts) {
-            if (current != null && current.isArray()) {
-                current = current.get(Integer.parseInt(part));
-            } else {
-                current = current.get(part);
-            }
-            assertNotNull(current, "Path " + jsonPath + " not found in " + response.body());
-        }
-        assertTrue(current != null && !current.isMissingNode(), "Response does not contain " + jsonPath + "\nBody: " + response.body());
-    }
-
     @Then("subsequent GET requests for any date in the series should show title {string}")
     public void subsequent_get_requests_for_any_date_in_the_series_should_show_title(String expectedTitle)
             throws Exception {
@@ -278,13 +183,6 @@ public class CalendarSteps extends CommonStepDefs {
         for (JsonNode node : root) {
             assertEquals(expectedTitle, node.get("title").get("en").asString());
         }
-    }
-
-    @And("I save the created event {string} as {string}")
-    public void iSaveTheCreatedEventAs(String field, String varName) {
-        HttpResponse<String> response = contextHelper.getValue("response");
-        JsonNode root = objectMapper.readTree(response.body());
-        contextHelper.addValue(varName, root.get(field).asString());
     }
 
     @And("the response list should contain exactly the following state for the series:")

@@ -60,7 +60,7 @@ Feature: Calendar Events Management
       | end        | 2026-10-28T16:00:00Z |
       | type       | 1                    |
       | serverName | Main Server          |
-    And I save the created event "id" as "eventId"
+    And I save the response field "id" as "eventId"
     When I update the event "{eventId}" with the following details:
       | mode          | SINGLE                   |
       | title.en      | Updated Training Session |
@@ -81,7 +81,7 @@ Feature: Calendar Events Management
       | end        | 2026-10-29T11:00:00Z |
       | type       | 1                    |
       | serverName | Server 1             |
-    And I save the created event "id" as "eventId"
+    And I save the response field "id" as "eventId"
     When I delete the event "{eventId}" with parameters:
       | mode | ALL |
     Then the response status code should be 204
@@ -98,7 +98,7 @@ Feature: Calendar Events Management
       | recurrence.frequency | WEEKLY                     |
       | recurrence.interval  | 1                          |
       | recurrence.count     | 5                          |
-    And I save the created event "id" as "eventId"
+    And I save the response field "id" as "eventId"
     When I delete the event "{eventId}" with parameters:
       | mode | ALL |
     Then the response status code should be 204
@@ -172,7 +172,7 @@ Feature: Calendar Events Management
       | recurrence.interval  | 1                         |
       | recurrence.count     | 20                        |
     Then the response status code should be 201
-    And I save the created event "id" as "seriesId"
+    And I save the response field "id" as "seriesId"
     When I update the event "{seriesId}" with the following details:
       | mode          | FUTURE               |
       | title.en      | New Time Standup     |
@@ -196,7 +196,7 @@ Feature: Calendar Events Management
       | recurrence.interval  | 1                    |
       | recurrence.count     | 5                    |
     Then the response status code should be 201
-    And I save the created event "id" as "seriesId"
+    And I save the response field "id" as "seriesId"
     When I update the event "{seriesId}" with the following details:
       | mode          | ALL                  |
       | title.en      | Rebranded Title      |
@@ -220,7 +220,7 @@ Feature: Calendar Events Management
       | recurrence.interval  | 1                    |
       | recurrence.count     | 5                    |
     Then the response status code should be 201
-    And I save the created event "id" as "seriesId"
+    And I save the response field "id" as "seriesId"
     When I delete the event "{seriesId}" with parameters:
       | mode          | FUTURE               |
       | exceptionDate | 2026-11-15T10:00:00Z |
@@ -274,8 +274,8 @@ Feature: Calendar Events Management
       | recurrence.count     | 12                        |
       | recurrence.byDay     | ["MO", "WE", "FR"]        |
     Then the response status code should be 201
-    And I save the created event "seriesId" as "globalSyncSeries"
-    And I save the created event "id" as "baseInstanceId"
+    And I save the response field "seriesId" as "globalSyncSeries"
+    And I save the response field "id" as "baseInstanceId"
 
     # Step 2: Update a SINGLE instance (Exception: Move Wednesday session 2 hours later) submitting in Eastern Standard Time (UTC-05:00)
     # Original start 15:00 UTC is 10:00 EST. New start 17:00 UTC is 12:00 EST.
@@ -358,7 +358,7 @@ Feature: Calendar Events Management
       | recurrence.frequency | DAILY                    |
       | recurrence.interval  | 1                        |
       | recurrence.count     | 5                        |
-    And I save the created event "id" as "seriesId"
+    And I save the response field "id" as "seriesId"
     When I update the event "{seriesId}" with the following details:
       | mode               | SINGLE               |
       | title.en           | Unit override update |
@@ -381,7 +381,7 @@ Feature: Calendar Events Management
       | serverName           | Discord Server       |
       | recurrence.frequency | DAILY                |
       | recurrence.count     | 5                    |
-    And I save the created event "id" as "discordEventId"
+    And I save the response field "id" as "discordEventId"
     And the event "{discordEventId}" has source "DISCORD"
     When I update the event "{discordEventId}" with the following details:
       | mode          | FUTURE               |
@@ -400,7 +400,7 @@ Feature: Calendar Events Management
       | end        | 2026-10-10T11:00:00Z |
       | type       | 1                    |
       | serverName | Test Server          |
-    And I save the created event "id" as "eventId"
+    And I save the response field "id" as "eventId"
     When I delete the event "{eventId}" with parameters:
       | mode          | SINGLE               |
       | exceptionDate | 2026-10-10T10:00:00Z |
@@ -417,7 +417,7 @@ Feature: Calendar Events Management
       | serverName           | Discord Server           |
       | recurrence.frequency | DAILY                    |
       | recurrence.count     | 5                        |
-    And I save the created event "id" as "discordEventId"
+    And I save the response field "id" as "discordEventId"
     And the event "{discordEventId}" has source "DISCORD"
     When I delete the event "{discordEventId}" with parameters:
       | mode | ALL |
@@ -434,7 +434,7 @@ Feature: Calendar Events Management
       | serverName           | Discord Server               |
       | recurrence.frequency | DAILY                        |
       | recurrence.count     | 5                            |
-    And I save the created event "id" as "discordEventId"
+    And I save the response field "id" as "discordEventId"
     And the event "{discordEventId}" has source "DISCORD"
     When I delete the event "{discordEventId}" with parameters:
       | mode          | FUTURE               |
@@ -450,7 +450,7 @@ Feature: Calendar Events Management
       | end        | 2026-10-10T12:00:00Z |
       | type       | 1                    |
       | serverName | Discord Server       |
-    And I save the created event "id" as "discordEventId"
+    And I save the response field "id" as "discordEventId"
     And the event "{discordEventId}" has source "DISCORD"
     When I delete the event "{discordEventId}" with parameters:
       | mode | SINGLE |
@@ -469,7 +469,7 @@ Feature: Calendar Events Management
       | recurrence.count     | 5                    |
     Then the response status code should be 201
     And the response body should indicate "recurring" is true
-    And I save the created event "id" as "eventId"
+    And I save the response field "id" as "eventId"
     When I update the event "{eventId}" with the following details:
       | mode       | ALL                  |
       | title.en   | Alpha Squad Single   |
