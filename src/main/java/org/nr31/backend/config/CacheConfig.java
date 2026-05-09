@@ -24,7 +24,8 @@ public class CacheConfig {
             cache("calendarEvents",      Duration.ofHours(24),  100),
             cache("fileResolution",      Duration.ofHours(24),  100),
             cache("appConfig",           Duration.ofHours(24),  100),
-            cache("youtubeLatestVideo",  Duration.ofMinutes(25), 50)
+            cache("youtubeLatestVideo",  Duration.ofMinutes(25), 50),
+            cache("discordWidget",       Duration.ofMinutes(6),  10)
         ));
         return cacheManager;
     }

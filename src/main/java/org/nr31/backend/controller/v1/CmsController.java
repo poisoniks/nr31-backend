@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.nr31.backend.dto.DiscordWidgetDataDto;
 import org.nr31.backend.dto.YoutubeVideoDto;
 import org.nr31.backend.dto.cms.PageResponseDto;
 import org.nr31.backend.dto.cms.PublishDraftRequest;
@@ -14,6 +15,7 @@ import org.nr31.backend.dto.cms.SlotRestrictionsDto;
 import org.nr31.backend.dto.cms.UpdateDraftRequest;
 import org.nr31.backend.dto.cms.UpdateSlotRestrictionsRequest;
 import org.nr31.backend.service.CmsService;
+import org.nr31.backend.service.DiscordWidgetService;
 import org.nr31.backend.service.ValidationService;
 import org.nr31.backend.service.YouTubeService;
 import org.springframework.cache.annotation.CacheEvict;
@@ -31,6 +33,7 @@ public class CmsController {
     private final CmsService cmsService;
     private final ValidationService validationService;
     private final YouTubeService youTubeService;
+    private final DiscordWidgetService discordWidgetService;
 
     @Operation(summary = "Get published page by slug", description = "Retrieves the published revision of a page by its slug")
     @ApiResponses(value = {
@@ -133,6 +136,20 @@ public class CmsController {
             @Parameter(description = "YouTube channel ID", example = "UCbU41G2hhiwdn-gFFRqZN4w")
             @PathVariable String channelId) {
         return youTubeService.getLatestVideo(channelId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Get Discord widget data", description = "Returns cached Discord server presence data. Refreshed every 5 minutes by a background job.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved Discord widget data"),
+            @ApiResponse(responseCode = "404", description = "No cached data for the given invite code")
+    })
+    @GetMapping(value = "/discord/{inviteCode}", produces = "application/json")
+    public ResponseEntity<DiscordWidgetDataDto> getDiscordWidgetData(
+            @Parameter(description = "Discord invite code", example = "uuc")
+            @PathVariable String inviteCode) {
+        return discordWidgetService.getWidgetData(inviteCode)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
