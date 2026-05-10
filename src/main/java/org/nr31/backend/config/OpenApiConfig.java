@@ -2,12 +2,20 @@ package org.nr31.backend.config;
 
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.prepost.PreAuthorize;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Configuration
 @SecurityScheme(
@@ -17,6 +25,57 @@ import java.util.List;
         scheme = "bearer"
 )
 public class OpenApiConfig {
+
+    private static final Pattern AUTHORITY_PATTERN = Pattern.compile("hasAuthority\\('([^']+)'\\)");
+
+    @Bean
+    public OpenAPI customOpenAPI() {
+        return new OpenAPI()
+                .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"));
+    }
+
+    @Bean
+    public OperationCustomizer securityOperationCustomizer() {
+        return (operation, handlerMethod) -> {
+            PreAuthorize methodAnnotation = handlerMethod.getMethodAnnotation(PreAuthorize.class);
+            PreAuthorize classAnnotation = handlerMethod.getBeanType().getAnnotation(PreAuthorize.class);
+
+            if (methodAnnotation == null && classAnnotation == null) {
+                return operation;
+            }
+
+            Set<String> requirements = new LinkedHashSet<>();
+            if (classAnnotation != null) {
+                requirements.add(parseSecurityExpression(classAnnotation.value()));
+            }
+            if (methodAnnotation != null) {
+                requirements.add(parseSecurityExpression(methodAnnotation.value()));
+            }
+
+            String existingDescription = operation.getDescription() != null ? operation.getDescription() : "";
+            StringBuilder newDescription = new StringBuilder(existingDescription);
+            
+            if (!existingDescription.isEmpty()) {
+                newDescription.append("\n\n");
+            }
+            
+            newDescription.append("Security requirement:\n");
+            for (String req : requirements) {
+                newDescription.append("- ").append(req).append("\n");
+            }
+
+            operation.setDescription(newDescription.toString().trim());
+            return operation;
+        };
+    }
+
+    private String parseSecurityExpression(String expression) {
+        Matcher matcher = AUTHORITY_PATTERN.matcher(expression);
+        if (matcher.matches()) {
+            return "Must have authority " + matcher.group(1);
+        }
+        return "Has security restrictions";
+    }
 
     @Bean
     public OpenApiCustomizer pageableCustomizer() {
