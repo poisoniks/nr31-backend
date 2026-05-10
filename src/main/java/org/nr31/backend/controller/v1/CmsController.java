@@ -24,6 +24,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+import tools.jackson.databind.JsonNode;
+import org.nr31.backend.service.WidgetSchemaService;
+
 @RestController
 @RequestMapping("/api/v1/cms")
 @RequiredArgsConstructor
@@ -34,6 +38,7 @@ public class CmsController {
     private final ValidationService validationService;
     private final YouTubeService youTubeService;
     private final DiscordWidgetService discordWidgetService;
+    private final WidgetSchemaService widgetSchemaService;
 
     @Operation(summary = "Get published page by slug", description = "Retrieves the published revision of a page by its slug")
     @ApiResponses(value = {
@@ -158,5 +163,34 @@ public class CmsController {
         return discordWidgetService.getWidgetData(inviteCode)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Get all widget JSON schemas",
+               description = "Returns a map of all known widget types to their respective JSON schemas.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved all widget schemas"),
+            @ApiResponse(responseCode = "401", description = "User is not authenticated"),
+            @ApiResponse(responseCode = "403", description = "User lacks required cms:write permission")
+    })
+    @GetMapping(value = "/widget-schemas", produces = "application/json")
+    @PreAuthorize("hasAuthority('cms:write')")
+    public ResponseEntity<Map<String, JsonNode>> getAllWidgetSchemas() {
+        return ResponseEntity.ok(widgetSchemaService.getAllSchemas());
+    }
+
+    @Operation(summary = "Get widget JSON schema",
+               description = "Returns the JSON Schema for a specific widget type, reflecting its fields, validation constraints, and localization structure.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved widget schema"),
+            @ApiResponse(responseCode = "401", description = "User is not authenticated"),
+            @ApiResponse(responseCode = "403", description = "User lacks required cms:write permission"),
+            @ApiResponse(responseCode = "404", description = "Unknown widget type")
+    })
+    @GetMapping(value = "/widget-schemas/{type}", produces = "application/json")
+    @PreAuthorize("hasAuthority('cms:write')")
+    public ResponseEntity<JsonNode> getWidgetSchema(
+            @Parameter(description = "Widget type identifier", example = "hero")
+            @PathVariable String type) {
+        return ResponseEntity.ok(widgetSchemaService.getSchema(type));
     }
 }

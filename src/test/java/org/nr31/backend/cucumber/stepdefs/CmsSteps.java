@@ -166,6 +166,25 @@ public class CmsSteps extends CommonStepDefs {
         contextHelper.addValue("response", response);
     }
 
+    @When("I request the widget schema for type {string}")
+    public void i_request_the_widget_schema_for_type(String type) throws Exception {
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/cms/widget-schemas/" + type, null);
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I request all widget schemas")
+    public void i_request_all_widget_schemas() throws Exception {
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/cms/widget-schemas", null);
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I request the widget schema for type {string} without authentication")
+    public void i_request_the_widget_schema_without_auth(String type) throws Exception {
+        contextHelper.addValue("jwt_token", null);
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/cms/widget-schemas/" + type, null);
+        contextHelper.addValue("response", response);
+    }
+
     @And("the response body should contain slot restriction for {string} with widgets {string}")
     public void the_response_body_should_contain_slot_restriction_for_with_widgets(String slotType, String widgets) throws Exception {
         HttpResponse<String> response = contextHelper.getValue("response");
