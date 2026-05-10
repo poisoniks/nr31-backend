@@ -7,8 +7,6 @@ import net.jqwik.api.*;
 import org.nr31.backend.dto.cms.*;
 import org.nr31.backend.model.Page;
 import org.nr31.backend.repository.PageRepository;
-import org.nr31.backend.repository.PageRevisionRepository;
-import org.nr31.backend.service.impl.CmsServiceImpl;
 
 import java.time.Instant;
 import java.util.List;
@@ -108,10 +106,7 @@ class SerializationPropertyTest {
             
             // Setup mocks for service call
             PageRepository pageRepository = mock(PageRepository.class);
-            PageRevisionRepository pageRevisionRepository = mock(PageRevisionRepository.class);
-            ValidationService validationService = mock(ValidationService.class);
-            CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
-            
+
             Page page = Page.builder()
                 .id(1L)
                 .slug("test-page")
@@ -124,7 +119,7 @@ class SerializationPropertyTest {
             when(pageRepository.findBySlug("test-page")).thenReturn(Optional.of(page));
             
             // Attempt to update draft with invalid layout data
-            UpdateDraftRequest request = new UpdateDraftRequest(1, layoutData);
+            new UpdateDraftRequest(1, layoutData);
 
             // The validation should fail when the service processes the request
             // Note: In a real scenario, this would be caught by @Valid annotation in the controller

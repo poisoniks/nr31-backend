@@ -135,6 +135,9 @@ public class CmsController {
     public ResponseEntity<YoutubeVideoDto> getLatestYoutubeVideo(
             @Parameter(description = "YouTube channel ID", example = "UCbU41G2hhiwdn-gFFRqZN4w")
             @PathVariable String channelId) {
+        if (!youTubeService.getTrackedChannelIds().contains(channelId)) {
+            return ResponseEntity.notFound().build();
+        }
         return youTubeService.getLatestVideo(channelId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -149,6 +152,9 @@ public class CmsController {
     public ResponseEntity<DiscordWidgetDataDto> getDiscordWidgetData(
             @Parameter(description = "Discord invite code", example = "uuc")
             @PathVariable String inviteCode) {
+        if (!discordWidgetService.getTrackedInviteCodes().contains(inviteCode)) {
+            return ResponseEntity.notFound().build();
+        }
         return discordWidgetService.getWidgetData(inviteCode)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

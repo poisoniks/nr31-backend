@@ -61,7 +61,14 @@ public class YouTubeServiceImpl implements YouTubeService {
     }
 
     @Override
+    @CacheEvict(value = "youtubeTrackedChannels", allEntries = true)
+    public void evictTrackedCache() {
+        log.debug("Evicted YouTube tracked channels cache");
+    }
+
+    @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "youtubeTrackedChannels")
     public Set<String> getTrackedChannelIds() {
         Set<String> channelIds = new HashSet<>();
 

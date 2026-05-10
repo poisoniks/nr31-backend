@@ -37,4 +37,9 @@ public interface YouTubeService {
      * @return set of channel IDs to track
      */
     Set<String> getTrackedChannelIds();
+
+    /**
+     * Evicts the entire tracked channel IDs cache.
+     */
+    void evictTrackedCache();
 }

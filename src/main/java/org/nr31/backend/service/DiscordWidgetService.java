@@ -37,4 +37,9 @@ public interface DiscordWidgetService {
      * @return set of invite codes to track
      */
     Set<String> getTrackedInviteCodes();
+
+    /**
+     * Evicts the entire tracked invite codes cache.
+     */
+    void evictTrackedCache();
 }

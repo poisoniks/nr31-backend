@@ -17,7 +17,9 @@ import org.nr31.backend.model.RevisionStatus;
 import org.nr31.backend.repository.PageRepository;
 import org.nr31.backend.repository.PageRevisionRepository;
 import org.nr31.backend.service.CmsService;
+import org.nr31.backend.service.DiscordWidgetService;
 import org.nr31.backend.service.ValidationService;
+import org.nr31.backend.service.YouTubeService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,8 @@ public class CmsServiceImpl implements CmsService {
     private final PageRepository pageRepository;
     private final PageRevisionRepository pageRevisionRepository;
     private final ValidationService validationService;
+    private final DiscordWidgetService discordWidgetService;
+    private final YouTubeService youTubeService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -117,6 +121,10 @@ public class CmsServiceImpl implements CmsService {
         draftRevision.setLayoutData(layoutDataJson);
 
         PageRevision savedRevision = pageRevisionRepository.save(draftRevision);
+
+        discordWidgetService.evictTrackedCache();
+        youTubeService.evictTrackedCache();
+
         return mapToResponseDto(page, savedRevision, request.getLayoutData());
     }
 
@@ -167,6 +175,9 @@ public class CmsServiceImpl implements CmsService {
         // Refresh to get the updated version from the database
         pageRepository.flush();
         Page refreshedPage = pageRepository.findById(savedPage.getId()).orElse(savedPage);
+
+        discordWidgetService.evictTrackedCache();
+        youTubeService.evictTrackedCache();
 
         LayoutDataDto layoutData = deserializeLayoutData(savedRevision.getLayoutData());
         return mapToResponseDto(refreshedPage, savedRevision, layoutData);

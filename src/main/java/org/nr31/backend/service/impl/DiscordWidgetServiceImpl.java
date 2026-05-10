@@ -62,7 +62,14 @@ public class DiscordWidgetServiceImpl implements DiscordWidgetService {
     }
 
     @Override
+    @CacheEvict(value = "discordTrackedInvites", allEntries = true)
+    public void evictTrackedCache() {
+        log.debug("Evicted Discord tracked invites cache");
+    }
+
+    @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "discordTrackedInvites")
     public Set<String> getTrackedInviteCodes() {
         Set<String> inviteCodes = new HashSet<>();
 

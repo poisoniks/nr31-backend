@@ -25,7 +25,9 @@ public class CacheConfig {
             cache("fileResolution",      Duration.ofHours(24),  100),
             cache("appConfig",           Duration.ofHours(24),  100),
             cache("youtubeLatestVideo",  Duration.ofMinutes(25), 50),
-            cache("discordWidget",       Duration.ofMinutes(6),  10)
+            cache("discordWidget",       Duration.ofMinutes(6),  10),
+            cache("youtubeTrackedChannels", Duration.ofMinutes(2), 1),
+            cache("discordTrackedInvites",  Duration.ofMinutes(2), 1)
         ));
         return cacheManager;
     }

@@ -45,7 +45,9 @@ class CmsServicePropertyTest {
         PageRepository pageRepository = mock(PageRepository.class);
         PageRevisionRepository pageRevisionRepository = mock(PageRevisionRepository.class);
         ValidationService validationService = mock(ValidationService.class);
-        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
+        DiscordWidgetService discordWidgetService = mock(DiscordWidgetService.class);
+        YouTubeService youTubeService = mock(YouTubeService.class);
+        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, discordWidgetService, youTubeService, objectMapper);
 
         // Setup page with current version
         Page page = Page.builder()
@@ -107,7 +109,9 @@ class CmsServicePropertyTest {
         PageRepository pageRepository = mock(PageRepository.class);
         PageRevisionRepository pageRevisionRepository = mock(PageRevisionRepository.class);
         ValidationService validationService = mock(ValidationService.class);
-        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
+        DiscordWidgetService discordWidgetService = mock(DiscordWidgetService.class);
+        YouTubeService youTubeService = mock(YouTubeService.class);
+        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, discordWidgetService, youTubeService, objectMapper);
 
         // Setup page with current version
         Page page = Page.builder()
@@ -177,7 +181,9 @@ class CmsServicePropertyTest {
         PageRepository pageRepository = mock(PageRepository.class);
         PageRevisionRepository pageRevisionRepository = mock(PageRevisionRepository.class);
         ValidationService validationService = mock(ValidationService.class);
-        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
+        DiscordWidgetService discordWidgetService = mock(DiscordWidgetService.class);
+        YouTubeService youTubeService = mock(YouTubeService.class);
+        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, discordWidgetService, youTubeService, objectMapper);
 
         // Setup page with version
         Page page = Page.builder()
@@ -235,7 +241,9 @@ class CmsServicePropertyTest {
         PageRepository pageRepository = mock(PageRepository.class);
         PageRevisionRepository pageRevisionRepository = mock(PageRevisionRepository.class);
         ValidationService validationService = mock(ValidationService.class);
-        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
+        DiscordWidgetService discordWidgetService = mock(DiscordWidgetService.class);
+        YouTubeService youTubeService = mock(YouTubeService.class);
+        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, discordWidgetService, youTubeService, objectMapper);
 
         // Setup page with published revision
         Map<String, String> localizedTitle = Map.of("en", title);
@@ -294,7 +302,9 @@ class CmsServicePropertyTest {
         PageRepository pageRepository = mock(PageRepository.class);
         PageRevisionRepository pageRevisionRepository = mock(PageRevisionRepository.class);
         ValidationService validationService = mock(ValidationService.class);
-        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
+        DiscordWidgetService discordWidgetService = mock(DiscordWidgetService.class);
+        YouTubeService youTubeService = mock(YouTubeService.class);
+        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, discordWidgetService, youTubeService, objectMapper);
 
         // Setup: No published revision exists
         when(pageRevisionRepository.findByPageSlugAndStatusWithPage(slug, RevisionStatus.PUBLISHED))
@@ -329,7 +339,9 @@ class CmsServicePropertyTest {
         PageRepository pageRepository = mock(PageRepository.class);
         PageRevisionRepository pageRevisionRepository = mock(PageRevisionRepository.class);
         ValidationService validationService = mock(ValidationService.class);
-        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
+        DiscordWidgetService discordWidgetService = mock(DiscordWidgetService.class);
+        YouTubeService youTubeService = mock(YouTubeService.class);
+        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, discordWidgetService, youTubeService, objectMapper);
 
         // Setup page with published revision but no draft
         Page page = Page.builder()
@@ -403,7 +415,9 @@ class CmsServicePropertyTest {
         PageRepository pageRepository = mock(PageRepository.class);
         PageRevisionRepository pageRevisionRepository = mock(PageRevisionRepository.class);
         ValidationService validationService = mock(ValidationService.class);
-        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
+        DiscordWidgetService discordWidgetService = mock(DiscordWidgetService.class);
+        YouTubeService youTubeService = mock(YouTubeService.class);
+        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, discordWidgetService, youTubeService, objectMapper);
 
         // Setup page with draft revision
         Map<String, String> localizedTitle = Map.of("en", title);
@@ -467,7 +481,9 @@ class CmsServicePropertyTest {
         PageRepository pageRepository = mock(PageRepository.class);
         PageRevisionRepository pageRevisionRepository = mock(PageRevisionRepository.class);
         ValidationService validationService = mock(ValidationService.class);
-        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
+        DiscordWidgetService discordWidgetService = mock(DiscordWidgetService.class);
+        YouTubeService youTubeService = mock(YouTubeService.class);
+        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, discordWidgetService, youTubeService, objectMapper);
 
         // Setup page with draft revision
         Page page = Page.builder()
@@ -531,7 +547,9 @@ class CmsServicePropertyTest {
         PageRepository pageRepository = mock(PageRepository.class);
         PageRevisionRepository pageRevisionRepository = mock(PageRevisionRepository.class);
         ValidationService validationService = mock(ValidationService.class);
-        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
+        DiscordWidgetService discordWidgetService = mock(DiscordWidgetService.class);
+        YouTubeService youTubeService = mock(YouTubeService.class);
+        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, discordWidgetService, youTubeService, objectMapper);
 
         // Setup page with both draft and published revisions
         Page page = Page.builder()
@@ -599,7 +617,9 @@ class CmsServicePropertyTest {
         PageRepository pageRepository = mock(PageRepository.class);
         PageRevisionRepository pageRevisionRepository = mock(PageRevisionRepository.class);
         ValidationService validationService = mock(ValidationService.class);
-        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, objectMapper);
+        DiscordWidgetService discordWidgetService = mock(DiscordWidgetService.class);
+        YouTubeService youTubeService = mock(YouTubeService.class);
+        CmsService cmsService = new CmsServiceImpl(pageRepository, pageRevisionRepository, validationService, discordWidgetService, youTubeService, objectMapper);
 
         // Setup: No page or revision exists for this slug
         when(pageRevisionRepository.findByPageSlugAndStatusWithPage(slug, RevisionStatus.PUBLISHED))
