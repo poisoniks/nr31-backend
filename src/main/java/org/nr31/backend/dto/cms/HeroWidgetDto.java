@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.nr31.backend.annotation.ImageField;
+import org.nr31.backend.annotation.LocalizedField;
 import org.nr31.backend.validation.ValidBackgroundImageId;
 import org.nr31.backend.validation.ValidLocalizedString;
 
@@ -18,6 +20,7 @@ public class HeroWidgetDto extends WidgetDto {
     
     @NotNull(message = "Badge text must not be null")
     @ValidLocalizedString
+    @LocalizedField
     @Schema(description = "Localized badge text above main title", 
             example = "{\"en\": \"M&B Bannerlord Regiment\", \"uk\": \"Полк M&B Bannerlord\"}", 
             requiredMode = Schema.RequiredMode.REQUIRED)
@@ -37,6 +40,7 @@ public class HeroWidgetDto extends WidgetDto {
     
     @NotNull(message = "Description must not be null")
     @ValidLocalizedString
+    @LocalizedField
     @Schema(description = "Localized descriptive paragraph", 
             example = "{\"en\": \"Join the elite artillery regiment\", \"uk\": \"Приєднуйтесь до елітного артилерійського полку\"}", 
             requiredMode = Schema.RequiredMode.REQUIRED)
@@ -44,6 +48,7 @@ public class HeroWidgetDto extends WidgetDto {
     
     @NotNull(message = "CTA text must not be null")
     @ValidLocalizedString
+    @LocalizedField
     @Schema(description = "Localized call-to-action button text", 
             example = "{\"en\": \"Join Now\", \"uk\": \"Приєднатися зараз\"}", 
             requiredMode = Schema.RequiredMode.REQUIRED)
@@ -57,6 +62,7 @@ public class HeroWidgetDto extends WidgetDto {
     
     @NotNull(message = "Background image ID must not be null")
     @ValidBackgroundImageId
+    @ImageField
     @Schema(description = "UUID of the background image from Library API", 
             example = "550e8400-e29b-41d4-a716-446655440000", 
             requiredMode = Schema.RequiredMode.REQUIRED)

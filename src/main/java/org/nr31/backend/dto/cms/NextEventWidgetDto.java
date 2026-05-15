@@ -3,6 +3,7 @@ package org.nr31.backend.dto.cms;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.nr31.backend.annotation.LocalizedField;
 import org.nr31.backend.validation.ValidLocalizedString;
 
 import java.util.Map;
@@ -13,6 +14,7 @@ import java.util.Map;
 public class NextEventWidgetDto extends WidgetDto {
     
     @ValidLocalizedString
+    @LocalizedField
     @Schema(description = "Optional localized title override", 
             example = "{\"en\": \"Upcoming Official Match\", \"uk\": \"Наступний офіційний матч\"}", 
             requiredMode = Schema.RequiredMode.NOT_REQUIRED)

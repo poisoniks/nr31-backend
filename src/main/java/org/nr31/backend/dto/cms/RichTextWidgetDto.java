@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.nr31.backend.annotation.LocalizedField;
 import org.nr31.backend.validation.ValidRichTextSize;
 
 import java.util.Map;
@@ -18,6 +19,7 @@ public class RichTextWidgetDto extends WidgetDto {
     @NotNull(message = "Body content must not be null")
     @Valid
     @ValidRichTextSize
+    @LocalizedField
     @Schema(
         description = "Localized TipTap JSON AST content (max size per locale enforced by AppConfig key 'cms.richtext.max_size_bytes')",
         example = """

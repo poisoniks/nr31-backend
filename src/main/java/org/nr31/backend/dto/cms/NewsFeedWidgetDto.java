@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.nr31.backend.annotation.LocalizedField;
 import org.nr31.backend.validation.ValidLocalizedString;
 import org.nr31.backend.validation.ValidNewsFeedItemCount;
 
@@ -17,6 +18,7 @@ public class NewsFeedWidgetDto extends WidgetDto {
     
     @NotNull(message = "Section title must not be null")
     @ValidLocalizedString
+    @LocalizedField
     @Schema(description = "Localized section header", 
             example = "{\"en\": \"Latest News\", \"uk\": \"Останні новини\"}", 
             requiredMode = Schema.RequiredMode.REQUIRED)
