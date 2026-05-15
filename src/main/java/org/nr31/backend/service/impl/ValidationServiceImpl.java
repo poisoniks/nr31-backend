@@ -1,5 +1,6 @@
 package org.nr31.backend.service.impl;
 
+import org.nr31.backend.dto.cms.DiscordWidgetDto;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -168,7 +169,9 @@ public class ValidationServiceImpl implements ValidationService {
             return "newsfeed";
         } else if (widget instanceof YoutubeWidgetDto) {
             return "youtube";
+        } else if (widget instanceof DiscordWidgetDto) {
+            return "discord";
         }
-        throw new IllegalArgumentException("Unknown widget type: " + widget.getClass().getName());
+        throw new IllegalArgumentException("Unknown widget type: " + widget.getClass().getSimpleName());
     }
 }
