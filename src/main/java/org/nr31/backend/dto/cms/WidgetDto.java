@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.util.UUID;
+
 @Data
 @Schema(description = "Base class for all widgets")
 @JsonTypeInfo(
@@ -21,6 +23,9 @@ import lombok.Data;
     @JsonSubTypes.Type(value = DiscordWidgetDto.class, name = "discord")
 })
 public abstract class WidgetDto {
+    @Schema(description = "Unique identifier for the widget", requiredMode = Schema.RequiredMode.REQUIRED)
+    private UUID id = UUID.randomUUID();
+
     // Note: The 'type' field is managed automatically by Jackson's @JsonTypeInfo
     // Do not add an explicit 'type' field here
 }

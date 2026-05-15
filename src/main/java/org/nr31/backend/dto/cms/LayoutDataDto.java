@@ -3,6 +3,7 @@ package org.nr31.backend.dto.cms;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import org.nr31.backend.validation.UniqueWidgetIds;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,6 +13,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@UniqueWidgetIds
 @Schema(description = "Complete layout data for a page")
 public class LayoutDataDto {
     
