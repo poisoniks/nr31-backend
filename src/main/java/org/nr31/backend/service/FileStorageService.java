@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 public interface FileStorageService {
@@ -28,4 +29,6 @@ public interface FileStorageService {
     void purgeOrphanedAttachments(Instant threshold);
 
     void purgeOrphanedPhysicalFiles();
+
+    Set<String> getAllowedMimeTypes();
 }

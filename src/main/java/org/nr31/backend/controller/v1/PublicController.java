@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.SupportedLocaleDTO;
+import org.nr31.backend.service.FileStorageService;
 import org.nr31.backend.service.PublicService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Set;
+
 @RestController
 @RequestMapping("/api/v1/public")
 @RequiredArgsConstructor
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicController {
 
     private final PublicService publicService;
+    private final FileStorageService fileStorageService;
 
     @Operation(summary = "Get supported locales", description = "Retrieves a list of all supported locales")
     @ApiResponses(value = {
@@ -30,5 +34,14 @@ public class PublicController {
     @GetMapping(value = "/locales", produces = "application/json")
     public ResponseEntity<Page<SupportedLocaleDTO>> getSupportedLocales(@PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(publicService.getSupportedLocales(pageable));
+    }
+
+    @Operation(summary = "Get allowed MIME types", description = "Retrieves a list of all allowed MIME types for file uploads")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved allowed MIME types")
+    })
+    @GetMapping(value = "/allowed-mime-types", produces = "application/json")
+    public ResponseEntity<Set<String>> getAllowedMimeTypes() {
+        return ResponseEntity.ok(fileStorageService.getAllowedMimeTypes());
     }
 }

@@ -17,7 +17,7 @@ public class PublicSteps extends CommonStepDefs {
     }
 
     @Then("the response body should be a list of supported locales")
-    public void the_response_body_should_be_a_list_of_supported_locales() throws Exception {
+    public void the_response_body_should_be_a_list_of_supported_locales() {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
         JsonNode contentNode = root.isArray() ? root : root.get("content");
@@ -25,7 +25,7 @@ public class PublicSteps extends CommonStepDefs {
     }
 
     @Then("the list should contain a locale with code {string}")
-    public void the_list_should_contain_a_locale_with_code(String expectedCode) throws Exception {
+    public void the_list_should_contain_a_locale_with_code(String expectedCode) {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
         JsonNode contentNode = root.isArray() ? root : root.get("content");
@@ -37,5 +37,26 @@ public class PublicSteps extends CommonStepDefs {
             }
         }
         assertTrue(found, "Expected to find locale with code: " + expectedCode);
+    }
+
+    @When("I request the list of allowed MIME types")
+    public void i_request_the_list_of_allowed_mime_types() throws Exception {
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/public/allowed-mime-types", null);
+        contextHelper.addValue("response", response);
+    }
+
+    @Then("the response body should contain MIME type {string}")
+    public void the_response_body_should_contain_mime_type(String expectedMimeType) {
+        HttpResponse<String> response = contextHelper.getValue("response");
+        JsonNode root = objectMapper.readTree(response.body());
+        assertTrue(root.isArray(), "Expected allowed MIME types response to be a JSON array");
+        boolean found = false;
+        for (JsonNode node : root) {
+            if (expectedMimeType.equals(node.asString())) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found, "Expected to find allowed MIME type: " + expectedMimeType);
     }
 }

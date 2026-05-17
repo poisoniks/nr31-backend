@@ -8,3 +8,11 @@ Feature: Public API
     Then the response status code should be 200
     And the response body should be a list of supported locales
     And the list should contain a locale with code "en"
+
+  Scenario: Retrieve all allowed MIME types
+    When I request the list of allowed MIME types
+    Then the response status code should be 200
+    And the response body should contain MIME type "application/pdf"
+    And the response body should contain MIME type "application/zip"
+    And the response body should contain MIME type "text/plain"
+    And the response body should contain MIME type "image/png"

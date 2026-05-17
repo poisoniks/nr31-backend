@@ -85,10 +85,10 @@ public class LibrarySteps extends CommonStepDefs {
         contextHelper.addValue("response", response);
     }
 
-    @When("I upload a text file {string} to library root")
-    public void i_upload_a_text_file_to_library_root(String fileName) throws Exception {
+    @When("I upload a file {string} with content type {string} to library root")
+    public void i_upload_a_file_with_content_type_to_library_root(String fileName, String contentType) throws Exception {
         byte[] content = "hello world".getBytes(StandardCharsets.UTF_8);
-        HttpResponse<String> response = uploadLibraryFile(fileName, "text/plain", content, null);
+        HttpResponse<String> response = uploadLibraryFile(fileName, contentType, content, null);
         contextHelper.addValue("response", response);
     }
 

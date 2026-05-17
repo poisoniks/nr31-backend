@@ -73,7 +73,7 @@ Feature: File Management
     Then the response status code should be 400
 
   Scenario: Upload unsupported file type returns 400
-    When I upload a text file "readme.txt" as "attachment"
+    When I upload a file "readme.mp3" with content type "audio/mpeg" as "attachment"
     Then the response status code should be 400
 
   Scenario: Upload without authentication returns 403
@@ -300,7 +300,7 @@ Feature: File Management
     And the response should have header "X-Accel-Redirect" starting with "/internal-files/"
 
   Scenario: Upload library file with unsupported type returns 400
-    When I upload a text file "readme.txt" to library root
+    When I upload a file "readme.mp3" with content type "audio/mpeg" to library root
     Then the response status code should be 400
 
   Scenario: Upload library file without authentication returns 403

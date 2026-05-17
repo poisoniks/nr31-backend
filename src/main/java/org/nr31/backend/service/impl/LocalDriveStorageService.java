@@ -389,7 +389,8 @@ public class LocalDriveStorageService implements FileStorageService {
                 .build();
     }
 
-    private Set<String> getAllowedMimeTypes() {
+    @Override
+    public Set<String> getAllowedMimeTypes() {
         try {
             AppConfigDto config = appConfigService.getConfig(AppConfigKey.ALLOWED_MIME_TYPES);
             JsonNode node = objectMapper.readTree(config.getConfigValue());

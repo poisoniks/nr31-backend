@@ -51,10 +51,10 @@ public class FilesUploadSteps extends CommonStepDefs {
         contextHelper.addValue("response", response);
     }
 
-    @When("I upload a text file {string} as {string}")
-    public void i_upload_a_text_file_as(String fileName, String scope) throws Exception {
+    @When("I upload a file {string} with content type {string} as {string}")
+    public void i_upload_a_file_with_content_type_as(String fileName, String contentType, String scope) throws Exception {
         byte[] content = "hello world".getBytes(StandardCharsets.UTF_8);
-        HttpResponse<String> response = uploadFile(fileName, "text/plain", content, scope);
+        HttpResponse<String> response = uploadFile(fileName, contentType, content, scope);
         contextHelper.addValue("response", response);
     }
 
