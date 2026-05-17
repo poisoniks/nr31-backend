@@ -115,7 +115,7 @@ class LayoutAttachmentsValidatorTest {
         boolean result = validator.isValid(layoutData, context);
         assertThat(result).isFalse();
         verify(context).disableDefaultConstraintViolation();
-        verify(context).buildConstraintViolationWithTemplate("One or more attached files do not exist.");
+        verify(context).buildConstraintViolationWithTemplate("cms_validation.layout.invalid_attachments");
     }
 
     @Test
@@ -200,7 +200,7 @@ class LayoutAttachmentsValidatorTest {
         boolean result = validator.isValid(layoutData, context);
         assertThat(result).isFalse();
         verify(context).disableDefaultConstraintViolation();
-        verify(context).buildConstraintViolationWithTemplate("You are not authorized to attach the file: bob_file.png");
+        verify(context).buildConstraintViolationWithTemplate("cms_validation.layout.unauthorized_attachment|fileName=bob_file.png");
     }
 
     @Test

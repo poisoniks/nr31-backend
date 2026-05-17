@@ -37,8 +37,10 @@ public enum ErrorCode {
     FOLDER_NOT_EMPTY,
     FEATURE_DISABLED,
 
-    //CMS
+    // CMS
     INVALID_WIDGET_TYPE,
+    CMS_VALIDATION_ERROR,
+    DUPLICATE_WIDGET_IDS,
     
     // Server errors
     INTERNAL_SERVER_ERROR

@@ -30,6 +30,9 @@ public class UniqueWidgetIdsValidator implements ConstraintValidator<UniqueWidge
                     UUID id = widget.getId();
                     if (id != null) {
                         if (!ids.add(id)) {
+                            context.disableDefaultConstraintViolation();
+                            context.buildConstraintViolationWithTemplate("cms_validation.layout.duplicate_widget_ids")
+                                    .addConstraintViolation();
                             return false;
                         }
                     }

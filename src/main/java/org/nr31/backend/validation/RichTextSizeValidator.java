@@ -50,7 +50,7 @@ public class RichTextSizeValidator implements ConstraintValidator<ValidRichTextS
                 if (sizeBytes > maxSizeBytes) {
                     context.disableDefaultConstraintViolation();
                     context.buildConstraintViolationWithTemplate(
-                        String.format("Rich text content for locale '%s' exceeds maximum allowed size of %d bytes (actual: %d bytes)", 
+                        String.format("cms_validation.richtext.size_exceeded|locale=%s|max=%d|actual=%d", 
                             locale, maxSizeBytes, sizeBytes)
                     ).addConstraintViolation();
                     return false;
@@ -58,7 +58,7 @@ public class RichTextSizeValidator implements ConstraintValidator<ValidRichTextS
             } catch (JacksonException e) {
                 context.disableDefaultConstraintViolation();
                 context.buildConstraintViolationWithTemplate(
-                    String.format("Failed to serialize rich text content for locale '%s'", locale)
+                    String.format("cms_validation.richtext.serialization_failed|locale=%s", locale)
                 ).addConstraintViolation();
                 return false;
             }

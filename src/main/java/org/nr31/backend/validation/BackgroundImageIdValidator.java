@@ -20,6 +20,12 @@ public class BackgroundImageIdValidator implements ConstraintValidator<ValidBack
             return true;
         }
 
-        return fileMetadataRepository.existsById(value);
+        boolean exists = fileMetadataRepository.existsById(value);
+        if (!exists) {
+            context.disableDefaultConstraintViolation();
+            context.buildConstraintViolationWithTemplate("cms_validation.hero.background_image_not_found")
+                    .addConstraintViolation();
+        }
+        return exists;
     }
 }

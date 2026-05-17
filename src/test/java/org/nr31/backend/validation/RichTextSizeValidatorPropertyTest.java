@@ -84,7 +84,7 @@ class RichTextSizeValidatorPropertyTest {
             .isFalse();
 
         verify(context).disableDefaultConstraintViolation();
-        verify(context).buildConstraintViolationWithTemplate(contains("exceeds maximum allowed size"));
+        verify(context).buildConstraintViolationWithTemplate(contains("cms_validation.richtext.size_exceeded"));
     }
 
     @Provide

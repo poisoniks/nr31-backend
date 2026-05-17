@@ -52,11 +52,14 @@ class BackgroundImageIdValidatorTest {
     void shouldReturnFalseWhenFileMetadataDoesNotExist() {
         UUID nonExistingId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
         when(fileMetadataRepository.existsById(nonExistingId)).thenReturn(false);
+        ConstraintValidatorContext.ConstraintViolationBuilder builder = mock(ConstraintValidatorContext.ConstraintViolationBuilder.class);
+        when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(builder);
 
         boolean result = validator.isValid(nonExistingId, context);
 
         assertThat(result).isFalse();
         verify(fileMetadataRepository).existsById(nonExistingId);
-        verifyNoInteractions(context);
+        verify(context).disableDefaultConstraintViolation();
+        verify(context).buildConstraintViolationWithTemplate("cms_validation.hero.background_image_not_found");
     }
 }

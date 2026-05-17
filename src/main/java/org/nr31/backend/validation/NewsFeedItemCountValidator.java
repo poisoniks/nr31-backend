@@ -40,7 +40,7 @@ public class NewsFeedItemCountValidator implements ConstraintValidator<ValidNews
         if (value > maxItems) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(
-                    String.format("Item count exceeds maximum allowed of %d (actual: %d)", maxItems, value))
+                    String.format("cms_validation.newsfeed.item_count_exceeded|max=%d|actual=%d", maxItems, value))
                     .addConstraintViolation();
             return false;
         }

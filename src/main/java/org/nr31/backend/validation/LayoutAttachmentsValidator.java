@@ -49,7 +49,7 @@ public class LayoutAttachmentsValidator implements ConstraintValidator<ValidAtta
         List<FileMetadata> files = fileMetadataRepository.findAllById(attachmentIds);
         if (files.size() != attachmentIds.size()) {
             context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate("One or more attached files do not exist.")
+            context.buildConstraintViolationWithTemplate("cms_validation.layout.invalid_attachments")
                     .addConstraintViolation();
             return false;
         }
@@ -67,7 +67,7 @@ public class LayoutAttachmentsValidator implements ConstraintValidator<ValidAtta
                             !currentUsername.equals(file.getUploader().getUsername())) {
                         context.disableDefaultConstraintViolation();
                         context.buildConstraintViolationWithTemplate(
-                                String.format("You are not authorized to attach the file: %s", file.getOriginalName())
+                                String.format("cms_validation.layout.unauthorized_attachment|fileName=%s", file.getOriginalName())
                         ).addConstraintViolation();
                         return false;
                     }

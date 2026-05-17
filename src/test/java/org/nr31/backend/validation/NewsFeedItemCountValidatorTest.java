@@ -85,7 +85,7 @@ class NewsFeedItemCountValidatorTest {
         assertThat(result).isFalse();
         verify(context).disableDefaultConstraintViolation();
         verify(context).buildConstraintViolationWithTemplate(
-                "Item count exceeds maximum allowed of 50 (actual: 51)");
+                "cms_validation.newsfeed.item_count_exceeded|max=50|actual=51");
     }
 
     @Test
@@ -158,6 +158,6 @@ class NewsFeedItemCountValidatorTest {
         assertThat(result).isFalse();
         verify(context).disableDefaultConstraintViolation();
         verify(context).buildConstraintViolationWithTemplate(
-                "Item count exceeds maximum allowed of 25 (actual: 30)");
+                "cms_validation.newsfeed.item_count_exceeded|max=25|actual=30");
     }
 }

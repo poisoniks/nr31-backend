@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.nr31.backend.dto.ErrorCode;
 import org.nr31.backend.dto.ErrorResponse;
 import org.nr31.backend.dto.ValidationErrorResponse;
+import org.nr31.backend.dto.cms.CmsValidationErrorResponse;
+import org.nr31.backend.dto.cms.UpdateDraftRequest;
 import org.nr31.backend.dto.cms.WidgetDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -143,8 +145,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ApiResponse(responseCode = "400", description = "Validation error",
-            content = @Content(schema = @Schema(implementation = ValidationErrorResponse.class)))
-    public ValidationErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+            content = @Content(schema = @Schema(anyOf = {ValidationErrorResponse.class, CmsValidationErrorResponse.class})))
+    public ErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        if (e.getBindingResult().getTarget() instanceof UpdateDraftRequest) {
+            CmsValidationErrorResponse response = CmsValidationHandler.buildCmsValidationResponse(e);
+            log.debug("CMS Validation failed: details={}, context={}", response.getDetails(), response.getContext());
+            return response;
+        }
+
         Map<String, String> errors = new HashMap<>();
         e.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = (error instanceof FieldError) ? ((FieldError) error).getField() : error.getObjectName();

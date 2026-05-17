@@ -24,6 +24,12 @@ public class LocalizedStringsValidator implements ConstraintValidator<ValidLocal
         Set<String> keys = value.keySet();
         long validCount = supportedLocaleRepository.countByCodeIn(keys);
 
-        return validCount == keys.size();
+        boolean isValid = validCount == keys.size();
+        if (!isValid) {
+            context.disableDefaultConstraintViolation();
+            context.buildConstraintViolationWithTemplate("cms_validation.localized_string.invalid_locale_keys")
+                    .addConstraintViolation();
+        }
+        return isValid;
     }
 }
