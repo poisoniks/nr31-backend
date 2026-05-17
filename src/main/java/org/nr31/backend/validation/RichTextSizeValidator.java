@@ -7,6 +7,7 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.service.AppConfigService;
 import org.springframework.stereotype.Component;
 
@@ -26,7 +27,7 @@ public class RichTextSizeValidator implements ConstraintValidator<ValidRichTextS
             return true;
         }
 
-        AppConfigDto config = appConfigService.getConfig("cms.richtext.max_size_bytes");
+        AppConfigDto config = appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES);
         long maxSizeBytes;
         
         try {

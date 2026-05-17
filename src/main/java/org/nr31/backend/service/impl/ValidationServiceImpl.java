@@ -17,6 +17,7 @@ import org.nr31.backend.dto.cms.UpdateSlotRestrictionsRequest;
 import org.nr31.backend.dto.cms.WidgetDto;
 import org.nr31.backend.exception.AppConfigValidationException;
 import org.nr31.backend.exception.ElementNotFoundException;
+import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.service.AppConfigService;
 import org.nr31.backend.service.ValidationService;
 import org.springframework.cache.annotation.CacheEvict;
@@ -34,8 +35,6 @@ public class ValidationServiceImpl implements ValidationService {
 
     private final AppConfigService appConfigService;
     private final ObjectMapper objectMapper;
-
-    private static final String SLOT_RESTRICTIONS_CONFIG_KEY = "cms_slot_restrictions";
 
     @Override
     public void validateLayout(LayoutDataDto layoutData) {
@@ -82,7 +81,7 @@ public class ValidationServiceImpl implements ValidationService {
     @Cacheable("slotRestrictions")
     public SlotRestrictionsDto getSlotRestrictions() {
         try {
-            AppConfigDto config = appConfigService.getConfig(SLOT_RESTRICTIONS_CONFIG_KEY);
+            AppConfigDto config = appConfigService.getConfig(AppConfigKey.CMS_SLOT_RESTRICTIONS);
             Map<String, List<String>> restrictions = objectMapper.readValue(
                 config.getConfigValue(),
                 objectMapper.getTypeFactory().constructMapType(
@@ -144,12 +143,12 @@ public class ValidationServiceImpl implements ValidationService {
         try {
             String jsonValue = objectMapper.writeValueAsString(restrictions);
             AppConfigDto configDto = AppConfigDto.builder()
-                .name(SLOT_RESTRICTIONS_CONFIG_KEY)
+                .name(AppConfigKey.CMS_SLOT_RESTRICTIONS.getKey())
                 .configValue(jsonValue)
                 .description(Map.of("en", "CMS slot restrictions configuration"))
                 .build();
 
-            appConfigService.updateConfig(SLOT_RESTRICTIONS_CONFIG_KEY, configDto);
+            appConfigService.updateConfig(AppConfigKey.CMS_SLOT_RESTRICTIONS.getKey(), configDto);
         } catch (JacksonException e) {
             throw new AppConfigValidationException(
                 "Failed to serialize slot restrictions",

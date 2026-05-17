@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.service.AppConfigService;
 
 import java.util.HashMap;
@@ -60,7 +61,7 @@ class RichTextSizeValidatorTest {
             .name("cms.richtext.max_size_bytes")
             .configValue("1000")
             .build();
-        when(appConfigService.getConfig("cms.richtext.max_size_bytes")).thenReturn(config);
+        when(appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES)).thenReturn(config);
 
         // Create small content (well under 1000 bytes)
         JsonNode smallContent = objectMapper.readTree("""
@@ -90,7 +91,7 @@ class RichTextSizeValidatorTest {
             .name("cms.richtext.max_size_bytes")
             .configValue("100")
             .build();
-        when(appConfigService.getConfig("cms.richtext.max_size_bytes")).thenReturn(config);
+        when(appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES)).thenReturn(config);
 
         // Create large content (over 100 bytes)
         JsonNode largeContent = objectMapper.readTree("""
@@ -124,7 +125,7 @@ class RichTextSizeValidatorTest {
             .name("cms.richtext.max_size_bytes")
             .configValue("200")
             .build();
-        when(appConfigService.getConfig("cms.richtext.max_size_bytes")).thenReturn(config);
+        when(appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES)).thenReturn(config);
 
         // Create content where one locale is within limit, another exceeds it
         JsonNode smallContent = objectMapper.readTree("""
@@ -175,7 +176,7 @@ class RichTextSizeValidatorTest {
             .name("cms.richtext.max_size_bytes")
             .configValue("invalid-json")
             .build();
-        when(appConfigService.getConfig("cms.richtext.max_size_bytes")).thenReturn(config);
+        when(appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES)).thenReturn(config);
 
         // Create small content (under default 1MB)
         JsonNode smallContent = objectMapper.readTree("""

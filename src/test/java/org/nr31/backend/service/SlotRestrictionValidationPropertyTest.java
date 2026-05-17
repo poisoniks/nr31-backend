@@ -4,6 +4,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import net.jqwik.api.*;
 import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.dto.cms.*;
 import org.nr31.backend.exception.AppConfigValidationException;
 import org.nr31.backend.service.impl.ValidationServiceImpl;
@@ -48,7 +49,7 @@ class SlotRestrictionValidationPropertyTest {
             .configValue(restrictionsJson)
             .build();
         
-        when(appConfigService.getConfig("cms_slot_restrictions")).thenReturn(configDto);
+        when(appConfigService.getConfig(AppConfigKey.CMS_SLOT_RESTRICTIONS)).thenReturn(configDto);
         // When: Validating layout with invalid widget-slot combination
         // Then: Should throw AppConfigValidationException
         assertThatThrownBy(() -> validationService.validateLayout(layoutData))

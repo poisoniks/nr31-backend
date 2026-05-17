@@ -6,6 +6,7 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.service.AppConfigService;
 import org.springframework.stereotype.Component;
 
@@ -22,7 +23,7 @@ public class NewsFeedItemCountValidator implements ConstraintValidator<ValidNews
             return true;
         }
 
-        AppConfigDto config = appConfigService.getConfig("cms.newsfeed.max_items");
+        AppConfigDto config = appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS);
         int maxItems;
 
         try {

@@ -10,6 +10,7 @@ import org.nr31.backend.annotation.FeatureSwitch;
 import org.nr31.backend.dto.AppConfigDto;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.exception.FeatureDisabledException;
+import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.service.AppConfigService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
@@ -44,7 +45,7 @@ public class FeatureSwitchInterceptor implements HandlerInterceptor {
 
     private boolean isFeatureEnabled(String featureName) {
         try {
-            AppConfigDto config = appConfigService.getConfig("feature_switches");
+            AppConfigDto config = appConfigService.getConfig(AppConfigKey.FEATURE_SWITCHES);
             JsonNode configNode = objectMapper.readTree(config.getConfigValue());
             
             if (configNode.isArray()) {

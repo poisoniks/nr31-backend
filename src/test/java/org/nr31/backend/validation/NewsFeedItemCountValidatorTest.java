@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.service.AppConfigService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,7 +48,7 @@ class NewsFeedItemCountValidatorTest {
                 .name("cms.newsfeed.max_items")
                 .configValue("50")
                 .build();
-        when(appConfigService.getConfig("cms.newsfeed.max_items")).thenReturn(config);
+        when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
         // Test with itemCount well below limit
         boolean result = validator.isValid(10, context);
@@ -61,7 +62,7 @@ class NewsFeedItemCountValidatorTest {
                 .name("cms.newsfeed.max_items")
                 .configValue("50")
                 .build();
-        when(appConfigService.getConfig("cms.newsfeed.max_items")).thenReturn(config);
+        when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
         // Test with itemCount exactly at limit
         boolean result = validator.isValid(50, context);
@@ -75,7 +76,7 @@ class NewsFeedItemCountValidatorTest {
                 .name("cms.newsfeed.max_items")
                 .configValue("50")
                 .build();
-        when(appConfigService.getConfig("cms.newsfeed.max_items")).thenReturn(config);
+        when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
         when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
 
@@ -94,7 +95,7 @@ class NewsFeedItemCountValidatorTest {
                 .name("cms.newsfeed.max_items")
                 .configValue("invalid-json")
                 .build();
-        when(appConfigService.getConfig("cms.newsfeed.max_items")).thenReturn(config);
+        when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
         // Test that it throws RuntimeException
         assertThrows(RuntimeException.class, () ->
@@ -109,7 +110,7 @@ class NewsFeedItemCountValidatorTest {
                 .name("cms.newsfeed.max_items")
                 .configValue("\"not-a-number\"")
                 .build();
-        when(appConfigService.getConfig("cms.newsfeed.max_items")).thenReturn(config);
+        when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
         // Test that it throws RuntimeException
         assertThrows(RuntimeException.class, () ->
@@ -120,7 +121,7 @@ class NewsFeedItemCountValidatorTest {
     @Test
     void shouldThrowNullPointerExceptionWhenConfigIsMissing() {
         // Setup: config service returns null
-        when(appConfigService.getConfig("cms.newsfeed.max_items")).thenReturn(null);
+        when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(null);
 
         // Test that it throws NullPointerException when accessing config.getConfigValue()
         assertThrows(RuntimeException.class, () -> {
@@ -134,7 +135,7 @@ class NewsFeedItemCountValidatorTest {
                 .name("cms.newsfeed.max_items")
                 .configValue("50")
                 .build();
-        when(appConfigService.getConfig("cms.newsfeed.max_items")).thenReturn(config);
+        when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
         // Test with itemCount of 1 (minimum valid value per @Min(1) annotation)
         boolean result = validator.isValid(1, context);
@@ -148,7 +149,7 @@ class NewsFeedItemCountValidatorTest {
                 .name("cms.newsfeed.max_items")
                 .configValue("25")
                 .build();
-        when(appConfigService.getConfig("cms.newsfeed.max_items")).thenReturn(config);
+        when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
         when(context.buildConstraintViolationWithTemplate(anyString())).thenReturn(violationBuilder);
 

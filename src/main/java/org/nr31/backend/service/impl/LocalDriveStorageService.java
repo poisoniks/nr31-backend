@@ -1,12 +1,15 @@
 package org.nr31.backend.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
+import org.nr31.backend.dto.AppConfigDto;
 import org.nr31.backend.dto.ErrorCode;
 import org.nr31.backend.dto.FileMetadataDTO;
 import org.nr31.backend.dto.FileUploadResponse;
 import org.nr31.backend.dto.LibraryFileUpdateRequest;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.exception.FileStorageException;
+import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.model.FileMetadata;
 import org.nr31.backend.model.FileScope;
 import org.nr31.backend.model.MediaFolder;
@@ -14,7 +17,9 @@ import org.nr31.backend.model.User;
 import org.nr31.backend.repository.FileMetadataRepository;
 import org.nr31.backend.repository.MediaFolderRepository;
 import org.nr31.backend.repository.UserRepository;
+import org.nr31.backend.service.AppConfigService;
 import org.nr31.backend.service.FileStorageService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -40,6 +45,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +60,10 @@ public class LocalDriveStorageService implements FileStorageService {
     private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
             "image/png",
             "image/jpeg",
-            "image/webp");
+            "image/webp",
+            "application/pdf",
+            "application/zip",
+            "text/plain");
 
     private static final String FILES_URL_PREFIX = "/api/v1/files/";
 
@@ -64,18 +73,24 @@ public class LocalDriveStorageService implements FileStorageService {
     private final FileMetadataRepository fileMetadataRepository;
     private final UserRepository userRepository;
     private final MediaFolderRepository mediaFolderRepository;
+    private final AppConfigService appConfigService;
+    private final ObjectMapper objectMapper;
 
     public LocalDriveStorageService(
             @Value("${app.uploads.dir:/app/uploads}") String uploadDir,
             FileMetadataRepository fileMetadataRepository,
             UserRepository userRepository,
             MediaFolderRepository mediaFolderRepository,
-            ObjectProvider<FileSystem> fileSystemProvider) {
+            ObjectProvider<FileSystem> fileSystemProvider,
+            AppConfigService appConfigService,
+            ObjectMapper objectMapper) {
         FileSystem fs = fileSystemProvider.getIfAvailable(FileSystems::getDefault);
         this.uploadDir = fs.getPath(uploadDir).toAbsolutePath().normalize();
         this.fileMetadataRepository = fileMetadataRepository;
         this.userRepository = userRepository;
         this.mediaFolderRepository = mediaFolderRepository;
+        this.appConfigService = appConfigService;
+        this.objectMapper = objectMapper;
 
         try {
             Files.createDirectories(this.uploadDir);
@@ -92,9 +107,10 @@ public class LocalDriveStorageService implements FileStorageService {
         }
 
         String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_MIME_TYPES.contains(contentType)) {
+        Set<String> allowedMimeTypes = getAllowedMimeTypes();
+        if (contentType == null || !allowedMimeTypes.contains(contentType)) {
             throw new FileStorageException(
-                    "File type not allowed. Allowed types: " + ALLOWED_MIME_TYPES, ErrorCode.INVALID_FILE_TYPE);
+                    "File type not allowed. Allowed types: " + allowedMimeTypes, ErrorCode.INVALID_FILE_TYPE);
         }
 
         User uploader = userRepository.findByUsername(uploaderUsername)
@@ -371,5 +387,22 @@ public class LocalDriveStorageService implements FileStorageService {
                 .uploaderUsername(metadata.getUploader().getUsername())
                 .createdAt(metadata.getCreatedAt())
                 .build();
+    }
+
+    private Set<String> getAllowedMimeTypes() {
+        try {
+            AppConfigDto config = appConfigService.getConfig(AppConfigKey.ALLOWED_MIME_TYPES);
+            JsonNode node = objectMapper.readTree(config.getConfigValue());
+            if (node.isArray()) {
+                Set<String> allowedMimeTypes = new HashSet<>();
+                for (JsonNode item : node) {
+                    allowedMimeTypes.add(item.asText());
+                }
+                return allowedMimeTypes;
+            }
+        } catch (Exception e) {
+            log.error("Failed to load allowed MIME types from database app_config, falling back to defaults", e);
+        }
+        return ALLOWED_MIME_TYPES;
     }
 }

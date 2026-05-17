@@ -15,6 +15,7 @@ import org.nr31.backend.exception.AppConfigException;
 import org.nr31.backend.exception.AppConfigValidationException;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.model.AppConfig;
+import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.repository.AppConfigRepository;
 import org.nr31.backend.service.AppConfigService;
 import org.springframework.cache.annotation.CacheEvict;
@@ -55,6 +56,21 @@ public class AppConfigServiceImpl implements AppConfigService {
     public AppConfigDto getConfig(String name) {
         AppConfig appConfig = appConfigRepository.findByConfigKey(name)
                 .orElseThrow(() -> new ElementNotFoundException("Config not found", ErrorCode.CONFIG_NOT_FOUND, Map.of("name", name)));
+
+        return AppConfigDto.builder()
+                .name(appConfig.getConfigKey())
+                .description(appConfig.getDescription())
+                .configValue(appConfig.getConfigValue().toString())
+                .configSchema(appConfig.getConfigSchema().toString())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "appConfig", key = "#key.key")
+    public AppConfigDto getConfig(AppConfigKey key) {
+        AppConfig appConfig = appConfigRepository.findByConfigKey(key.getKey())
+                .orElseThrow(() -> new ElementNotFoundException("Config not found", ErrorCode.CONFIG_NOT_FOUND, Map.of("name", key.getKey())));
 
         return AppConfigDto.builder()
                 .name(appConfig.getConfigKey())

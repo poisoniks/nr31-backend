@@ -16,6 +16,7 @@ import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.integration.discord.dto.DiscordDeleteDTO;
 import org.nr31.backend.integration.discord.dto.DiscordEventExceptionDTO;
 import org.nr31.backend.integration.discord.dto.DiscordScheduledEventDTO;
+import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.service.AppConfigService;
 import org.nr31.backend.service.CalendarService;
 import org.springframework.cache.Cache;
@@ -37,7 +38,6 @@ import java.util.stream.Collectors;
 public class CalendarUpdateDiscordListener extends UpdatedListenerAdapter {
     protected static final String CALENDAR_CACHE_NAME = "calendarEvents";
     protected static final String SCHEDULED_EVENTS_ROUTE = "guilds/{guild_id}/scheduled-events";
-    public static final String GUILD_ID_PROPERTY = "fetch_scheduled_discord_events_guild_id";
     public static final String GUILD_ID_PROPERTY_KEY = "guildId";
 
     private final CalendarService calendarService;
@@ -182,7 +182,7 @@ public class CalendarUpdateDiscordListener extends UpdatedListenerAdapter {
 
     private String getGuildId() {
         try {
-            AppConfigDto config = appConfigService.getConfig(GUILD_ID_PROPERTY);
+            AppConfigDto config = appConfigService.getConfig(AppConfigKey.FETCH_SCHEDULED_DISCORD_EVENTS_GUILD_ID);
             JsonNode configNode = objectMapper.readTree(config.getConfigValue());
             JsonNode valueNode = configNode.get(GUILD_ID_PROPERTY_KEY);
             if (valueNode != null && !valueNode.isNull()) {
@@ -193,7 +193,7 @@ public class CalendarUpdateDiscordListener extends UpdatedListenerAdapter {
             log.warn("Guild Id to fetch scheduled Discord events is not found");
             return null;
         } catch (Exception e) {
-            log.error("Failed to parse '{}' configuration. Returning null.", GUILD_ID_PROPERTY, e);
+            log.error("Failed to parse '{}' configuration. Returning null.", AppConfigKey.FETCH_SCHEDULED_DISCORD_EVENTS_GUILD_ID.getKey(), e);
             return null;
         }
     }
