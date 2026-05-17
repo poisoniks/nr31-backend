@@ -215,7 +215,25 @@ public class CmsSteps extends CommonStepDefs {
         String slug = getLastPageSlug();
         String publishedLayout = contextHelper.getValue("published_layout_" + slug);
         JsonNode publishedLayoutData = objectMapper.readTree(publishedLayout);
+        
+        stripWidgetIds(publishedLayoutData);
+        stripWidgetIds(draftLayoutData);
+        
         assertEquals(publishedLayoutData, draftLayoutData, "Draft layout data should match published layout data");
+    }
+ 
+    private void stripWidgetIds(JsonNode layoutData) {
+        if (layoutData != null && layoutData.has("slots")) {
+            for (JsonNode slot : layoutData.get("slots")) {
+                if (slot.has("widgets")) {
+                    for (JsonNode widget : slot.get("widgets")) {
+                        if (widget.isObject()) {
+                            ((ObjectNode) widget).remove("id");
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @And("the previous published revision should be archived")

@@ -48,10 +48,17 @@ Feature: File Management
     When I get file "{fileId}"
     Then the response status code should be 404
 
-  Scenario: CAS deduplication - same content uploaded twice shares the same hash
+  Scenario: CAS deduplication - same content uploaded twice as attachment shares the same UUID
     When I upload a PNG file "icon.png" as "attachment"
     And I save the response field "id" as "fileId1"
     When I upload the same PNG file "icon.png" as "attachment"
+    And I save the response field "id" as "fileId2"
+    Then files "{fileId1}" and "{fileId2}" should have the same UUID
+ 
+  Scenario: CAS deduplication - same content uploaded twice as library file receives different UUIDs
+    When I upload a PNG file "banner.png" as "library"
+    And I save the response field "id" as "fileId1"
+    When I upload the same PNG file "banner.png" as "library"
     And I save the response field "id" as "fileId2"
     Then files "{fileId1}" and "{fileId2}" should have different UUIDs
 
@@ -91,9 +98,9 @@ Feature: File Management
     And the response body should contain "message" with value containing "quota"
 
   Scenario: Delete one of two CAS-deduplicated files, other remains accessible
-    When I upload a PNG file "icon.png" as "attachment"
+    When I upload a PNG file "icon.png" as "library"
     And I save the response field "id" as "fileId1"
-    When I upload the same PNG file "icon.png" as "attachment"
+    When I upload the same PNG file "icon.png" as "library"
     And I save the response field "id" as "fileId2"
     When I delete file "{fileId1}"
     Then the response status code should be 204

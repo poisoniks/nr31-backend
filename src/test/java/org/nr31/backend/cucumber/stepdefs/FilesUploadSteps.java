@@ -85,6 +85,13 @@ public class FilesUploadSteps extends CommonStepDefs {
         String id2 = resolveVariables(ref2);
         assertNotEquals(id1, id2, "Expected different UUIDs but both were: " + id1);
     }
+ 
+    @Then("files {string} and {string} should have the same UUID")
+    public void files_should_have_the_same_uuid(String ref1, String ref2) {
+        String id1 = resolveVariables(ref1);
+        String id2 = resolveVariables(ref2);
+        org.junit.jupiter.api.Assertions.assertEquals(id1, id2, "Expected same UUID but got different: " + id1 + " and " + id2);
+    }
 
     private HttpResponse<String> uploadFile(String fileName, String contentType, byte[] content, String scope) throws Exception {
         String boundary = UUID.randomUUID().toString();

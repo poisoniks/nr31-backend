@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -129,6 +130,24 @@ public class LocalDriveStorageService implements FileStorageService {
             throw new FileStorageException("SHA-256 algorithm not available", e);
         } catch (IOException e) {
             throw new FileStorageException("Failed to process uploaded file", e);
+        }
+
+        if (scope == FileScope.ATTACHMENT) {
+            Optional<FileMetadata> existingMetadata = fileMetadataRepository
+                    .findByStoredNameAndUploaderIdAndScope(sha256Hash, uploader.getId(), scope);
+            if (existingMetadata.isPresent()) {
+                deleteTempFileSilently(tempFile);
+                FileMetadata metadata = existingMetadata.get();
+                metadata.setCreatedAt(Instant.now());
+                fileMetadataRepository.save(metadata);
+                log.info("Deduplicated file upload (hash: {}) for user {}. Reset GC clock.", sha256Hash, uploaderUsername);
+                return FileUploadResponse.builder()
+                        .id(metadata.getId())
+                        .originalName(metadata.getOriginalName())
+                        .url(FILES_URL_PREFIX + metadata.getId())
+                        .size(metadata.getSizeBytes())
+                        .build();
+            }
         }
 
         Path targetPath = uploadDir.resolve(sha256Hash).normalize();
