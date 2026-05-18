@@ -42,6 +42,7 @@ dependencies {
     implementation 'com.github.victools:jsonschema-module-jackson:5.0.0'
     implementation 'com.github.victools:jsonschema-module-jakarta-validation:5.0.0'
     implementation 'commons-io:commons-io:2.21.0'
+    implementation 'com.github.slugify:slugify:3.0.7'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
     implementation("net.dv8tion:JDA:6.3.1")

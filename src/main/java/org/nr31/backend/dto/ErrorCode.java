@@ -41,6 +41,11 @@ public enum ErrorCode {
     INVALID_WIDGET_TYPE,
     CMS_VALIDATION_ERROR,
     DUPLICATE_WIDGET_IDS,
+
+    // Knowledge Base
+    KB_FOLDER_NOT_FOUND,
+    KB_ARTICLE_NOT_FOUND,
+    KB_FOLDER_NOT_EMPTY,
     
     // Server errors
     INTERNAL_SERVER_ERROR
