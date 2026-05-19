@@ -95,3 +95,73 @@ WHERE p.slug IN (
 AND NOT EXISTS (
     SELECT 1 FROM page_revisions pr WHERE pr.page_id = p.id
 );
+
+-- KB Test Permissions and Roles
+INSERT INTO role_permissions (role_id, permission_id) 
+SELECT r.id, p.id FROM roles r, permissions p 
+WHERE r.name = 'ROLE_ADMIN' AND p.name = 'kb:admin'
+ON CONFLICT (role_id, permission_id) DO NOTHING;
+
+INSERT INTO users (username, password_hash) VALUES ('kbauthor', '$2a$12$llGEJmpM5l3xhCORCr/tX.RrkU/GiJeYSjIcLZxmjZwMhtKzMwGya') ON CONFLICT (username) DO NOTHING;
+INSERT INTO roles (name) VALUES ('ROLE_KB_AUTHOR') ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id FROM roles r, permissions p 
+WHERE r.name = 'ROLE_KB_AUTHOR' AND p.name = 'kb:write'
+ON CONFLICT (role_id, permission_id) DO NOTHING;
+
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r 
+WHERE u.username = 'kbauthor' AND r.name = 'ROLE_KB_AUTHOR'
+ON CONFLICT (user_id, role_id) DO NOTHING;
+
+-- Seed KB Folders
+-- Root folder
+INSERT INTO kb_folders (id, name, slug, parent_id, is_restricted, created_at)
+VALUES (100, '{"en": "General Support"}', 'general-support', NULL, FALSE, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO NOTHING;
+
+-- Another root folder (restricted)
+INSERT INTO kb_folders (id, name, slug, parent_id, is_restricted, created_at)
+VALUES (101, '{"en": "Admin Only"}', 'admin-only', NULL, TRUE, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO NOTHING;
+
+-- Sub-folder
+INSERT INTO kb_folders (id, name, slug, parent_id, is_restricted, created_at)
+VALUES (102, '{"en": "User Guides"}', 'user-guides', 100, FALSE, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO NOTHING;
+
+-- Empty folder for deletion tests
+INSERT INTO kb_folders (id, name, slug, parent_id, is_restricted, created_at)
+VALUES (103, '{"en": "Empty Folder"}', 'empty-folder', NULL, FALSE, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO NOTHING;
+
+-- Seed KB Articles
+-- Article in support folder authored by admin
+INSERT INTO kb_articles (id, folder_id, author_id, title, slug, content, plain_text_content, created_at, updated_at)
+VALUES (
+    200, 
+    100, 
+    (SELECT id FROM users WHERE username = 'admin'), 
+    '{"en": "How to Reset Password"}', 
+    'how-to-reset-password', 
+    '{"en": {"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "To reset password, go to settings."}]}]}}'::jsonb, 
+    '{"en": "To reset password, go to settings."}'::jsonb, 
+    CURRENT_TIMESTAMP, 
+    CURRENT_TIMESTAMP
+) ON CONFLICT (id) DO NOTHING;
+
+-- Article authored by kbauthor (used to test that kbauthor can update/delete their own articles)
+INSERT INTO kb_articles (id, folder_id, author_id, title, slug, content, plain_text_content, created_at, updated_at)
+VALUES (
+    201, 
+    100, 
+    (SELECT id FROM users WHERE username = 'kbauthor'), 
+    '{"en": "Author Guide"}', 
+    'author-guide', 
+    '{"en": {"type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "This is a guide for authors."}]}]}}'::jsonb, 
+    '{"en": "This is a guide for authors."}'::jsonb, 
+    CURRENT_TIMESTAMP, 
+    CURRENT_TIMESTAMP
+) ON CONFLICT (id) DO NOTHING;
+

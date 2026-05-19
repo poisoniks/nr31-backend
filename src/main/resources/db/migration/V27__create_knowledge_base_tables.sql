@@ -70,3 +70,44 @@ CREATE INDEX idx_kb_articles_folder_id ON kb_articles(folder_id);
 CREATE INDEX idx_kb_articles_search ON kb_articles USING GIN (search_vector);
 CREATE INDEX idx_kb_articles_trgm_title ON kb_articles
 USING GIN (extract_localized_text(title) gin_trgm_ops);
+
+-- Extracts text from a multi-locale TipTap JSONB document while preserving the locale keys
+CREATE OR REPLACE FUNCTION extract_tiptap_text(doc JSONB)
+RETURNS JSONB AS $$
+DECLARE
+    result JSONB := '{}'::jsonb;
+    locale_key text;
+    locale_content jsonb;
+    extracted_text text;
+BEGIN
+    IF doc IS NULL OR jsonb_typeof(doc) != 'object' THEN
+        RETURN '{}'::jsonb;
+    END IF;
+
+    FOR locale_key, locale_content IN SELECT * FROM jsonb_each(doc) LOOP
+
+        SELECT string_agg(val, ' ') INTO extracted_text
+        FROM (
+            SELECT jsonb_path_query(locale_content, '$.** ? (@.type == "text").text') #>> '{}' AS val
+        ) t;
+        result := jsonb_set(result, ARRAY[locale_key], to_jsonb(coalesce(extracted_text, '')));
+        
+    END LOOP;
+
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE;
+
+-- Trigger to automatically keep plain_text_content in sync with content
+CREATE OR REPLACE FUNCTION sync_kb_article_plain_text()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.plain_text_content := extract_tiptap_text(NEW.content);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_kb_articles_plain_text
+BEFORE INSERT OR UPDATE ON kb_articles
+FOR EACH ROW
+EXECUTE FUNCTION sync_kb_article_plain_text();

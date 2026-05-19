@@ -1,6 +1,6 @@
 package org.nr31.backend.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.github.slugify.Slugify;
 import org.nr31.backend.dto.ErrorCode;
 import org.nr31.backend.dto.kb.CreateKbArticleRequest;
@@ -41,14 +41,18 @@ public class KbServiceImpl implements KbService {
     private final KbArticleRepository kbArticleRepository;
     private final UserRepository userRepository;
     private final Slugify slugify;
+    private final ObjectMapper objectMapper;
+    private static final com.fasterxml.jackson.databind.ObjectMapper legacyMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     public KbServiceImpl(
             KbFolderRepository kbFolderRepository,
             KbArticleRepository kbArticleRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            ObjectMapper objectMapper) {
         this.kbFolderRepository = kbFolderRepository;
         this.kbArticleRepository = kbArticleRepository;
         this.userRepository = userRepository;
+        this.objectMapper = objectMapper;
         this.slugify = Slugify.builder().build();
     }
 
@@ -99,13 +103,13 @@ public class KbServiceImpl implements KbService {
                     .orElseThrow(() -> new ElementNotFoundException("Parent folder not found", ErrorCode.KB_FOLDER_NOT_FOUND));
         }
 
-        String slug = generateUniqueFolderSlug(request.getName(), request.getParentId());
+        String slug = generateUniqueFolderSlug(request.getName(), request.getParentId(), null);
 
         KbFolder folder = KbFolder.builder()
                 .name(request.getName())
                 .slug(slug)
                 .parent(parent)
-                .restricted(request.isRestricted())
+                .restricted(Boolean.TRUE.equals(request.getRestricted()))
                 .build();
 
         KbFolder saved = kbFolderRepository.save(folder);
@@ -124,7 +128,7 @@ public class KbServiceImpl implements KbService {
             if (request.getParentId() == -1) {
                 folder.setParent(null);
                 // Regenerate slug at root level
-                folder.setSlug(generateUniqueFolderSlug(request.getName() != null ? request.getName() : folder.getName(), null));
+                folder.setSlug(generateUniqueFolderSlug(request.getName() != null ? request.getName() : folder.getName(), null, id));
             } else {
                 if (request.getParentId().equals(id)) {
                     throw new ConflictException("A folder cannot be its own parent", ErrorCode.CONFLICT);
@@ -143,11 +147,11 @@ public class KbServiceImpl implements KbService {
 
                 folder.setParent(newParent);
                 // Regenerate slug under new parent
-                folder.setSlug(generateUniqueFolderSlug(request.getName() != null ? request.getName() : folder.getName(), newParent.getId()));
+                folder.setSlug(generateUniqueFolderSlug(request.getName() != null ? request.getName() : folder.getName(), newParent.getId(), id));
             }
         } else if (request.getName() != null) {
             // Name change under same parent
-            folder.setSlug(generateUniqueFolderSlug(request.getName(), folder.getParent() != null ? folder.getParent().getId() : null));
+            folder.setSlug(generateUniqueFolderSlug(request.getName(), folder.getParent() != null ? folder.getParent().getId() : null, id));
         }
 
         if (request.getName() != null) {
@@ -210,15 +214,14 @@ public class KbServiceImpl implements KbService {
             baseSlug = "article";
         }
         String uniqueSlug = generateUniqueArticleSlug(request.getTitle());
-        String plainText = extractPlainTextFromTipTap(request.getContent());
+        com.fasterxml.jackson.databind.JsonNode jackson2Content = convertToJackson2(request.getContent());
 
         KbArticle article = KbArticle.builder()
                 .folder(folder)
                 .author(author)
                 .title(request.getTitle())
                 .slug(uniqueSlug)
-                .content(request.getContent())
-                .plainTextContent(plainText)
+                .content(jackson2Content)
                 .build();
 
         KbArticle saved = saveArticleWithSlugRetry(article, baseSlug);
@@ -253,8 +256,8 @@ public class KbServiceImpl implements KbService {
         }
 
         if (request.getContent() != null) {
-            article.setContent(request.getContent());
-            article.setPlainTextContent(extractPlainTextFromTipTap(request.getContent()));
+            com.fasterxml.jackson.databind.JsonNode jackson2Content = convertToJackson2(request.getContent());
+            article.setContent(jackson2Content);
         }
 
         KbArticle saved = saveArticleWithSlugRetry(article, baseSlug);
@@ -344,24 +347,32 @@ public class KbServiceImpl implements KbService {
                 .anyMatch(a -> authorityName.equals(a.getAuthority()));
     }
 
-    private String generateUniqueFolderSlug(Map<String, String> name, Long parentId) {
+    private String generateUniqueFolderSlug(Map<String, String> name, Long parentId, Long excludeId) {
         String baseSlug = slugify.slugify(getSlugSource(name));
         if (baseSlug == null || baseSlug.isEmpty()) {
             baseSlug = "folder";
         }
         String uniqueSlug = baseSlug;
         int counter = 1;
-        while (folderExists(uniqueSlug, parentId)) {
+        while (folderExists(uniqueSlug, parentId, excludeId)) {
             uniqueSlug = baseSlug + "-" + counter++;
         }
         return uniqueSlug;
     }
 
-    private boolean folderExists(String slug, Long parentId) {
-        if (parentId == null) {
-            return kbFolderRepository.existsBySlugAndParentIsNull(slug);
+    private boolean folderExists(String slug, Long parentId, Long excludeId) {
+        if (excludeId != null) {
+            if (parentId == null) {
+                return kbFolderRepository.existsBySlugAndParentIsNullAndIdNot(slug, excludeId);
+            } else {
+                return kbFolderRepository.existsBySlugAndParentIdAndIdNot(slug, parentId, excludeId);
+            }
         } else {
-            return kbFolderRepository.existsBySlugAndParentId(slug, parentId);
+            if (parentId == null) {
+                return kbFolderRepository.existsBySlugAndParentIsNull(slug);
+            } else {
+                return kbFolderRepository.existsBySlugAndParentId(slug, parentId);
+            }
         }
     }
 
@@ -403,40 +414,6 @@ public class KbServiceImpl implements KbService {
         throw new ConflictException("Failed to generate a unique slug for the article due to concurrency.", ErrorCode.CONFLICT);
     }
 
-    private String extractPlainTextFromTipTap(JsonNode jsonContent) {
-        if (jsonContent == null || jsonContent.isNull()) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder();
-        extractTextRecursively(jsonContent, sb);
-        return sb.toString().trim();
-    }
-
-    private void extractTextRecursively(JsonNode node, StringBuilder sb) {
-        if (node.isObject()) {
-            if (node.has("type") && "text".equals(node.get("type").asText()) && node.has("text")) {
-                sb.append(node.get("text").asText()).append(" ");
-            }
-            if (node.has("attrs")) {
-                JsonNode attrs = node.get("attrs");
-                if (attrs.has("label")) {
-                    sb.append(attrs.get("label").asText()).append(" ");
-                }
-            }
-            if (node.has("content")) {
-                JsonNode content = node.get("content");
-                if (content.isArray()) {
-                    for (JsonNode child : content) {
-                        extractTextRecursively(child, sb);
-                    }
-                }
-            }
-        } else if (node.isArray()) {
-            for (JsonNode child : node) {
-                extractTextRecursively(child, sb);
-            }
-        }
-    }
 
     private List<KbFolderDto> generateBreadcrumbs(Long folderId) {
         if (folderId == null) {
@@ -478,10 +455,33 @@ public class KbServiceImpl implements KbService {
                 .authorName(article.getAuthor().getUsername())
                 .title(article.getTitle())
                 .slug(article.getSlug())
-                .content(article.getContent())
+                .content(convertToJackson3(article.getContent()))
                 .breadcrumbs(generateBreadcrumbs(article.getFolder().getId()))
                 .createdAt(article.getCreatedAt())
                 .updatedAt(article.getUpdatedAt())
                 .build();
     }
+
+    private com.fasterxml.jackson.databind.JsonNode convertToJackson2(tools.jackson.databind.JsonNode node) {
+        if (node == null) {
+            return null;
+        }
+        try {
+            return legacyMapper.readTree(node.toString());
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to convert JSON node to Jackson 2", e);
+        }
+    }
+
+    private tools.jackson.databind.JsonNode convertToJackson3(com.fasterxml.jackson.databind.JsonNode node) {
+        if (node == null) {
+            return null;
+        }
+        try {
+            return objectMapper.readTree(node.toString());
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to convert JSON node to Jackson 3", e);
+        }
+    }
+
 }

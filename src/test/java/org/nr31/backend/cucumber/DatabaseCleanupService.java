@@ -75,10 +75,11 @@ public class DatabaseCleanupService {
 
         for (String table : modifiedTables) {
             String quotedTable = quote(table);
+            String columnsList = getNonGeneratedColumns(table);
             // Use DELETE instead of TRUNCATE to avoid implicit CASCADE wiping out unmodified dependent tables
             sql.append("DELETE FROM public.").append(quotedTable).append("; ");
-            sql.append("INSERT INTO public.").append(quotedTable)
-                    .append(" SELECT * FROM _snapshot.").append(quotedTable).append("; ");
+            sql.append("INSERT INTO public.").append(quotedTable).append(" (").append(columnsList).append(") ")
+                    .append(" SELECT ").append(columnsList).append(" FROM _snapshot.").append(quotedTable).append("; ");
         }
 
         // Clear the tracking table
@@ -100,6 +101,18 @@ public class DatabaseCleanupService {
         } finally {
             jdbcTemplate.execute("SET session_replication_role = 'origin'");
         }
+    }
+
+    private String getNonGeneratedColumns(String tableName) {
+        List<String> columns = jdbcTemplate.queryForList(
+                "SELECT column_name FROM information_schema.columns " +
+                "WHERE table_schema = 'public' AND table_name = ? " +
+                "AND is_generated = 'NEVER' " +
+                "ORDER BY ordinal_position", String.class, tableName);
+        if (columns.isEmpty()) {
+            return "*";
+        }
+        return String.join(", ", columns.stream().map(this::quote).toList());
     }
 
     private List<String> discoverTableNames() {

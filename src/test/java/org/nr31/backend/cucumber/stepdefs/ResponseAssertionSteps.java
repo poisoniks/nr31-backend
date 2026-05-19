@@ -79,13 +79,6 @@ public class ResponseAssertionSteps extends CommonStepDefs {
         assertEquals(resolveVariables(expectedValue), current.asString());
     }
 
-    @Then("values {string} and {string} should be different")
-    public void values_should_be_different(String ref1, String ref2) {
-        String val1 = resolveVariables(ref1);
-        String val2 = resolveVariables(ref2);
-        assertNotEquals(val1, val2, "Expected different values but both were: " + val1);
-    }
-
     @Then("the response body should indicate {string} is true")
     public void the_response_body_should_indicate_is_true(String fieldName) {
         HttpResponse<String> response = contextHelper.getValue("response");
@@ -101,7 +94,11 @@ public class ResponseAssertionSteps extends CommonStepDefs {
         String[] pathParts = jsonPath.split("\\.");
         JsonNode current = root;
         for (String part : pathParts) {
-            current = current.get(part);
+            if (current != null && current.isArray()) {
+                current = current.get(Integer.parseInt(part));
+            } else {
+                current = current.get(part);
+            }
             assertNotNull(current, "Path " + jsonPath + " not found in " + response.body());
         }
         assertTrue(current.isArray(), "Path " + jsonPath + " is not an array");

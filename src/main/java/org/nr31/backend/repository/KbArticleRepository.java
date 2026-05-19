@@ -24,10 +24,14 @@ public interface KbArticleRepository extends JpaRepository<KbArticle, Long> {
 
     @Query(value = """
             SELECT a.* FROM kb_articles a
-            WHERE a.search_vector @@ websearch_to_tsquery('simple', :query)
+            WHERE a.search_vector @@ websearch_to_tsquery('english', :query)
+               OR a.search_vector @@ websearch_to_tsquery('simple', :query)
                OR extract_localized_text(a.title) % :query
             ORDER BY
-               ts_rank(a.search_vector, websearch_to_tsquery('simple', :query)) DESC,
+               GREATEST(
+                   ts_rank(a.search_vector, websearch_to_tsquery('english', :query)),
+                   ts_rank(a.search_vector, websearch_to_tsquery('simple', :query))
+               ) DESC,
                similarity(extract_localized_text(a.title), :query) DESC
             LIMIT 20
             """, nativeQuery = true)

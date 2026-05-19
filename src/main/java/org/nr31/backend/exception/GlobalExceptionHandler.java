@@ -13,6 +13,7 @@ import org.nr31.backend.dto.cms.UpdateDraftRequest;
 import org.nr31.backend.dto.cms.WidgetDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
@@ -85,6 +86,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthorizationDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ErrorResponse handleAuthorizationDeniedException(AuthorizationDeniedException e) {
+        log.debug("Access denied: {}", e.getMessage());
+        return ErrorResponse.builder()
+                .message("Access denied")
+                .code(ErrorCode.FORBIDDEN)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handleAccessDeniedException(AccessDeniedException e) {
         log.debug("Access denied: {}", e.getMessage());
         return ErrorResponse.builder()
                 .message("Access denied")

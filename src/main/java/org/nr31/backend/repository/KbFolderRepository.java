@@ -24,7 +24,11 @@ public interface KbFolderRepository extends JpaRepository<KbFolder, Long> {
 
     boolean existsBySlugAndParentIsNull(String slug);
 
+    boolean existsBySlugAndParentIsNullAndIdNot(String slug, Long excludeId);
+
     boolean existsBySlugAndParentId(String slug, Long parentId);
+
+    boolean existsBySlugAndParentIdAndIdNot(String slug, Long parentId, Long excludeId);
 
     boolean existsByParentId(Long parentId);
 

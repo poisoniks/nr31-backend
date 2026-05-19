@@ -21,5 +21,5 @@ public class CreateKbFolderRequest {
 
     private Long parentId;
 
-    private boolean restricted;
+    private Boolean restricted;
 }

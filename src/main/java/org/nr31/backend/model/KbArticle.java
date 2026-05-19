@@ -15,6 +15,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
@@ -53,8 +54,10 @@ public class KbArticle {
     @Column(columnDefinition = "jsonb", nullable = false)
     private JsonNode content;
 
-    @Column(name = "plain_text_content", nullable = false)
-    private String plainTextContent;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "plain_text_content", columnDefinition = "jsonb", nullable = false, insertable = false, updatable = false)
+    @Generated
+    private JsonNode plainTextContent;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
