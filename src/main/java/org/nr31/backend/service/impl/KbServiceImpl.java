@@ -20,6 +20,9 @@ import org.nr31.backend.model.User;
 import org.nr31.backend.repository.KbArticleRepository;
 import org.nr31.backend.repository.KbFolderRepository;
 import org.nr31.backend.repository.UserRepository;
+import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.model.AppConfigKey;
+import org.nr31.backend.service.AppConfigService;
 import org.nr31.backend.service.KbService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -40,6 +43,7 @@ public class KbServiceImpl implements KbService {
     private final KbFolderRepository kbFolderRepository;
     private final KbArticleRepository kbArticleRepository;
     private final UserRepository userRepository;
+    private final AppConfigService appConfigService;
     private final Slugify slugify;
     private final ObjectMapper objectMapper;
     private static final com.fasterxml.jackson.databind.ObjectMapper legacyMapper = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -48,10 +52,12 @@ public class KbServiceImpl implements KbService {
             KbFolderRepository kbFolderRepository,
             KbArticleRepository kbArticleRepository,
             UserRepository userRepository,
+            AppConfigService appConfigService,
             ObjectMapper objectMapper) {
         this.kbFolderRepository = kbFolderRepository;
         this.kbArticleRepository = kbArticleRepository;
         this.userRepository = userRepository;
+        this.appConfigService = appConfigService;
         this.objectMapper = objectMapper;
         this.slugify = Slugify.builder().build();
     }
@@ -285,13 +291,37 @@ public class KbServiceImpl implements KbService {
         if (query == null || query.trim().isEmpty()) {
             return List.of();
         }
-        List<KbArticle> results = kbArticleRepository.searchArticles(query.trim());
+        String trimmedQuery = query.trim();
+        String precision = getSearchPrecision();
+
+        List<KbArticle> results = switch (precision) {
+            case "standard" -> kbArticleRepository.searchStandard(trimmedQuery);
+            case "full" -> kbArticleRepository.searchFull(trimmedQuery);
+            default -> kbArticleRepository.searchBasic(trimmedQuery);
+        };
+
         return results.stream()
                 .map(article -> KbSearchResultDto.builder()
                         .article(mapToArticleSummaryDto(article))
                         .breadcrumbs(generateBreadcrumbs(article.getFolder().getId()))
                         .build())
                 .toList();
+    }
+
+    private String getSearchPrecision() {
+        try {
+            AppConfigDto config = appConfigService.getConfig(AppConfigKey.KB_SEARCH_PRECISION);
+            String value = config.getConfigValue();
+            if (value != null) {
+                value = value.replace("\"", "").trim();
+            }
+            return switch (value) {
+                case "basic", "standard", "full" -> value;
+                default -> "full";
+            };
+        } catch (Exception e) {
+            return "full";
+        }
     }
 
     // ==========================================

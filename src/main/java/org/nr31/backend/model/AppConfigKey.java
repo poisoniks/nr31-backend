@@ -8,6 +8,7 @@ public enum AppConfigKey {
     CMS_RICHTEXT_MAX_SIZE_BYTES("cms.richtext.max_size_bytes"),
     CMS_NEWSFEED_MAX_ITEMS("cms.newsfeed.max_items"),
     CMS_SLOT_RESTRICTIONS("cms_slot_restrictions"),
+    KB_SEARCH_PRECISION("kb_search_precision"),
     FEATURE_SWITCHES("feature_switches"),
     FETCH_SCHEDULED_DISCORD_EVENTS_GUILD_ID("fetch_scheduled_discord_events_guild_id");
 

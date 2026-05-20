@@ -22,18 +22,63 @@ public interface KbArticleRepository extends JpaRepository<KbArticle, Long> {
 
     Page<KbArticle> findByFolderIdOrderByCreatedAtDesc(Long folderId, Pageable pageable);
 
+    // Level 1: Basic — Full-text search only (stems)
     @Query(value = """
             SELECT a.* FROM kb_articles a
             WHERE a.search_vector @@ websearch_to_tsquery('english', :query)
                OR a.search_vector @@ websearch_to_tsquery('simple', :query)
-               OR extract_localized_text(a.title) % :query
+            ORDER BY
+               GREATEST(
+                   ts_rank(a.search_vector, websearch_to_tsquery('english', :query)),
+                   ts_rank(a.search_vector, websearch_to_tsquery('simple', :query))
+               ) DESC
+            LIMIT 20
+            """, nativeQuery = true)
+    List<KbArticle> searchBasic(@Param("query") String query);
+
+    // Level 2: Standard — FTS + prefix + word_similarity (fuzzy)
+    @Query(value = """
+            SELECT a.* FROM kb_articles a
+            WHERE a.search_vector @@ websearch_to_tsquery('english', :query)
+               OR a.search_vector @@ websearch_to_tsquery('simple', :query)
+               OR a.search_vector @@ to_tsquery('simple',
+                      regexp_replace(trim(:query), '\\s+', ':* & ', 'g') || ':*')
+               OR word_similarity(:query, extract_localized_text(a.title)) > 0.3
+               OR word_similarity(:query, extract_localized_text(a.plain_text_content)) > 0.3
             ORDER BY
                GREATEST(
                    ts_rank(a.search_vector, websearch_to_tsquery('english', :query)),
                    ts_rank(a.search_vector, websearch_to_tsquery('simple', :query))
                ) DESC,
-               similarity(extract_localized_text(a.title), :query) DESC
+               GREATEST(
+                   word_similarity(:query, extract_localized_text(a.title)),
+                   word_similarity(:query, extract_localized_text(a.plain_text_content))
+               ) DESC
             LIMIT 20
             """, nativeQuery = true)
-    List<KbArticle> searchArticles(@Param("query") String query);
+    List<KbArticle> searchStandard(@Param("query") String query);
+
+    // Level 3: Full — everything above + ILIKE substring (infix/suffix)
+    @Query(value = """
+            SELECT a.* FROM kb_articles a
+            WHERE a.search_vector @@ websearch_to_tsquery('english', :query)
+               OR a.search_vector @@ websearch_to_tsquery('simple', :query)
+               OR a.search_vector @@ to_tsquery('simple',
+                      regexp_replace(trim(:query), '\\s+', ':* & ', 'g') || ':*')
+               OR word_similarity(:query, extract_localized_text(a.title)) > 0.3
+               OR word_similarity(:query, extract_localized_text(a.plain_text_content)) > 0.3
+               OR extract_localized_text(a.title) ILIKE '%' || :query || '%'
+               OR extract_localized_text(a.plain_text_content) ILIKE '%' || :query || '%'
+            ORDER BY
+               GREATEST(
+                   ts_rank(a.search_vector, websearch_to_tsquery('english', :query)),
+                   ts_rank(a.search_vector, websearch_to_tsquery('simple', :query))
+               ) DESC,
+               GREATEST(
+                   word_similarity(:query, extract_localized_text(a.title)),
+                   word_similarity(:query, extract_localized_text(a.plain_text_content))
+               ) DESC
+            LIMIT 20
+            """, nativeQuery = true)
+    List<KbArticle> searchFull(@Param("query") String query);
 }
