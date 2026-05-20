@@ -211,6 +211,13 @@ Feature: App Config Management
     Then the response status code should be 200
     And the response body should contain a user with username "admin"
 
+  Scenario: Search application configs by name fuzzy match
+    Given I log in with user "admin" and password "testpass"
+    When I search configs by name "test_config_"
+    Then the response status code should be 200
+    And the response list of configs should contain an item with name "test_config_1"
+    And the response list of configs should contain an item with name "test_config_2"
+
   Scenario: Prevent unauthorized user from listing users
     Given I log in with user "user" and password "testpass"
     When I retrieve all users

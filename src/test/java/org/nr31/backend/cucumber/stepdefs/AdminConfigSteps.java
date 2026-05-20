@@ -201,6 +201,12 @@ public class AdminConfigSteps extends CommonStepDefs {
         contextHelper.addValue("response", response);
     }
 
+    @When("I search configs by name {string}")
+    public void i_search_configs_by_name(String name) throws Exception {
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/admin/config/search?name=" + name, null);
+        contextHelper.addValue("response", response);
+    }
+
     @And("the response body should contain a user with username {string}")
     public void the_response_body_should_contain_a_user_with_username(String expectedUsername) throws Exception {
         HttpResponse<String> response = contextHelper.getValue("response");

@@ -137,6 +137,18 @@ public class AdminPanelController {
         return ResponseEntity.ok(appConfigService.getAllConfigs(pageable));
     }
 
+    @Operation(summary = "Search application configs by name", description = "Retrieves a paginated list of application configurations filtered by name (fuzzy match)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved config list")
+    })
+    @GetMapping("/config/search")
+    @PreAuthorize("hasAuthority('config:read')")
+    public ResponseEntity<Page<AppConfigDto>> searchConfigsByName(
+            @RequestParam String name,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(appConfigService.searchConfigs(name, pageable));
+    }
+
     @Operation(summary = "Update application config", description = "Updates or creates an application configuration")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully updated config"),

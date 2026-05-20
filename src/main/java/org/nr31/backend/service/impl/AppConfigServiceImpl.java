@@ -52,6 +52,18 @@ public class AppConfigServiceImpl implements AppConfigService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<AppConfigDto> searchConfigs(String name, Pageable pageable) {
+        return appConfigRepository.findByConfigKeyContainingIgnoreCase(name, pageable)
+                .map(appConfig -> AppConfigDto.builder()
+                        .name(appConfig.getConfigKey())
+                        .description(appConfig.getDescription())
+                        .configValue(appConfig.getConfigValue().toString())
+                        .configSchema(appConfig.getConfigSchema() != null ? appConfig.getConfigSchema().toString() : null)
+                        .build());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     @Cacheable(value = "appConfig", key = "#name")
     public AppConfigDto getConfig(String name) {
         AppConfig appConfig = appConfigRepository.findByConfigKey(name)

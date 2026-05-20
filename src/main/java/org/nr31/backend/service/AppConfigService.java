@@ -13,5 +13,7 @@ public interface AppConfigService {
 
     Page<AppConfigDto> getAllConfigs(Pageable pageable);
 
+    Page<AppConfigDto> searchConfigs(String name, Pageable pageable);
+
     AppConfigDto updateConfig(String name, AppConfigDto appConfigDto);
 }
