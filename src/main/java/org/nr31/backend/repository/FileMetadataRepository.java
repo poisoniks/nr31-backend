@@ -41,7 +41,7 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, UUID
                       SELECT 1 FROM page_revisions pr
                       WHERE f.id = ANY(
                           ARRAY(
-                              SELECT CAST(jsonb_path_query(pr.layout_data, '$.** ? (@.type == "fileAttachment").attrs.id') AS uuid)
+                              SELECT CAST(jsonb_path_query(pr.layout_data, '$.** ? (@.type == "fileAttachment").attrs.id') #>> '{}' AS uuid)
                           )
                       )
                   )
@@ -55,7 +55,7 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, UUID
                       SELECT 1 FROM page_revisions pr
                       WHERE f.id = ANY(
                           ARRAY(
-                              SELECT CAST(jsonb_path_query(pr.layout_data, '$.** ? (@.type == "fileAttachment").attrs.id') AS uuid)
+                              SELECT CAST(jsonb_path_query(pr.layout_data, '$.** ? (@.type == "fileAttachment").attrs.id') #>> '{}' AS uuid)
                           )
                       )
                   )
