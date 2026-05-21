@@ -9,6 +9,7 @@ import org.nr31.backend.dto.ErrorResponse;
 import org.nr31.backend.dto.LogoutRequest;
 import org.nr31.backend.dto.ValidationErrorResponse;
 import org.nr31.backend.service.AuthenticationService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.nr31.backend.dto.RefreshTokenRequest;
+import org.nr31.backend.dto.RegisterRequest;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import org.nr31.backend.service.RefreshTokenService;
 import org.springframework.web.bind.annotation.RestController;
@@ -79,6 +82,32 @@ public class AuthController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> logoutUser(@Valid @RequestBody LogoutRequest request) {
         refreshTokenService.deleteByToken(request.getRefreshToken());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Register a new user", description = "Creates a new user and sends a verification email")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User successfully registered"),
+            @ApiResponse(responseCode = "409", description = "Username or email already exists",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request body",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
+    })
+    @PostMapping(value = "/register", produces = "application/json", consumes = "application/json")
+    public ResponseEntity<Void> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
+        authenticationService.register(registerRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Operation(summary = "Verify user email", description = "Verifies a user's email address using a token")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Email successfully verified"),
+            @ApiResponse(responseCode = "400", description = "Invalid or expired token",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PostMapping(value = "/verify-email")
+    public ResponseEntity<Void> verifyEmail(@RequestParam String token) {
+        authenticationService.verifyEmail(token);
         return ResponseEntity.noContent().build();
     }
 }

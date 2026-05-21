@@ -41,6 +41,12 @@ public class User {
     @ToStringExclude
     private String password;
 
+    @Column(unique = true)
+    private String email;
+
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)

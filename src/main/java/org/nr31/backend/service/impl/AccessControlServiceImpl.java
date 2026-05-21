@@ -208,6 +208,8 @@ public class AccessControlServiceImpl implements AccessControlService {
         return UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
+                .email(user.getEmail())
+                .emailVerified(user.isEmailVerified())
                 .roles(user.getRoles().stream()
                         .map(this::convertToDTO)
                         .collect(Collectors.toSet()))

@@ -20,6 +20,12 @@ public class UserDTO {
     @Schema(description = "Username of the user", example = "admin", requiredMode = Schema.RequiredMode.REQUIRED)
     private String username;
 
+    @Schema(description = "Email of the user", example = "user@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String email;
+
+    @Schema(description = "Verification status of the email", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
+    private boolean emailVerified;
+
     @Schema(description = "Set of roles assigned to the user")
     private Set<RoleDTO> roles;
 }

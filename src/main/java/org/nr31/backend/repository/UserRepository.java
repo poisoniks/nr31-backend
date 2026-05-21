@@ -16,6 +16,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @QueryHints(@QueryHint(name = AvailableHints.HINT_CACHEABLE, value = "true"))
     Optional<User> findByUsername(String username);
 
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
+
     Page<User> findByUsernameContainingIgnoreCase(String username, Pageable pageable);
 
     long countByRolesId(Long roleId);
