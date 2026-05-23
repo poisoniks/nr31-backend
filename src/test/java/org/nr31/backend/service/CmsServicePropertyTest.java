@@ -124,10 +124,7 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        com.fasterxml.jackson.databind.JsonNode layoutJson;
-        try {
-            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
-        } catch(Exception e) { throw new RuntimeException(e); }
+        JsonNode layoutJson = objectMapper.readTree(objectMapper.writeValueAsString(layoutData));
 
         PageRevision draftRevision = PageRevision.builder()
             .id(1L)
@@ -196,10 +193,7 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        com.fasterxml.jackson.databind.JsonNode layoutJson;
-        try {
-            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
-        } catch(Exception e) { throw new RuntimeException(e); }
+        JsonNode layoutJson = objectMapper.readTree(objectMapper.writeValueAsString(layoutData));
 
         PageRevision draftRevision = PageRevision.builder()
             .id(1L)
@@ -257,10 +251,7 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        com.fasterxml.jackson.databind.JsonNode layoutJson;
-        try {
-            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
-        } catch(Exception e) { throw new RuntimeException(e); }
+        JsonNode layoutJson = objectMapper.readTree(objectMapper.writeValueAsString(layoutData));
 
         PageRevision publishedRevision = PageRevision.builder()
             .id(1L)
@@ -354,10 +345,7 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        com.fasterxml.jackson.databind.JsonNode layoutJson;
-        try {
-            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
-        } catch(Exception e) { throw new RuntimeException(e); }
+        JsonNode layoutJson = objectMapper.readTree(objectMapper.writeValueAsString(layoutData));
 
         PageRevision publishedRevision = PageRevision.builder()
             .id(1L)
@@ -431,10 +419,7 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        com.fasterxml.jackson.databind.JsonNode layoutJson;
-        try {
-            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
-        } catch(Exception e) { throw new RuntimeException(e); }
+        JsonNode layoutJson = objectMapper.readTree(objectMapper.writeValueAsString(layoutData));
 
         PageRevision draftRevision = PageRevision.builder()
             .id(1L)
@@ -496,10 +481,7 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        com.fasterxml.jackson.databind.JsonNode layoutJson;
-        try {
-            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
-        } catch(Exception e) { throw new RuntimeException(e); }
+        JsonNode layoutJson = objectMapper.readTree(objectMapper.writeValueAsString(layoutData));
 
         PageRevision draftRevision = PageRevision.builder()
             .id(1L)
@@ -562,10 +544,7 @@ class CmsServicePropertyTest {
             .build();
 
         LayoutDataDto layoutData = createSimpleLayout();
-        com.fasterxml.jackson.databind.JsonNode layoutJson;
-        try {
-            layoutJson = new com.fasterxml.jackson.databind.ObjectMapper().readTree(objectMapper.writeValueAsString(layoutData));
-        } catch(Exception e) { throw new RuntimeException(e); }
+        JsonNode layoutJson = objectMapper.readTree(objectMapper.writeValueAsString(layoutData));
 
         PageRevision draftRevision = PageRevision.builder()
             .id(1L)

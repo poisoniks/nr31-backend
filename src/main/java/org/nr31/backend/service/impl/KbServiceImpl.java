@@ -1,6 +1,7 @@
 package org.nr31.backend.service.impl;
 
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
 import com.github.slugify.Slugify;
 import org.nr31.backend.dto.ErrorCode;
 import org.nr31.backend.dto.kb.CreateKbArticleRequest;
@@ -46,7 +47,6 @@ public class KbServiceImpl implements KbService {
     private final AppConfigService appConfigService;
     private final Slugify slugify;
     private final ObjectMapper objectMapper;
-    private static final com.fasterxml.jackson.databind.ObjectMapper legacyMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
     public KbServiceImpl(
             KbFolderRepository kbFolderRepository,
@@ -220,14 +220,12 @@ public class KbServiceImpl implements KbService {
             baseSlug = "article";
         }
         String uniqueSlug = generateUniqueArticleSlug(request.getTitle());
-        com.fasterxml.jackson.databind.JsonNode jackson2Content = convertToJackson2(request.getContent());
-
         KbArticle article = KbArticle.builder()
                 .folder(folder)
                 .author(author)
                 .title(request.getTitle())
                 .slug(uniqueSlug)
-                .content(jackson2Content)
+                .content(request.getContent())
                 .build();
 
         KbArticle saved = saveArticleWithSlugRetry(article, baseSlug);
@@ -262,8 +260,7 @@ public class KbServiceImpl implements KbService {
         }
 
         if (request.getContent() != null) {
-            com.fasterxml.jackson.databind.JsonNode jackson2Content = convertToJackson2(request.getContent());
-            article.setContent(jackson2Content);
+            article.setContent(request.getContent());
         }
 
         KbArticle saved = saveArticleWithSlugRetry(article, baseSlug);
@@ -311,7 +308,7 @@ public class KbServiceImpl implements KbService {
     private String getSearchPrecision() {
         try {
             AppConfigDto config = appConfigService.getConfig(AppConfigKey.KB_SEARCH_PRECISION);
-            com.fasterxml.jackson.databind.JsonNode node = config.getConfigValue();
+            JsonNode node = config.getConfigValue();
             String value = (node != null) ? node.asText("") : "";
             return switch (value) {
                 case "basic", "standard", "full" -> value;
@@ -483,33 +480,13 @@ public class KbServiceImpl implements KbService {
                 .authorName(article.getAuthor().getUsername())
                 .title(article.getTitle())
                 .slug(article.getSlug())
-                .content(convertToJackson3(article.getContent()))
+                .content(article.getContent())
                 .breadcrumbs(generateBreadcrumbs(article.getFolder().getId()))
                 .createdAt(article.getCreatedAt())
                 .updatedAt(article.getUpdatedAt())
                 .build();
     }
 
-    private com.fasterxml.jackson.databind.JsonNode convertToJackson2(tools.jackson.databind.JsonNode node) {
-        if (node == null) {
-            return null;
-        }
-        try {
-            return legacyMapper.readTree(node.toString());
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to convert JSON node to Jackson 2", e);
-        }
-    }
 
-    private tools.jackson.databind.JsonNode convertToJackson3(com.fasterxml.jackson.databind.JsonNode node) {
-        if (node == null) {
-            return null;
-        }
-        try {
-            return objectMapper.readTree(node.toString());
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to convert JSON node to Jackson 3", e);
-        }
-    }
 
 }

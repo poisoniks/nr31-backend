@@ -33,9 +33,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ValidationServiceImpl implements ValidationService {
 
-    /** Used for producing Jackson 2 JsonNode instances when building AppConfigDto for write operations. */
-    private static final com.fasterxml.jackson.databind.ObjectMapper JACKSON2_MAPPER =
-            new com.fasterxml.jackson.databind.ObjectMapper();
+
 
     private final AppConfigService appConfigService;
     private final ObjectMapper objectMapper;
@@ -146,7 +144,7 @@ public class ValidationServiceImpl implements ValidationService {
 
         AppConfigDto configDto = AppConfigDto.builder()
             .name(AppConfigKey.CMS_SLOT_RESTRICTIONS.getKey())
-            .configValue(JACKSON2_MAPPER.valueToTree(restrictions))
+            .configValue(objectMapper.valueToTree(restrictions))
             .description(Map.of("en", "CMS slot restrictions configuration"))
             .build();
 

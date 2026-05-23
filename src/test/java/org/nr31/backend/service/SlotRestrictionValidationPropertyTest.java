@@ -42,8 +42,7 @@ class SlotRestrictionValidationPropertyTest {
             "sidebar", List.of("nextevent", "newsfeed"),
             "content", List.of("richtext", "nextevent", "newsfeed")
         );
-        
-        com.fasterxml.jackson.databind.JsonNode restrictionsNode = new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(restrictions);
+        JsonNode restrictionsNode = objectMapper.valueToTree(restrictions);
         AppConfigDto configDto = AppConfigDto.builder()
             .name("cms_slot_restrictions")
             .configValue(restrictionsNode)

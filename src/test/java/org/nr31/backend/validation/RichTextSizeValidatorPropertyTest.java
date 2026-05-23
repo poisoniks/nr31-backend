@@ -28,14 +28,6 @@ class RichTextSizeValidatorPropertyTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private com.fasterxml.jackson.databind.JsonNode jackson2JsonNode(String val) {
-        try {
-            return new com.fasterxml.jackson.databind.ObjectMapper().readTree(val);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Property(tries = 100)
     @Label("RichTextSizeValidator accepts content within size limit")
     void validatorAcceptsContentWithinLimit(
@@ -44,7 +36,7 @@ class RichTextSizeValidatorPropertyTest {
         AppConfigService appConfigService = mock(AppConfigService.class);
         AppConfigDto config = AppConfigDto.builder()
             .name("cms.richtext.max_size_bytes")
-            .configValue(jackson2JsonNode(String.valueOf(testCase.maxSizeBytes)))
+            .configValue(objectMapper.readTree(String.valueOf(testCase.maxSizeBytes)))
             .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES)).thenReturn(config);
 
@@ -70,7 +62,7 @@ class RichTextSizeValidatorPropertyTest {
         AppConfigService appConfigService = mock(AppConfigService.class);
         AppConfigDto config = AppConfigDto.builder()
             .name("cms.richtext.max_size_bytes")
-            .configValue(jackson2JsonNode(String.valueOf(testCase.maxSizeBytes)))
+            .configValue(objectMapper.readTree(String.valueOf(testCase.maxSizeBytes)))
             .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES)).thenReturn(config);
 

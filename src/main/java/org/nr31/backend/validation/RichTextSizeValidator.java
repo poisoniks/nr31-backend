@@ -28,7 +28,7 @@ public class RichTextSizeValidator implements ConstraintValidator<ValidRichTextS
         }
 
         AppConfigDto config = appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES);
-        com.fasterxml.jackson.databind.JsonNode configValueNode = config.getConfigValue();
+        JsonNode configValueNode = config.getConfigValue();
         long maxSizeBytes = (configValueNode != null && configValueNode.isNumber())
                 ? configValueNode.asLong()
                 : 1048576L;

@@ -1,6 +1,5 @@
 package org.nr31.backend.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -10,7 +9,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
+import org.nr31.backend.hibernate.Jackson3JsonNodeType;
+import tools.jackson.databind.JsonNode;
 
 import java.util.Map;
 
@@ -30,11 +32,11 @@ public class AppConfig {
     @Column(name = "description", columnDefinition = "jsonb")
     private Map<String, String> description;
 
-    @JdbcTypeCode(SqlTypes.JSON)
+    @Type(Jackson3JsonNodeType.class)
     @Column(name = "config_value", nullable = false, columnDefinition = "jsonb")
     private JsonNode configValue;
 
-    @JdbcTypeCode(SqlTypes.JSON)
+    @Type(Jackson3JsonNodeType.class)
     @Column(name = "config_schema", columnDefinition = "jsonb")
     private JsonNode configSchema;
 }

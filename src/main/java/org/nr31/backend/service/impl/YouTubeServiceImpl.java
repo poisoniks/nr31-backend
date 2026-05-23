@@ -1,6 +1,6 @@
 package org.nr31.backend.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.nr31.backend.dto.YoutubeVideoDto;

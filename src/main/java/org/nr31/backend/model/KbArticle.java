@@ -1,6 +1,6 @@
 package org.nr31.backend.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -17,8 +17,10 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
+import org.nr31.backend.hibernate.Jackson3JsonNodeType;
 
 import java.time.Instant;
 import java.util.Map;
@@ -50,11 +52,11 @@ public class KbArticle {
     @Column(nullable = false, unique = true)
     private String slug;
 
-    @JdbcTypeCode(SqlTypes.JSON)
+    @Type(Jackson3JsonNodeType.class)
     @Column(columnDefinition = "jsonb", nullable = false)
     private JsonNode content;
 
-    @JdbcTypeCode(SqlTypes.JSON)
+    @Type(Jackson3JsonNodeType.class)
     @Column(name = "plain_text_content", columnDefinition = "jsonb", nullable = false, insertable = false, updatable = false)
     @Generated
     private JsonNode plainTextContent;

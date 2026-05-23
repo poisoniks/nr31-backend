@@ -1,14 +1,14 @@
 package org.nr31.backend.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
+import org.hibernate.annotations.Type;
+import org.nr31.backend.hibernate.Jackson3JsonNodeType;
+import tools.jackson.databind.JsonNode;
 
 import java.time.Instant;
 
@@ -28,7 +28,7 @@ public class PageRevision {
     @JoinColumn(name = "page_id", nullable = false)
     private Page page;
 
-    @JdbcTypeCode(SqlTypes.JSON)
+    @Type(Jackson3JsonNodeType.class)
     @Column(name = "layout_data", nullable = false, columnDefinition = "jsonb")
     private JsonNode layoutData;
 

@@ -2,7 +2,7 @@ package org.nr31.backend.service.impl;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.ErrorCode;
 import org.nr31.backend.dto.cms.LayoutDataDto;
@@ -183,23 +183,16 @@ public class CmsServiceImpl implements CmsService {
         return mapToResponseDto(refreshedPage, savedRevision, layoutData);
     }
 
-    private static final com.fasterxml.jackson.databind.ObjectMapper legacyMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-
     private LayoutDataDto deserializeLayoutData(JsonNode layoutDataJson) {
         try {
-            return objectMapper.readValue(layoutDataJson.toString(), LayoutDataDto.class);
+            return objectMapper.treeToValue(layoutDataJson, LayoutDataDto.class);
         } catch (JacksonException e) {
             throw new IllegalStateException("Failed to deserialize layout data", e);
         }
     }
 
     private JsonNode serializeLayoutData(LayoutDataDto layoutData) {
-        try {
-            String jsonString = objectMapper.writeValueAsString(layoutData);
-            return legacyMapper.readTree(jsonString);
-        } catch (JacksonException | com.fasterxml.jackson.core.JsonProcessingException e) {
-            throw new IllegalStateException("Failed to serialize layout data", e);
-        }
+        return objectMapper.valueToTree(layoutData);
     }
 
     private PageResponseDto mapToResponseDto(Page page, PageRevision revision, LayoutDataDto layoutData) {
