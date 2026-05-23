@@ -30,12 +30,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.i18n.LocaleContextHolder;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -54,7 +53,6 @@ public class JwtAuthenticationService implements AuthenticationService {
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final EmailSenderService emailSenderService;
     private final AppConfigService appConfigService;
-    private final ObjectMapper objectMapper;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
@@ -148,8 +146,8 @@ public class JwtAuthenticationService implements AuthenticationService {
     private boolean isBlockUnverifiedUsersEnabled() {
         try {
             AppConfigDto config = appConfigService.getConfig(AppConfigKey.FEATURE_SWITCHES);
-            JsonNode configNode = objectMapper.readTree(config.getConfigValue());
-            if (configNode.isArray()) {
+            JsonNode configNode = config.getConfigValue();
+            if (configNode != null && configNode.isArray()) {
                 for (JsonNode element : configNode) {
                     if (element.has("name") && "block_unverified_users".equals(element.get("name").asText())) {
                         JsonNode enabledNode = element.get("enabled");

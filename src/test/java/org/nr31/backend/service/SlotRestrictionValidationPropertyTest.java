@@ -35,7 +35,7 @@ class SlotRestrictionValidationPropertyTest {
     @Label("Property 4: Slot Restriction Validation - Invalid placements are rejected")
     void invalidWidgetPlacementsAreRejected(
         @ForAll("invalidWidgetSlotCombinations") LayoutDataDto layoutData
-    ) throws Exception {
+    ) {
         // Setup slot restrictions for this test
         Map<String, List<String>> restrictions = Map.of(
             "hero-slot", List.of("hero"),
@@ -43,10 +43,10 @@ class SlotRestrictionValidationPropertyTest {
             "content", List.of("richtext", "nextevent", "newsfeed")
         );
         
-        String restrictionsJson = objectMapper.writeValueAsString(restrictions);
+        com.fasterxml.jackson.databind.JsonNode restrictionsNode = new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(restrictions);
         AppConfigDto configDto = AppConfigDto.builder()
             .name("cms_slot_restrictions")
-            .configValue(restrictionsJson)
+            .configValue(restrictionsNode)
             .build();
         
         when(appConfigService.getConfig(AppConfigKey.CMS_SLOT_RESTRICTIONS)).thenReturn(configDto);

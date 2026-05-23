@@ -1,7 +1,6 @@
 package org.nr31.backend.integration.discord;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,7 +43,6 @@ public class CalendarUpdateDiscordListener extends UpdatedListenerAdapter {
     private final CacheManager cacheManager;
     private final TransactionTemplate transactionTemplate;
     private final AppConfigService appConfigService;
-    private final ObjectMapper objectMapper;
 
     @Override
     public void onReady(ReadyEvent event) {
@@ -183,10 +181,12 @@ public class CalendarUpdateDiscordListener extends UpdatedListenerAdapter {
     private String getGuildId() {
         try {
             AppConfigDto config = appConfigService.getConfig(AppConfigKey.FETCH_SCHEDULED_DISCORD_EVENTS_GUILD_ID);
-            JsonNode configNode = objectMapper.readTree(config.getConfigValue());
-            JsonNode valueNode = configNode.get(GUILD_ID_PROPERTY_KEY);
-            if (valueNode != null && !valueNode.isNull()) {
-                return valueNode.asString();
+            JsonNode configNode = config.getConfigValue();
+            if (configNode != null) {
+                JsonNode valueNode = configNode.get(GUILD_ID_PROPERTY_KEY);
+                if (valueNode != null && !valueNode.isNull()) {
+                    return valueNode.asText();
+                }
             }
             return null;
         } catch (ElementNotFoundException e) {

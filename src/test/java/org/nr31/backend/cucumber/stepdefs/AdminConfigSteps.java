@@ -69,7 +69,7 @@ public class AdminConfigSteps extends CommonStepDefs {
     public void the_updated_config_value_should_be(String expectedValue) throws Exception {
         HttpResponse<String> response = contextHelper.getValue("response");
         JsonNode root = objectMapper.readTree(response.body());
-        assertEquals(expectedValue, root.get("configValue").asString());
+        assertEquals(objectMapper.readTree(expectedValue), root.get("configValue"));
     }
 
     @When("I assign permission {string} to role {string}")

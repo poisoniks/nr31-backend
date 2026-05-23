@@ -311,10 +311,8 @@ public class KbServiceImpl implements KbService {
     private String getSearchPrecision() {
         try {
             AppConfigDto config = appConfigService.getConfig(AppConfigKey.KB_SEARCH_PRECISION);
-            String value = config.getConfigValue();
-            if (value != null) {
-                value = value.replace("\"", "").trim();
-            }
+            com.fasterxml.jackson.databind.JsonNode node = config.getConfigValue();
+            String value = (node != null) ? node.asText("") : "";
             return switch (value) {
                 case "basic", "standard", "full" -> value;
                 default -> "full";

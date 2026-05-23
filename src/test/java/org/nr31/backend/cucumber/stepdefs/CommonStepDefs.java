@@ -52,12 +52,9 @@ public abstract class CommonStepDefs {
             if (value == null || value.equals("null")) {
                 current.set(key, objectMapper.nullNode());
             } else if ((value.startsWith("[") && value.endsWith("]"))
-                    || (value.startsWith("{") && value.endsWith("}"))) {
-                if (key.equals("configValue") || key.equals("configSchema")) {
-                    current.put(key, value);
-                } else {
-                    current.set(key, objectMapper.readTree(value));
-                }
+                    || (value.startsWith("{") && value.endsWith("}"))
+                    || (value.startsWith("\"") && value.endsWith("\""))) {
+                current.set(key, objectMapper.readTree(value));
             } else if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
                 current.put(key, Boolean.parseBoolean(value));
             } else if (value.matches("-?\\d+")) {

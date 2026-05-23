@@ -33,6 +33,14 @@ class RichTextSizeValidatorTest {
     private RichTextSizeValidator validator;
     private ObjectMapper objectMapper;
 
+    private com.fasterxml.jackson.databind.JsonNode jackson2JsonNode(String val) {
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().readTree(val);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
@@ -59,7 +67,7 @@ class RichTextSizeValidatorTest {
         // Setup: max size of 1000 bytes
         AppConfigDto config = AppConfigDto.builder()
             .name("cms.richtext.max_size_bytes")
-            .configValue("1000")
+            .configValue(jackson2JsonNode("1000"))
             .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES)).thenReturn(config);
 
@@ -89,7 +97,7 @@ class RichTextSizeValidatorTest {
         // Setup: max size of 100 bytes (very small)
         AppConfigDto config = AppConfigDto.builder()
             .name("cms.richtext.max_size_bytes")
-            .configValue("100")
+            .configValue(jackson2JsonNode("100"))
             .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES)).thenReturn(config);
 
@@ -123,7 +131,7 @@ class RichTextSizeValidatorTest {
         // Setup: max size of 200 bytes
         AppConfigDto config = AppConfigDto.builder()
             .name("cms.richtext.max_size_bytes")
-            .configValue("200")
+            .configValue(jackson2JsonNode("200"))
             .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES)).thenReturn(config);
 
@@ -174,7 +182,7 @@ class RichTextSizeValidatorTest {
         // Setup: invalid config value
         AppConfigDto config = AppConfigDto.builder()
             .name("cms.richtext.max_size_bytes")
-            .configValue("invalid-json")
+            .configValue(jackson2JsonNode("\"invalid-json\""))
             .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES)).thenReturn(config);
 

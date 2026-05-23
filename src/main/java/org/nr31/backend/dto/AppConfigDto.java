@@ -1,5 +1,6 @@
 package org.nr31.backend.dto;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -28,8 +29,8 @@ public class AppConfigDto {
 
     @NotNull(message = "Config value is required")
     @Schema(description = "The actual configuration value as a JSON object, validated by schema", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String configValue;
+    private JsonNode configValue;
 
     @Schema(description = "JSON schema used to validate the configValue")
-    private String configSchema;
+    private JsonNode configSchema;
 }

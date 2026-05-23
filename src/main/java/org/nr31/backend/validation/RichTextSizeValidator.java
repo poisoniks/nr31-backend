@@ -28,15 +28,10 @@ public class RichTextSizeValidator implements ConstraintValidator<ValidRichTextS
         }
 
         AppConfigDto config = appConfigService.getConfig(AppConfigKey.CMS_RICHTEXT_MAX_SIZE_BYTES);
-        long maxSizeBytes;
-        
-        try {
-            JsonNode configValueNode = objectMapper.readTree(config.getConfigValue());
-            maxSizeBytes = configValueNode.asLong();
-        } catch (JacksonException e) {
-            // If config is invalid, use default of 1MB
-            maxSizeBytes = 1048576L;
-        }
+        com.fasterxml.jackson.databind.JsonNode configValueNode = config.getConfigValue();
+        long maxSizeBytes = (configValueNode != null && configValueNode.isNumber())
+                ? configValueNode.asLong()
+                : 1048576L;
 
         // Check each locale's JsonNode serialized size
         for (Map.Entry<String, JsonNode> entry : value.entrySet()) {

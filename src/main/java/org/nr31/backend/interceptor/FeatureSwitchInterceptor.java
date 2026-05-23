@@ -1,7 +1,6 @@
 package org.nr31.backend.interceptor;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class FeatureSwitchInterceptor implements HandlerInterceptor {
 
     private final AppConfigService appConfigService;
-    private final ObjectMapper objectMapper;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -46,17 +44,17 @@ public class FeatureSwitchInterceptor implements HandlerInterceptor {
     private boolean isFeatureEnabled(String featureName) {
         try {
             AppConfigDto config = appConfigService.getConfig(AppConfigKey.FEATURE_SWITCHES);
-            JsonNode configNode = objectMapper.readTree(config.getConfigValue());
-            
-            if (configNode.isArray()) {
+            JsonNode configNode = config.getConfigValue();
+
+            if (configNode != null && configNode.isArray()) {
                 for (JsonNode element : configNode) {
-                    if (element.has("name") && featureName.equals(element.get("name").asString())) {
+                    if (element.has("name") && featureName.equals(element.get("name").asText())) {
                         JsonNode enabledNode = element.get("enabled");
                         if (enabledNode != null) {
                             if (enabledNode.isBoolean()) {
                                 return enabledNode.asBoolean();
-                            } else if (enabledNode.isString()) {
-                                return Boolean.parseBoolean(enabledNode.asString());
+                            } else if (enabledNode.isTextual()) {
+                                return Boolean.parseBoolean(enabledNode.asText());
                             }
                         }
                     }

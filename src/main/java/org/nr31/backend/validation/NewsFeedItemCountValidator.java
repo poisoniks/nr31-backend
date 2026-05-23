@@ -1,11 +1,9 @@
 package org.nr31.backend.validation;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import lombok.RequiredArgsConstructor;
-import org.nr31.backend.dto.AppConfigDto;
 import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.service.AppConfigService;
 import org.springframework.stereotype.Component;
@@ -15,7 +13,6 @@ import org.springframework.stereotype.Component;
 public class NewsFeedItemCountValidator implements ConstraintValidator<ValidNewsFeedItemCount, Integer> {
 
     private final AppConfigService appConfigService;
-    private final ObjectMapper objectMapper;
 
     @Override
     public boolean isValid(Integer value, ConstraintValidatorContext context) {
@@ -23,19 +20,11 @@ public class NewsFeedItemCountValidator implements ConstraintValidator<ValidNews
             return true;
         }
 
-        AppConfigDto config = appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS);
-        int maxItems;
-
-        try {
-            JsonNode configValueNode = objectMapper.readTree(config.getConfigValue());
-            if (configValueNode.isNumber()) {
-                maxItems = configValueNode.asInt();
-            } else {
-                throw new IllegalArgumentException("Config is not a number");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to parse cms.newsfeed.max_items config", e);
+        JsonNode configValueNode = appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS).getConfigValue();
+        if (configValueNode == null || !configValueNode.isNumber()) {
+            throw new RuntimeException("Unable to parse cms.newsfeed.max_items config: expected a number");
         }
+        int maxItems = configValueNode.asInt();
 
         if (value > maxItems) {
             context.disableDefaultConstraintViolation();

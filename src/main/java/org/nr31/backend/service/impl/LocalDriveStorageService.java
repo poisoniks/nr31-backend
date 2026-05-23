@@ -19,7 +19,7 @@ import org.nr31.backend.repository.MediaFolderRepository;
 import org.nr31.backend.repository.UserRepository;
 import org.nr31.backend.service.AppConfigService;
 import org.nr31.backend.service.FileStorageService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -74,7 +74,6 @@ public class LocalDriveStorageService implements FileStorageService {
     private final UserRepository userRepository;
     private final MediaFolderRepository mediaFolderRepository;
     private final AppConfigService appConfigService;
-    private final ObjectMapper objectMapper;
 
     public LocalDriveStorageService(
             @Value("${app.uploads.dir:/app/uploads}") String uploadDir,
@@ -82,15 +81,13 @@ public class LocalDriveStorageService implements FileStorageService {
             UserRepository userRepository,
             MediaFolderRepository mediaFolderRepository,
             ObjectProvider<FileSystem> fileSystemProvider,
-            AppConfigService appConfigService,
-            ObjectMapper objectMapper) {
+            AppConfigService appConfigService) {
         FileSystem fs = fileSystemProvider.getIfAvailable(FileSystems::getDefault);
         this.uploadDir = fs.getPath(uploadDir).toAbsolutePath().normalize();
         this.fileMetadataRepository = fileMetadataRepository;
         this.userRepository = userRepository;
         this.mediaFolderRepository = mediaFolderRepository;
         this.appConfigService = appConfigService;
-        this.objectMapper = objectMapper;
 
         try {
             Files.createDirectories(this.uploadDir);
@@ -393,8 +390,8 @@ public class LocalDriveStorageService implements FileStorageService {
     public Set<String> getAllowedMimeTypes() {
         try {
             AppConfigDto config = appConfigService.getConfig(AppConfigKey.ALLOWED_MIME_TYPES);
-            JsonNode node = objectMapper.readTree(config.getConfigValue());
-            if (node.isArray()) {
+            JsonNode node = config.getConfigValue();
+            if (node != null && node.isArray()) {
                 Set<String> allowedMimeTypes = new HashSet<>();
                 for (JsonNode item : node) {
                     allowedMimeTypes.add(item.asText());

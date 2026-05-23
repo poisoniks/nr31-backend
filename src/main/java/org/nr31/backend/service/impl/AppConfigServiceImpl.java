@@ -1,8 +1,6 @@
 package org.nr31.backend.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaRegistry;
 import com.networknt.schema.SchemaRegistryConfig;
@@ -28,7 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,30 +36,24 @@ import java.util.stream.Collectors;
 public class AppConfigServiceImpl implements AppConfigService {
 
     private final AppConfigRepository appConfigRepository;
-    private final ObjectMapper objectMapper;
+
+    /** Caches compiled JSON Schema validators keyed by schema-content + locale. */
+    private final Map<String, Schema> schemaCache = new ConcurrentHashMap<>();
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Read operations
+    // ──────────────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional(readOnly = true)
     public Page<AppConfigDto> getAllConfigs(Pageable pageable) {
-        return appConfigRepository.findAll(pageable)
-                .map(appConfig -> AppConfigDto.builder()
-                        .name(appConfig.getConfigKey())
-                        .description(appConfig.getDescription())
-                        .configValue(appConfig.getConfigValue().toString())
-                        .configSchema(appConfig.getConfigSchema() != null ? appConfig.getConfigSchema().toString() : null)
-                        .build());
+        return appConfigRepository.findAll(pageable).map(this::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<AppConfigDto> searchConfigs(String name, Pageable pageable) {
-        return appConfigRepository.findByConfigKeyContainingIgnoreCase(name, pageable)
-                .map(appConfig -> AppConfigDto.builder()
-                        .name(appConfig.getConfigKey())
-                        .description(appConfig.getDescription())
-                        .configValue(appConfig.getConfigValue().toString())
-                        .configSchema(appConfig.getConfigSchema() != null ? appConfig.getConfigSchema().toString() : null)
-                        .build());
+        return appConfigRepository.findByConfigKeyContainingIgnoreCase(name, pageable).map(this::toDto);
     }
 
     @Override
@@ -68,13 +62,7 @@ public class AppConfigServiceImpl implements AppConfigService {
     public AppConfigDto getConfig(String name) {
         AppConfig appConfig = appConfigRepository.findByConfigKey(name)
                 .orElseThrow(() -> new ElementNotFoundException("Config not found", ErrorCode.CONFIG_NOT_FOUND, Map.of("name", name)));
-
-        return AppConfigDto.builder()
-                .name(appConfig.getConfigKey())
-                .description(appConfig.getDescription())
-                .configValue(appConfig.getConfigValue().toString())
-                .configSchema(appConfig.getConfigSchema().toString())
-                .build();
+        return toDto(appConfig);
     }
 
     @Override
@@ -83,14 +71,12 @@ public class AppConfigServiceImpl implements AppConfigService {
     public AppConfigDto getConfig(AppConfigKey key) {
         AppConfig appConfig = appConfigRepository.findByConfigKey(key.getKey())
                 .orElseThrow(() -> new ElementNotFoundException("Config not found", ErrorCode.CONFIG_NOT_FOUND, Map.of("name", key.getKey())));
-
-        return AppConfigDto.builder()
-                .name(appConfig.getConfigKey())
-                .description(appConfig.getDescription())
-                .configValue(appConfig.getConfigValue().toString())
-                .configSchema(appConfig.getConfigSchema().toString())
-                .build();
+        return toDto(appConfig);
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Write operations
+    // ──────────────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -100,10 +86,8 @@ public class AppConfigServiceImpl implements AppConfigService {
                 .orElseThrow(() -> new ElementNotFoundException("Config not found", ErrorCode.CONFIG_NOT_FOUND, Map.of("name", name)));
 
         JsonNode schemaNode = appConfig.getConfigSchema();
-        JsonNode valueNode;
-        try {
-            valueNode = objectMapper.readTree(appConfigDto.getConfigValue());
-        } catch (JsonProcessingException e) {
+        JsonNode valueNode = appConfigDto.getConfigValue();
+        if (valueNode == null) {
             throw new AppConfigException("Invalid app config value");
         }
 
@@ -114,28 +98,45 @@ public class AppConfigServiceImpl implements AppConfigService {
         appConfig.setConfigSchema(schemaNode);
 
         AppConfig saved = appConfigRepository.save(appConfig);
+        return toDto(saved);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Private helpers
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /** Maps an {@link AppConfig} entity to its DTO, reusing the already-parsed JsonNode fields. */
+    private AppConfigDto toDto(AppConfig appConfig) {
         return AppConfigDto.builder()
-                .name(saved.getConfigKey())
-                .description(saved.getDescription())
-                .configValue(valueNode.toString())
-                .configSchema(schemaNode.toString())
+                .name(appConfig.getConfigKey())
+                .description(appConfig.getDescription())
+                .configValue(appConfig.getConfigValue())
+                .configSchema(appConfig.getConfigSchema())
                 .build();
     }
 
+    /**
+     * Validates {@code jsonNode} against {@code schemaNode}.
+     * Compiled {@link Schema} instances are cached by schema content + request locale
+     * to avoid recreating the schema registry on every admin update.
+     */
     private void validateJson(JsonNode jsonNode, JsonNode schemaNode) {
         if (schemaNode == null || schemaNode.isNull()) {
             throw new AppConfigValidationException("Json schema can not be null", Map.of("jsonSchema", "Schema can not be null"));
         }
 
-        SchemaRegistryConfig config = SchemaRegistryConfig.builder()
-                .locale(LocaleContextHolder.getLocale())
-                .build();
+        Locale locale = LocaleContextHolder.getLocale();
+        String cacheKey = schemaNode.toString() + "#" + locale.toLanguageTag();
 
-        SchemaRegistry schemaRegistry = SchemaRegistry.withDefaultDialect(
-                SpecificationVersion.DRAFT_7,
-                builder -> builder.schemaRegistryConfig(config));
-
-        Schema schema = schemaRegistry.getSchema(schemaNode);
+        Schema schema = schemaCache.computeIfAbsent(cacheKey, k -> {
+            SchemaRegistryConfig config = SchemaRegistryConfig.builder()
+                    .locale(locale)
+                    .build();
+            SchemaRegistry schemaRegistry = SchemaRegistry.withDefaultDialect(
+                    SpecificationVersion.DRAFT_7,
+                    builder -> builder.schemaRegistryConfig(config));
+            return schemaRegistry.getSchema(schemaNode);
+        });
 
         List<Error> validationResult = schema.validate(jsonNode);
 

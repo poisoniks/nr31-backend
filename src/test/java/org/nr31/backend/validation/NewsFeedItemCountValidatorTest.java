@@ -1,6 +1,7 @@
 package org.nr31.backend.validation;
 
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.ConstraintValidatorContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,11 +29,19 @@ class NewsFeedItemCountValidatorTest {
     private ConstraintValidatorContext.ConstraintViolationBuilder violationBuilder;
 
     private NewsFeedItemCountValidator validator;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private JsonNode toJsonNode(String val) {
+        try {
+            return objectMapper.readTree(val);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @BeforeEach
     void setUp() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        validator = new NewsFeedItemCountValidator(appConfigService, objectMapper);
+        validator = new NewsFeedItemCountValidator(appConfigService);
     }
 
     @Test
@@ -46,7 +55,7 @@ class NewsFeedItemCountValidatorTest {
     void shouldReturnTrueWhenItemCountIsBelowLimit() {
         AppConfigDto config = AppConfigDto.builder()
                 .name("cms.newsfeed.max_items")
-                .configValue("50")
+                .configValue(toJsonNode("50"))
                 .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
@@ -60,7 +69,7 @@ class NewsFeedItemCountValidatorTest {
     void shouldReturnTrueWhenItemCountIsAtLimit() {
         AppConfigDto config = AppConfigDto.builder()
                 .name("cms.newsfeed.max_items")
-                .configValue("50")
+                .configValue(toJsonNode("50"))
                 .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
@@ -74,7 +83,7 @@ class NewsFeedItemCountValidatorTest {
     void shouldReturnFalseWhenItemCountExceedsLimit() {
         AppConfigDto config = AppConfigDto.builder()
                 .name("cms.newsfeed.max_items")
-                .configValue("50")
+                .configValue(toJsonNode("50"))
                 .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
@@ -93,7 +102,7 @@ class NewsFeedItemCountValidatorTest {
         // Setup: invalid config value (not a valid JSON fragment)
         AppConfigDto config = AppConfigDto.builder()
                 .name("cms.newsfeed.max_items")
-                .configValue("invalid-json")
+                .configValue(toJsonNode("\"invalid-json\""))
                 .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
@@ -108,7 +117,7 @@ class NewsFeedItemCountValidatorTest {
         // Setup: config value is valid JSON string but not a number
         AppConfigDto config = AppConfigDto.builder()
                 .name("cms.newsfeed.max_items")
-                .configValue("\"not-a-number\"")
+                .configValue(toJsonNode("\"not-a-number\""))
                 .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
@@ -133,7 +142,7 @@ class NewsFeedItemCountValidatorTest {
     void shouldHandleMinimumValidItemCount() {
         AppConfigDto config = AppConfigDto.builder()
                 .name("cms.newsfeed.max_items")
-                .configValue("50")
+                .configValue(toJsonNode("50"))
                 .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
@@ -147,7 +156,7 @@ class NewsFeedItemCountValidatorTest {
     void shouldProvideCorrectErrorMessageWithActualValues() {
         AppConfigDto config = AppConfigDto.builder()
                 .name("cms.newsfeed.max_items")
-                .configValue("25")
+                .configValue(toJsonNode("25"))
                 .build();
         when(appConfigService.getConfig(AppConfigKey.CMS_NEWSFEED_MAX_ITEMS)).thenReturn(config);
 
