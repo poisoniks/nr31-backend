@@ -21,3 +21,6 @@ app:
     dir: /test-uploads
   discord:
     bot-token:
+  frontend-url: http://localhost:3000
+  mail:
+    from: noreply@nr31.org
