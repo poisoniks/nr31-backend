@@ -157,4 +157,9 @@ public class EmailVerificationSteps extends CommonStepDefs {
         assertTrue(response.statusCode() >= 200 && response.statusCode() < 300,
                 "Failed to clear Mailpit messages: " + response.body());
     }
+
+    @When("I wait {int} seconds")
+    public void i_wait_seconds(int seconds) throws Exception {
+        Thread.sleep(seconds * 1000L);
+    }
 }

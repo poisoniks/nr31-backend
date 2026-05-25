@@ -36,6 +36,7 @@ public enum ErrorCode {
     CONFLICT,
     FOLDER_NOT_EMPTY,
     FEATURE_DISABLED,
+    TOO_MANY_REQUESTS,
 
     // CMS
     INVALID_WIDGET_TYPE,

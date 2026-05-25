@@ -46,3 +46,5 @@ app:
   frontend-url: http://localhost:80
   mail:
     from: noreply@nr31.org
+  auth:
+    resend-limit-seconds: 120

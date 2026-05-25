@@ -87,6 +87,7 @@ Feature: Authentication and Token Management
     Then the response status code should be 201
     When I retrieve the verification token for email "resend@example.com" from Mailpit
     And I clear Mailpit messages
+    And I wait 3 seconds
     When I request to resend the verification email for "resend@example.com"
     Then the response status code should be 200
     When I retrieve the verification token for email "resend@example.com" from Mailpit
@@ -111,3 +112,11 @@ Feature: Authentication and Token Management
   Scenario: Resend verification email with invalid email format
     When I request to resend the verification email for "invalid-email-format"
     Then the response status code should be 400
+
+  Scenario: Resend verification email too quickly returns 429 Too Many Requests
+    When I register with username "rateuser", email "rate@example.com", and password "password123"
+    Then the response status code should be 201
+    When I request to resend the verification email for "rate@example.com"
+    Then the response status code should be 429
+    And the response body should contain "code" with value "TOO_MANY_REQUESTS"
+    And the response body should contain "metadata.remainingSeconds"

@@ -34,7 +34,7 @@ public abstract class CommonStepDefs {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    protected String dataTableToJson(DataTable dataTable) throws Exception {
+    protected String dataTableToJson(DataTable dataTable) {
         ObjectNode root = objectMapper.createObjectNode();
         Map<String, String> map = dataTable.asMap(String.class, String.class);
         for (Map.Entry<String, String> entry : map.entrySet()) {

@@ -118,6 +118,8 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Invalid request body",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class))),
             @ApiResponse(responseCode = "409", description = "Email is already verified",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "429", description = "Too many requests - please wait 5 minutes before resending",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping(value = "/resend-verification", produces = "application/json", consumes = "application/json")

@@ -90,3 +90,5 @@ app:
   frontend-url: ${APP_FRONTEND_URL}
   mail:
     from: ${APP_MAIL_FROM}
+  auth:
+    resend-limit-seconds: ${EMAIL_RATE_LIMIT_SECONDS}

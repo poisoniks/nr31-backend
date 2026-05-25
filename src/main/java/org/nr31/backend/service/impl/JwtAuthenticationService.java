@@ -7,6 +7,8 @@ import org.nr31.backend.dto.AuthCredentialsDTO;
 import org.nr31.backend.dto.RegisterRequest;
 import org.nr31.backend.dto.ErrorCode;
 import org.nr31.backend.exception.ConflictException;
+import org.nr31.backend.exception.KeyExpiredException;
+import org.nr31.backend.exception.RateLimitException;
 import org.nr31.backend.model.RefreshToken;
 import org.nr31.backend.model.User;
 import org.nr31.backend.model.EmailVerificationToken;
@@ -31,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.i18n.LocaleContextHolder;
 import tools.jackson.databind.JsonNode;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -55,6 +58,9 @@ public class JwtAuthenticationService implements AuthenticationService {
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
+
+    @Value("${app.auth.resend-limit-seconds}")
+    private long resendLimitSeconds;
 
     @Override
     public AuthCredentialsDTO authenticate(String username, String password) {
@@ -107,6 +113,7 @@ public class JwtAuthenticationService implements AuthenticationService {
                 .token(token)
                 .user(savedUser)
                 .expiryDate(Instant.now().plus(24, ChronoUnit.HOURS))
+                .createdAt(Instant.now())
                 .build();
 
         emailVerificationTokenRepository.save(verificationToken);
@@ -132,7 +139,7 @@ public class JwtAuthenticationService implements AuthenticationService {
 
         if (verificationToken.getExpiryDate().isBefore(Instant.now())) {
             emailVerificationTokenRepository.deleteByTokenCustom(token);
-            throw new IllegalArgumentException("Verification token has expired");
+            throw new KeyExpiredException("Email verification token has expired", ErrorCode.TOKEN_EXPIRED);
         }
 
         User user = verificationToken.getUser();
@@ -152,6 +159,18 @@ public class JwtAuthenticationService implements AuthenticationService {
             throw new ConflictException("Email is already verified", ErrorCode.CONFLICT);
         }
 
+        emailVerificationTokenRepository.findByUser(user).ifPresent(existingToken -> {
+            Instant nextAllowedSendTime = existingToken.getCreatedAt().plus(resendLimitSeconds, ChronoUnit.SECONDS);
+            Instant now = Instant.now();
+            if (nextAllowedSendTime.isAfter(now)) {
+                long remainingSeconds = Duration.between(now, nextAllowedSendTime).toSeconds();
+                throw new RateLimitException(
+                        "Please wait " + (resendLimitSeconds / 60) + " minutes before requesting another verification email",
+                        Map.of("remainingSeconds", remainingSeconds)
+                );
+            }
+        });
+
         emailVerificationTokenRepository.deleteByUser(user);
 
         String token = UUID.randomUUID().toString();
@@ -159,6 +178,7 @@ public class JwtAuthenticationService implements AuthenticationService {
                 .token(token)
                 .user(user)
                 .expiryDate(Instant.now().plus(24, ChronoUnit.HOURS))
+                .createdAt(Instant.now())
                 .build();
 
         emailVerificationTokenRepository.save(verificationToken);

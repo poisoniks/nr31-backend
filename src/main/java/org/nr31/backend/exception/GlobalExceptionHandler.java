@@ -301,6 +301,30 @@ public class GlobalExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(RateLimitException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public ErrorResponse handleRateLimitException(RateLimitException e) {
+        log.debug("Too many requests: {}", e.getMessage());
+        return ErrorResponse.builder()
+                .message(e.getMessage())
+                .code(e.getErrorCode())
+                .metadata(e.getMetadata())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @ExceptionHandler(KeyExpiredException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleKeyExpiredException(KeyExpiredException e) {
+        log.debug(e.getMessage(), e);
+        return ErrorResponse.builder()
+                .message(e.getMessage())
+                .code(e.getErrorCode())
+                .metadata(e.getMetadata())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @ExceptionHandler(FileStorageException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleFileStorageException(FileStorageException e) {

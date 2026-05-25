@@ -28,4 +28,8 @@ public class EmailVerificationToken {
 
     @Column(nullable = false, name = "expiry_date")
     private Instant expiryDate;
+
+    @Column(nullable = false, name = "created_at")
+    @Builder.Default
+    private Instant createdAt = Instant.now();
 }
