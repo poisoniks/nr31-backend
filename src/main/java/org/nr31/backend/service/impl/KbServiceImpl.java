@@ -1,6 +1,5 @@
 package org.nr31.backend.service.impl;
 
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.JsonNode;
 import com.github.slugify.Slugify;
 import org.nr31.backend.dto.ErrorCode;
@@ -46,19 +45,16 @@ public class KbServiceImpl implements KbService {
     private final UserRepository userRepository;
     private final AppConfigService appConfigService;
     private final Slugify slugify;
-    private final ObjectMapper objectMapper;
 
     public KbServiceImpl(
             KbFolderRepository kbFolderRepository,
             KbArticleRepository kbArticleRepository,
             UserRepository userRepository,
-            AppConfigService appConfigService,
-            ObjectMapper objectMapper) {
+            AppConfigService appConfigService) {
         this.kbFolderRepository = kbFolderRepository;
         this.kbArticleRepository = kbArticleRepository;
         this.userRepository = userRepository;
         this.appConfigService = appConfigService;
-        this.objectMapper = objectMapper;
         this.slugify = Slugify.builder().build();
     }
 
@@ -309,7 +305,7 @@ public class KbServiceImpl implements KbService {
         try {
             AppConfigDto config = appConfigService.getConfig(AppConfigKey.KB_SEARCH_PRECISION);
             JsonNode node = config.getConfigValue();
-            String value = (node != null) ? node.asText("") : "";
+            String value = (node != null) ? node.asString("") : "";
             return switch (value) {
                 case "basic", "standard", "full" -> value;
                 default -> "full";

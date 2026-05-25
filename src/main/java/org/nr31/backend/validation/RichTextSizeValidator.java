@@ -33,7 +33,6 @@ public class RichTextSizeValidator implements ConstraintValidator<ValidRichTextS
                 ? configValueNode.asLong()
                 : 1048576L;
 
-        // Check each locale's JsonNode serialized size
         for (Map.Entry<String, JsonNode> entry : value.entrySet()) {
             String locale = entry.getKey();
             JsonNode content = entry.getValue();

@@ -33,8 +33,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ValidationServiceImpl implements ValidationService {
 
-
-
     private final AppConfigService appConfigService;
     private final ObjectMapper objectMapper;
 

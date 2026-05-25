@@ -3,7 +3,6 @@ package org.nr31.backend.service.impl;
 import tools.jackson.databind.JsonNode;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaRegistry;
-import com.networknt.schema.SchemaRegistryConfig;
 import com.networknt.schema.SpecificationVersion;
 import com.networknt.schema.Error;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,13 +34,7 @@ import java.util.stream.Collectors;
 public class AppConfigServiceImpl implements AppConfigService {
 
     private final AppConfigRepository appConfigRepository;
-
-    /** Caches compiled JSON Schema validators keyed by schema-content + locale. */
-    private final Map<String, Schema> schemaCache = new ConcurrentHashMap<>();
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // Read operations
-    // ──────────────────────────────────────────────────────────────────────────
+    private final SchemaRegistry schemaRegistry;
 
     @Override
     @Transactional(readOnly = true)
@@ -74,10 +66,6 @@ public class AppConfigServiceImpl implements AppConfigService {
         return toDto(appConfig);
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // Write operations
-    // ──────────────────────────────────────────────────────────────────────────
-
     @Override
     @Transactional
     @CacheEvict(value = "appConfig", key = "#appConfigDto.name")
@@ -101,11 +89,6 @@ public class AppConfigServiceImpl implements AppConfigService {
         return toDto(saved);
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // Private helpers
-    // ──────────────────────────────────────────────────────────────────────────
-
-    /** Maps an {@link AppConfig} entity to its DTO, reusing the already-parsed JsonNode fields. */
     private AppConfigDto toDto(AppConfig appConfig) {
         return AppConfigDto.builder()
                 .name(appConfig.getConfigKey())
@@ -115,30 +98,17 @@ public class AppConfigServiceImpl implements AppConfigService {
                 .build();
     }
 
-    /**
-     * Validates {@code jsonNode} against {@code schemaNode}.
-     * Compiled {@link Schema} instances are cached by schema content + request locale
-     * to avoid recreating the schema registry on every admin update.
-     */
     private void validateJson(JsonNode jsonNode, JsonNode schemaNode) {
         if (schemaNode == null || schemaNode.isNull()) {
             throw new AppConfigValidationException("Json schema can not be null", Map.of("jsonSchema", "Schema can not be null"));
         }
 
         Locale locale = LocaleContextHolder.getLocale();
-        String cacheKey = schemaNode.toString() + "#" + locale.toLanguageTag();
+        Schema schema = schemaRegistry.getSchema(schemaNode);
 
-        Schema schema = schemaCache.computeIfAbsent(cacheKey, k -> {
-            SchemaRegistryConfig config = SchemaRegistryConfig.builder()
-                    .locale(locale)
-                    .build();
-            SchemaRegistry schemaRegistry = SchemaRegistry.withDefaultDialect(
-                    SpecificationVersion.DRAFT_7,
-                    builder -> builder.schemaRegistryConfig(config));
-            return schemaRegistry.getSchema(schemaNode);
+        List<Error> validationResult = schema.validate(jsonNode, executionContext -> {
+            executionContext.executionConfig(builder -> builder.locale(locale));
         });
-
-        List<Error> validationResult = schema.validate(jsonNode);
 
         if (!validationResult.isEmpty()) {
             Map<String, String> errors = validationResult.stream()

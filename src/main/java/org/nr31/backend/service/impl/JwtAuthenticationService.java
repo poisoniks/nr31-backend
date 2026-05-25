@@ -31,7 +31,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.i18n.LocaleContextHolder;
 import tools.jackson.databind.JsonNode;
 
-
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -149,7 +148,7 @@ public class JwtAuthenticationService implements AuthenticationService {
             JsonNode configNode = config.getConfigValue();
             if (configNode != null && configNode.isArray()) {
                 for (JsonNode element : configNode) {
-                    if (element.has("name") && "block_unverified_users".equals(element.get("name").asText())) {
+                    if (element.has("name") && "block_unverified_users".equals(element.get("name").asString())) {
                         JsonNode enabledNode = element.get("enabled");
                         if (enabledNode != null) {
                             return enabledNode.asBoolean();

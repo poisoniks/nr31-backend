@@ -48,13 +48,13 @@ public class FeatureSwitchInterceptor implements HandlerInterceptor {
 
             if (configNode != null && configNode.isArray()) {
                 for (JsonNode element : configNode) {
-                    if (element.has("name") && featureName.equals(element.get("name").asText())) {
+                    if (element.has("name") && featureName.equals(element.get("name").asString())) {
                         JsonNode enabledNode = element.get("enabled");
                         if (enabledNode != null) {
                             if (enabledNode.isBoolean()) {
                                 return enabledNode.asBoolean();
-                            } else if (enabledNode.isTextual()) {
-                                return Boolean.parseBoolean(enabledNode.asText());
+                            } else if (enabledNode.isString()) {
+                                return Boolean.parseBoolean(enabledNode.asString());
                             }
                         }
                     }

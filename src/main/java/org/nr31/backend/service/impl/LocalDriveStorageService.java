@@ -19,7 +19,6 @@ import org.nr31.backend.repository.MediaFolderRepository;
 import org.nr31.backend.repository.UserRepository;
 import org.nr31.backend.service.AppConfigService;
 import org.nr31.backend.service.FileStorageService;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -134,7 +133,7 @@ public class LocalDriveStorageService implements FileStorageService {
             tempFile = Files.createTempFile(uploadDir, "upload-", ".tmp");
 
             try (InputStream inputStream = file.getInputStream();
-                    DigestInputStream digestInputStream = new DigestInputStream(inputStream, digest)) {
+                 DigestInputStream digestInputStream = new DigestInputStream(inputStream, digest)) {
                 Files.copy(digestInputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
             }
 
@@ -394,7 +393,7 @@ public class LocalDriveStorageService implements FileStorageService {
             if (node != null && node.isArray()) {
                 Set<String> allowedMimeTypes = new HashSet<>();
                 for (JsonNode item : node) {
-                    allowedMimeTypes.add(item.asText());
+                    allowedMimeTypes.add(item.asString());
                 }
                 return allowedMimeTypes;
             }
