@@ -142,6 +142,40 @@ public class JwtAuthenticationService implements AuthenticationService {
         emailVerificationTokenRepository.deleteByTokenCustom(token);
     }
 
+    @Override
+    @Transactional
+    public void resendVerificationEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User with this email not found"));
+
+        if (user.isEmailVerified()) {
+            throw new ConflictException("Email is already verified", ErrorCode.CONFLICT);
+        }
+
+        emailVerificationTokenRepository.deleteByUser(user);
+
+        String token = UUID.randomUUID().toString();
+        EmailVerificationToken verificationToken = EmailVerificationToken.builder()
+                .token(token)
+                .user(user)
+                .expiryDate(Instant.now().plus(24, ChronoUnit.HOURS))
+                .build();
+
+        emailVerificationTokenRepository.save(verificationToken);
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("username", user.getUsername());
+        variables.put("verificationUrl", frontendUrl + "/verify-email?token=" + token);
+
+        emailSenderService.sendHtmlEmail(
+                user.getEmail(),
+                "email.verify.subject",
+                "email-verification",
+                variables,
+                LocaleContextHolder.getLocale()
+        );
+    }
+
     private boolean isBlockUnverifiedUsersEnabled() {
         try {
             AppConfigDto config = appConfigService.getConfig(AppConfigKey.FEATURE_SWITCHES);

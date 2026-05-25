@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.nr31.backend.dto.RefreshTokenRequest;
 import org.nr31.backend.dto.RegisterRequest;
+import org.nr31.backend.dto.ResendVerificationRequest;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import org.nr31.backend.service.RefreshTokenService;
@@ -109,5 +110,19 @@ public class AuthController {
     public ResponseEntity<Void> verifyEmail(@RequestParam String token) {
         authenticationService.verifyEmail(token);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Resend verification email", description = "Resends the verification email if the user exists and is not verified")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Verification email resent successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request body",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Email is already verified",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PostMapping(value = "/resend-verification", produces = "application/json", consumes = "application/json")
+    public ResponseEntity<Void> resendVerificationEmail(@Valid @RequestBody ResendVerificationRequest request) {
+        authenticationService.resendVerificationEmail(request.getEmail());
+        return ResponseEntity.ok().build();
     }
 }

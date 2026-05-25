@@ -7,4 +7,5 @@ public interface AuthenticationService {
     AuthCredentialsDTO authenticate(String username, String password);
     void register(RegisterRequest request);
     void verifyEmail(String token);
+    void resendVerificationEmail(String email);
 }

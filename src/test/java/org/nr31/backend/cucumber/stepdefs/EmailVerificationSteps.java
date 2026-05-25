@@ -1,6 +1,5 @@
 package org.nr31.backend.cucumber.stepdefs;
 
-import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
@@ -20,13 +19,6 @@ public class EmailVerificationSteps extends CommonStepDefs {
         String body = String.format("{\"username\":\"%s\",\"email\":\"%s\",\"password\":\"%s\"}", username, email, password);
         HttpResponse<String> response = makeApiCall("POST", "/api/v1/auth/register", body);
         contextHelper.addValue("response", response);
-    }
-
-    @Given("a registered but unverified user {string} with email {string} and password {string}")
-    public void a_registered_but_unverified_user_with_email_and_password(String username, String email, String password) throws Exception {
-        i_register_with_username_email_and_password(username, email, password);
-        HttpResponse<String> response = contextHelper.getValue("response");
-        assertEquals(201, response.statusCode(), "Failed to register unverified user: " + response.body());
     }
 
     @When("I retrieve the verification token for email {string} from Mailpit")
@@ -52,10 +44,10 @@ public class EmailVerificationSteps extends CommonStepDefs {
             if (messages != null && messages.isArray()) {
                 for (JsonNode msg : messages) {
                     JsonNode toArray = msg.get("To");
-                    if (toArray != null && toArray.isArray() && toArray.size() > 0) {
-                        String toAddress = toArray.get(0).get("Address").asText();
+                    if (toArray != null && toArray.isArray() && !toArray.isEmpty()) {
+                        String toAddress = toArray.get(0).get("Address").asString();
                         if (email.equalsIgnoreCase(toAddress)) {
-                            messageId = msg.get("ID").asText();
+                            messageId = msg.get("ID").asString();
                             break;
                         }
                     }
@@ -79,7 +71,7 @@ public class EmailVerificationSteps extends CommonStepDefs {
                 .build();
         HttpResponse<String> msgResponse = httpClient.send(msgRequest, HttpResponse.BodyHandlers.ofString());
         JsonNode msgRoot = objectMapper.readTree(msgResponse.body());
-        String htmlContent = msgRoot.get("HTML").asText();
+        String htmlContent = msgRoot.get("HTML").asString();
 
         // Extract UUID token using pattern matching
         Pattern pattern = Pattern.compile("token=([a-f0-9\\-]{36})");
@@ -119,7 +111,7 @@ public class EmailVerificationSteps extends CommonStepDefs {
 
         boolean found = false;
         for (JsonNode node : arrayNode) {
-            if (node.has("name") && featureName.equals(node.get("name").asText())) {
+            if (node.has("name") && featureName.equals(node.get("name").asString())) {
                 ((ObjectNode) node).put("enabled", enabled);
                 found = true;
                 break;
@@ -141,5 +133,28 @@ public class EmailVerificationSteps extends CommonStepDefs {
 
         HttpResponse<String> putResponse = makeAdminApiCall("PUT", "/api/v1/admin/config/feature_switches", updatePayload.toString());
         assertEquals(200, putResponse.statusCode(), "Failed to update feature switches: " + putResponse.body());
+    }
+
+    @When("I request to resend the verification email for {string}")
+    public void i_request_to_resend_the_verification_email_for(String email) throws Exception {
+        String body = String.format("{\"email\":\"%s\"}", email);
+        HttpResponse<String> response = makeApiCall("POST", "/api/v1/auth/resend-verification", body);
+        contextHelper.addValue("response", response);
+    }
+
+    @When("I clear Mailpit messages")
+    public void i_clear_mailpit_messages() throws Exception {
+        String mailpitHost = System.getProperty("mailpit.host", "localhost");
+        String mailpitPort = System.getProperty("mailpit.http.port", "8025");
+        String mailpitUrl = "http://" + mailpitHost + ":" + mailpitPort + "/api/v1/messages";
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(mailpitUrl))
+                .DELETE()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        assertTrue(response.statusCode() >= 200 && response.statusCode() < 300,
+                "Failed to clear Mailpit messages: " + response.body());
     }
 }
