@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
+import org.nr31.backend.dto.ErrorCode;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -98,5 +99,30 @@ public class OpenApiConfig {
                 });
             }
         };
+    }
+
+    @Bean
+    public OpenApiCustomizer errorResponseCustomizer() {
+        return openApi -> {
+            if (openApi.getComponents() != null && openApi.getComponents().getSchemas() != null) {
+                openApi.getComponents().getSchemas().forEach((schemaName, schema) -> {
+                    if (schemaName.endsWith("ErrorResponse") && schema.getProperties() != null) {
+                        Schema<?> metadataSchema = (Schema<?>) schema.getProperties().get("metadata");
+                        if (metadataSchema != null) {
+                            metadataSchema.setDescription(buildErrorCodeMetadataDocs());
+                        }
+                    }
+                });
+            }
+        };
+    }
+
+    private String buildErrorCodeMetadataDocs() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Standardized error codes for the application:\n\n");
+        for (ErrorCode code : ErrorCode.values()) {
+            sb.append("* `").append(code.name()).append("`: ").append(code.getDescription()).append("\n");
+        }
+        return sb.toString();
     }
 }
