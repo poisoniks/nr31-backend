@@ -33,6 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.i18n.LocaleContextHolder;
 import tools.jackson.databind.JsonNode;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -125,7 +127,7 @@ public class JwtAuthenticationService implements AuthenticationService {
 
         Map<String, Object> variables = new HashMap<>();
         variables.put("username", savedUser.getUsername());
-        variables.put("verificationUrl", frontendUrl + "/verify-email?token=" + token);
+        variables.put("verificationUrl", frontendUrl + "/verify-email?token=" + token + "&email=" + URLEncoder.encode(savedUser.getEmail(), StandardCharsets.UTF_8));
 
         emailSenderService.sendHtmlEmail(
                 savedUser.getEmail(),
@@ -190,7 +192,7 @@ public class JwtAuthenticationService implements AuthenticationService {
 
         Map<String, Object> variables = new HashMap<>();
         variables.put("username", user.getUsername());
-        variables.put("verificationUrl", frontendUrl + "/verify-email?token=" + token);
+        variables.put("verificationUrl", frontendUrl + "/verify-email?token=" + token + "&email=" + URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8));
 
         emailSenderService.sendHtmlEmail(
                 user.getEmail(),
