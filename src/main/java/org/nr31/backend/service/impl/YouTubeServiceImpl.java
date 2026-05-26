@@ -3,7 +3,7 @@ package org.nr31.backend.service.impl;
 import tools.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.nr31.backend.dto.YoutubeVideoDto;
+import org.nr31.backend.dto.integration.YoutubeVideoDto;
 import org.nr31.backend.model.PageRevision;
 import org.nr31.backend.model.RevisionStatus;
 import org.nr31.backend.repository.PageRevisionRepository;

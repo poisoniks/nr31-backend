@@ -4,7 +4,7 @@ import org.nr31.backend.dto.cms.DiscordWidgetDto;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.dto.admin.AppConfigDto;
 import org.nr31.backend.dto.cms.HeroWidgetDto;
 import org.nr31.backend.dto.cms.LayoutDataDto;
 import org.nr31.backend.dto.cms.NewsFeedWidgetDto;

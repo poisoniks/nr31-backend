@@ -1,8 +1,8 @@
 package org.nr31.backend.service;
 
-import org.nr31.backend.dto.FileMetadataDTO;
-import org.nr31.backend.dto.FileUploadResponse;
-import org.nr31.backend.dto.LibraryFileUpdateRequest;
+import org.nr31.backend.dto.media.FileMetadataDTO;
+import org.nr31.backend.dto.media.FileUploadResponse;
+import org.nr31.backend.dto.media.LibraryFileUpdateRequest;
 import org.nr31.backend.model.FileMetadata;
 import org.nr31.backend.model.FileScope;
 import org.springframework.data.domain.Page;

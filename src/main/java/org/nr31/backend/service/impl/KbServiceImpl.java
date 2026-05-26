@@ -2,7 +2,7 @@ package org.nr31.backend.service.impl;
 
 import tools.jackson.databind.JsonNode;
 import com.github.slugify.Slugify;
-import org.nr31.backend.dto.ErrorCode;
+import org.nr31.backend.dto.common.ErrorCode;
 import org.nr31.backend.dto.kb.CreateKbArticleRequest;
 import org.nr31.backend.dto.kb.CreateKbFolderRequest;
 import org.nr31.backend.dto.kb.KbArticleDetailDto;
@@ -20,7 +20,7 @@ import org.nr31.backend.model.User;
 import org.nr31.backend.repository.KbArticleRepository;
 import org.nr31.backend.repository.KbFolderRepository;
 import org.nr31.backend.repository.UserRepository;
-import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.dto.admin.AppConfigDto;
 import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.service.AppConfigService;
 import org.nr31.backend.service.KbService;

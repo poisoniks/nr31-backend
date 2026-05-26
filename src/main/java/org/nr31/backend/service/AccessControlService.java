@@ -1,10 +1,10 @@
 package org.nr31.backend.service;
 
-import org.nr31.backend.dto.PermissionDTO;
-import org.nr31.backend.dto.PermissionUpdateRequest;
-import org.nr31.backend.dto.RoleDTO;
-import org.nr31.backend.dto.RoleRequest;
-import org.nr31.backend.dto.UserDTO;
+import org.nr31.backend.dto.user.PermissionDTO;
+import org.nr31.backend.dto.user.PermissionUpdateRequest;
+import org.nr31.backend.dto.user.RoleDTO;
+import org.nr31.backend.dto.user.RoleRequest;
+import org.nr31.backend.dto.user.UserDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

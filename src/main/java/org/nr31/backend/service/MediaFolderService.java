@@ -1,7 +1,7 @@
 package org.nr31.backend.service;
 
-import org.nr31.backend.dto.MediaFolderDTO;
-import org.nr31.backend.dto.MediaFolderRequest;
+import org.nr31.backend.dto.media.MediaFolderDTO;
+import org.nr31.backend.dto.media.MediaFolderRequest;
 
 import java.util.List;
 import java.util.UUID;

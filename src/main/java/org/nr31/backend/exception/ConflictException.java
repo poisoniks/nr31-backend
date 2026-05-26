@@ -1,7 +1,7 @@
 package org.nr31.backend.exception;
 
 import lombok.Getter;
-import org.nr31.backend.dto.ErrorCode;
+import org.nr31.backend.dto.common.ErrorCode;
 
 import java.util.Map;
 

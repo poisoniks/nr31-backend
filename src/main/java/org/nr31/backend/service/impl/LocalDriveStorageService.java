@@ -2,11 +2,11 @@ package org.nr31.backend.service.impl;
 
 import tools.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
-import org.nr31.backend.dto.AppConfigDto;
-import org.nr31.backend.dto.ErrorCode;
-import org.nr31.backend.dto.FileMetadataDTO;
-import org.nr31.backend.dto.FileUploadResponse;
-import org.nr31.backend.dto.LibraryFileUpdateRequest;
+import org.nr31.backend.dto.admin.AppConfigDto;
+import org.nr31.backend.dto.common.ErrorCode;
+import org.nr31.backend.dto.media.FileMetadataDTO;
+import org.nr31.backend.dto.media.FileUploadResponse;
+import org.nr31.backend.dto.media.LibraryFileUpdateRequest;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.exception.FileStorageException;
 import org.nr31.backend.model.AppConfigKey;

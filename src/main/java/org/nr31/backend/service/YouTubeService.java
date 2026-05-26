@@ -1,6 +1,6 @@
 package org.nr31.backend.service;
 
-import org.nr31.backend.dto.YoutubeVideoDto;
+import org.nr31.backend.dto.integration.YoutubeVideoDto;
 
 import java.util.Optional;
 import java.util.Set;

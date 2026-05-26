@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 import java.util.Map;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.nr31.backend.dto.ErrorResponse;
+import org.nr31.backend.dto.common.ErrorResponse;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

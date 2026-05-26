@@ -4,7 +4,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintValidatorContext;
 import net.jqwik.api.*;
-import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.dto.admin.AppConfigDto;
 import org.nr31.backend.model.AppConfigKey;
 import org.nr31.backend.dto.cms.RichTextWidgetDto;
 import org.nr31.backend.service.AppConfigService;

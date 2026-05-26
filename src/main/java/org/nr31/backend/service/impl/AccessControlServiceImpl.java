@@ -6,12 +6,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.nr31.backend.dto.PermissionDTO;
-import org.nr31.backend.dto.PermissionUpdateRequest;
-import org.nr31.backend.dto.RoleDTO;
-import org.nr31.backend.dto.RoleRequest;
-import org.nr31.backend.dto.UserDTO;
-import org.nr31.backend.dto.ErrorCode;
+import org.nr31.backend.dto.user.PermissionDTO;
+import org.nr31.backend.dto.user.PermissionUpdateRequest;
+import org.nr31.backend.dto.user.RoleDTO;
+import org.nr31.backend.dto.user.RoleRequest;
+import org.nr31.backend.dto.user.UserDTO;
+import org.nr31.backend.dto.common.ErrorCode;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.model.Permission;
 import org.nr31.backend.model.Role;

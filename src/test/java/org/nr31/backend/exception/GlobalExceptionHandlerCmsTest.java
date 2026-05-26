@@ -2,9 +2,9 @@ package org.nr31.backend.exception;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.nr31.backend.dto.ErrorCode;
-import org.nr31.backend.dto.ErrorResponse;
-import org.nr31.backend.dto.ValidationErrorResponse;
+import org.nr31.backend.dto.common.ErrorCode;
+import org.nr31.backend.dto.common.ErrorResponse;
+import org.nr31.backend.dto.common.ValidationErrorResponse;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;

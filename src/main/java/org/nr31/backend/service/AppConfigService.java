@@ -1,6 +1,6 @@
 package org.nr31.backend.service;
 
-import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.dto.admin.AppConfigDto;
 import org.nr31.backend.model.AppConfigKey;
 
 import org.springframework.data.domain.Page;

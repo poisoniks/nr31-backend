@@ -1,7 +1,7 @@
 package org.nr31.backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.nr31.backend.dto.SupportedLocaleDTO;
+import org.nr31.backend.dto.common.SupportedLocaleDTO;
 import org.nr31.backend.model.SupportedLocale;
 import org.nr31.backend.repository.SupportedLocaleRepository;
 import org.nr31.backend.service.PublicService;

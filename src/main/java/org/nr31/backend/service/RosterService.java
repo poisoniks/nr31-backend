@@ -1,9 +1,9 @@
 package org.nr31.backend.service;
 
-import org.nr31.backend.dto.EventTypeDTO;
-import org.nr31.backend.dto.EventTypeRequest;
-import org.nr31.backend.dto.UnitTypeDTO;
-import org.nr31.backend.dto.UnitTypeRequest;
+import org.nr31.backend.dto.calendar.EventTypeDTO;
+import org.nr31.backend.dto.calendar.EventTypeRequest;
+import org.nr31.backend.dto.roster.UnitTypeDTO;
+import org.nr31.backend.dto.roster.UnitTypeRequest;
 
 import java.util.Optional;
 

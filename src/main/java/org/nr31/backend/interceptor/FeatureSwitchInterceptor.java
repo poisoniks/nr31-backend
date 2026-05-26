@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.nr31.backend.annotation.FeatureSwitch;
-import org.nr31.backend.dto.AppConfigDto;
+import org.nr31.backend.dto.admin.AppConfigDto;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.exception.FeatureDisabledException;
 import org.nr31.backend.model.AppConfigKey;

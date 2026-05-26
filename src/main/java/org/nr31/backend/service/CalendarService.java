@@ -1,11 +1,11 @@
 package org.nr31.backend.service;
 
-import org.nr31.backend.dto.CalendarActionMode;
-import org.nr31.backend.dto.CalendarEventDTO;
-import org.nr31.backend.dto.CreateEventRequest;
-import org.nr31.backend.dto.DiscordSyncEventDTO;
-import org.nr31.backend.dto.DiscordSyncExceptionDTO;
-import org.nr31.backend.dto.UpdateEventRequest;
+import org.nr31.backend.dto.calendar.CalendarActionMode;
+import org.nr31.backend.dto.calendar.CalendarEventDTO;
+import org.nr31.backend.dto.calendar.CreateEventRequest;
+import org.nr31.backend.dto.integration.DiscordSyncEventDTO;
+import org.nr31.backend.dto.integration.DiscordSyncExceptionDTO;
+import org.nr31.backend.dto.calendar.UpdateEventRequest;
 
 import java.time.Instant;
 import java.util.List;

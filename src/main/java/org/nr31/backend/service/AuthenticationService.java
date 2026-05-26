@@ -1,7 +1,7 @@
 package org.nr31.backend.service;
 
-import org.nr31.backend.dto.AuthCredentialsDTO;
-import org.nr31.backend.dto.RegisterRequest;
+import org.nr31.backend.dto.auth.AuthCredentialsDTO;
+import org.nr31.backend.dto.auth.RegisterRequest;
 
 public interface AuthenticationService {
     AuthCredentialsDTO authenticate(String username, String password);

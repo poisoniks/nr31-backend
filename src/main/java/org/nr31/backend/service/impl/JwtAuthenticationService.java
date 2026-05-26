@@ -2,10 +2,10 @@ package org.nr31.backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.nr31.backend.dto.AppConfigDto;
-import org.nr31.backend.dto.AuthCredentialsDTO;
-import org.nr31.backend.dto.RegisterRequest;
-import org.nr31.backend.dto.ErrorCode;
+import org.nr31.backend.dto.admin.AppConfigDto;
+import org.nr31.backend.dto.auth.AuthCredentialsDTO;
+import org.nr31.backend.dto.auth.RegisterRequest;
+import org.nr31.backend.dto.common.ErrorCode;
 import org.nr31.backend.exception.ConflictException;
 import org.nr31.backend.exception.KeyExpiredException;
 import org.nr31.backend.exception.RateLimitException;

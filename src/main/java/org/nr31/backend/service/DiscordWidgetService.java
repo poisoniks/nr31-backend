@@ -1,6 +1,6 @@
 package org.nr31.backend.service;
 
-import org.nr31.backend.dto.DiscordWidgetDataDto;
+import org.nr31.backend.dto.integration.DiscordWidgetDataDto;
 
 import java.util.Optional;
 import java.util.Set;

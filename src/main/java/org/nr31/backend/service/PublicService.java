@@ -1,6 +1,6 @@
 package org.nr31.backend.service;
 
-import org.nr31.backend.dto.SupportedLocaleDTO;
+import org.nr31.backend.dto.common.SupportedLocaleDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -1,8 +1,8 @@
 package org.nr31.backend.controller.v1;
 
 import lombok.RequiredArgsConstructor;
-import org.nr31.backend.dto.ErrorResponse;
-import org.nr31.backend.dto.FileUploadResponse;
+import org.nr31.backend.dto.common.ErrorResponse;
+import org.nr31.backend.dto.media.FileUploadResponse;
 import org.nr31.backend.model.FileMetadata;
 import org.nr31.backend.model.FileScope;
 import org.nr31.backend.service.FileStorageService;

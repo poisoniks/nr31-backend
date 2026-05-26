@@ -12,7 +12,7 @@ import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import com.github.victools.jsonschema.module.jakarta.validation.JakartaValidationModule;
 import com.github.victools.jsonschema.module.jakarta.validation.JakartaValidationOption;
 import lombok.extern.slf4j.Slf4j;
-import org.nr31.backend.dto.ErrorCode;
+import org.nr31.backend.dto.common.ErrorCode;
 import org.nr31.backend.dto.cms.WidgetDto;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.repository.SupportedLocaleRepository;

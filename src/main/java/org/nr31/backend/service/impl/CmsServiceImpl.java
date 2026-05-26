@@ -4,7 +4,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
-import org.nr31.backend.dto.ErrorCode;
+import org.nr31.backend.dto.common.ErrorCode;
 import org.nr31.backend.dto.cms.LayoutDataDto;
 import org.nr31.backend.dto.cms.PageResponseDto;
 import org.nr31.backend.dto.cms.PublishDraftRequest;
