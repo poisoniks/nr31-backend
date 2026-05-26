@@ -94,11 +94,15 @@ public class JwtAuthenticationService implements AuthenticationService {
     @Transactional
     public void register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new ConflictException("Username is already taken", ErrorCode.CONFLICT);
+            throw new ConflictException("Username is already taken", ErrorCode.USERNAME_ALREADY_EXISTS);
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ConflictException("Email is already registered", ErrorCode.CONFLICT);
-        }
+        userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
+            Map<String, Object> metadata = null;
+            if (!existingUser.isEmailVerified() && isBlockUnverifiedUsersEnabled()) {
+                metadata = Map.of("resendVerificationEmail", true);
+            }
+            throw new ConflictException("Email is already registered", ErrorCode.EMAIL_ALREADY_EXISTS, metadata);
+        });
 
         User user = new User();
         user.setUsername(request.getUsername());

@@ -57,8 +57,10 @@ Feature: Authentication and Token Management
     Then the response status code should be 201
     When I register with username "dupuser", email "other@example.com", and password "password123"
     Then the response status code should be 409
+    And the response body should contain "code" with value "USERNAME_ALREADY_EXISTS"
     When I register with username "otheruser", email "dupuser@example.com", and password "password123"
     Then the response status code should be 409
+    And the response body should contain "code" with value "EMAIL_ALREADY_EXISTS"
 
   Scenario: Unverified users blocked by default, can log in after verification
     When I register with username "unverifieduser", email "unverified@example.com", and password "password123"
