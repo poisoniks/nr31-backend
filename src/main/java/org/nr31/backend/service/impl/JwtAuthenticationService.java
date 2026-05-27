@@ -12,8 +12,10 @@ import org.nr31.backend.exception.RateLimitException;
 import org.nr31.backend.model.RefreshToken;
 import org.nr31.backend.model.User;
 import org.nr31.backend.model.EmailVerificationToken;
+import org.nr31.backend.model.PasswordResetToken;
 import org.nr31.backend.repository.UserRepository;
 import org.nr31.backend.repository.EmailVerificationTokenRepository;
+import org.nr31.backend.repository.PasswordResetTokenRepository;
 import org.nr31.backend.security.JwtUtil;
 import org.nr31.backend.service.AuthenticationService;
 import org.nr31.backend.service.RefreshTokenService;
@@ -40,6 +42,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -55,6 +58,7 @@ public class JwtAuthenticationService implements AuthenticationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailSenderService emailSenderService;
     private final AppConfigService appConfigService;
 
@@ -201,6 +205,71 @@ public class JwtAuthenticationService implements AuthenticationService {
                 variables,
                 LocaleContextHolder.getLocale()
         );
+    }
+
+    @Override
+    @Transactional
+    public void sendForgotPasswordEmail(String email) {
+        log.debug("Password reset requested for email: {}", email);
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            log.debug("Password reset request: User with email {} not found. Returning silent success.", email);
+            return;
+        }
+
+        Optional<PasswordResetToken> existingTokenOpt = passwordResetTokenRepository.findByUser(user);
+        if (existingTokenOpt.isPresent()) {
+            PasswordResetToken existingToken = existingTokenOpt.get();
+            Instant nextAllowedSendTime = existingToken.getCreatedAt().plus(resendLimitSeconds, ChronoUnit.SECONDS);
+            if (nextAllowedSendTime.isAfter(Instant.now())) {
+                log.debug("Password reset request rate-limited for email: {}. Returning silent success.", email);
+                return;
+            }
+        }
+
+        passwordResetTokenRepository.deleteByUser(user);
+
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(token)
+                .user(user)
+                .expiryDate(Instant.now().plus(1, ChronoUnit.HOURS))
+                .createdAt(Instant.now())
+                .build();
+
+        passwordResetTokenRepository.save(resetToken);
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("username", user.getUsername());
+        variables.put("resetUrl", frontendUrl + "/reset-password?token=" + token);
+
+        emailSenderService.sendHtmlEmail(
+                user.getEmail(),
+                "email.reset.subject",
+                "password-reset",
+                variables,
+                LocaleContextHolder.getLocale()
+        );
+    }
+
+    @Override
+    @Transactional
+    public void resetUserPassword(String token, String newPassword) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid password reset token"));
+
+        if (resetToken.getExpiryDate().isBefore(Instant.now())) {
+            passwordResetTokenRepository.deleteByTokenCustom(token);
+            throw new KeyExpiredException("Password reset token has expired", ErrorCode.TOKEN_EXPIRED);
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.saveAndFlush(user);
+
+        passwordResetTokenRepository.deleteByTokenCustom(token);
+
+        refreshTokenService.deleteByUser(user);
     }
 
     private boolean isBlockUnverifiedUsersEnabled() {

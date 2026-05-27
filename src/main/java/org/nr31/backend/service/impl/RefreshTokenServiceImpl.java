@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.nr31.backend.exception.TokenRefreshException;
 import org.nr31.backend.model.RefreshToken;
+import org.nr31.backend.model.User;
 import org.nr31.backend.repository.RefreshTokenRepository;
 import org.nr31.backend.repository.UserRepository;
 import org.nr31.backend.security.JwtUtil;
@@ -63,5 +64,14 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .map(RefreshToken::getUser)
                 .map(user -> jwtUtil.generateToken(userDetailsService.loadUserByUsername(user.getUsername())))
                 .orElseThrow(() -> new TokenRefreshException("Refresh token is expired or not found"));
+    }
+
+    @Override
+    @Transactional
+    public void deleteByUser(User user) {
+        if (user == null) {
+            return;
+        }
+        refreshTokenRepository.deleteByUser(user);
     }
 }

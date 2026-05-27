@@ -16,9 +16,11 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.nr31.backend.dto.auth.ForgotPasswordRequest;
 import org.nr31.backend.dto.auth.RefreshTokenRequest;
 import org.nr31.backend.dto.auth.RegisterRequest;
 import org.nr31.backend.dto.auth.ResendVerificationRequest;
+import org.nr31.backend.dto.auth.ResetPasswordRequest;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import org.nr31.backend.service.RefreshTokenService;
@@ -126,5 +128,31 @@ public class AuthController {
     public ResponseEntity<Void> resendVerificationEmail(@Valid @RequestBody ResendVerificationRequest request) {
         authenticationService.resendVerificationEmail(request.getEmail());
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Request password reset", description = "Sends a password reset link to the user's email if the account exists")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password reset process initiated (silent success)"),
+            @ApiResponse(responseCode = "400", description = "Invalid request body",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
+    })
+    @PostMapping(value = "/forgot-password", produces = "application/json", consumes = "application/json")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authenticationService.sendForgotPasswordEmail(request.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Reset password", description = "Resets user password using the token sent via email")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Password successfully reset"),
+            @ApiResponse(responseCode = "400", description = "Invalid or expired token",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request body",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
+    })
+    @PostMapping(value = "/reset-password", produces = "application/json", consumes = "application/json")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authenticationService.resetUserPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.noContent().build();
     }
 }
