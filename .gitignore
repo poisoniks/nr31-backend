@@ -6,3 +6,4 @@ uploads/
 .jqwik-database
 .kiro/
 /bin
+.agents/
