@@ -141,16 +141,16 @@ Feature: Authentication and Token Management
 
   Scenario: Authenticated password change fails if new password is same as current password
     Given I log in with user "admin" and password "testpass"
-    When I change the password with current password "testpass" and new password "testpass"
+    When I change the password with current password "testpass" and new password "NewPassword123!"
+    Then the response status code should be 204
+    When I change the password with current password "NewPassword123!" and new password "NewPassword123!"
     Then the response status code should be 409
     And the response body should contain "code" with value "CONFLICT"
 
   Scenario: Authenticated password change fails if new password validation fails
     Given I log in with user "admin" and password "testpass"
-    When I change the password with current password "testpass" and new password "NewPassword123!"
-    Then the response status code should be 204
-    When I change the password with current password "NewPassword123!" and new password "NewPassword123!"
-    Then the response status code should be 409
+    When I change the password with current password "testpass" and new password "weak"
+    Then the response status code should be 400
 
   Scenario: Authenticated password change invalidates all refresh tokens
     Given I log in with user "admin" and password "testpass"
@@ -158,4 +158,29 @@ Feature: Authentication and Token Management
     When I change the password with current password "testpass" and new password "NewPassword123!"
     Then the response status code should be 204
     When I refresh the token with "{adminRefreshToken}"
+    Then the response status code should be 400
+
+  Scenario: Successful password reset flow
+    When I register with username "resetuser", email "reset@example.com", and password "Password123!"
+    Then the response status code should be 201
+    When I retrieve the verification token for email "reset@example.com" from Mailpit
+    And I verify the email with the retrieved token
+    Then the response status code should be 204
+    And I clear Mailpit messages
+    When I request a password reset for email "reset@example.com"
+    Then the response status code should be 200
+    When I retrieve the password reset token for email "reset@example.com" from Mailpit
+    And I reset the password with the retrieved token and new password "NewPassword123!"
+    Then the response status code should be 204
+    When I log in with user "resetuser" and password "Password123!"
+    Then the response status code should be 401
+    When I log in with user "resetuser" and password "NewPassword123!"
+    Then the response status code should be 200
+
+  Scenario: Request password reset for non-existent user returns silent success
+    When I request a password reset for email "nonexistent@example.com"
+    Then the response status code should be 200
+
+  Scenario: Try to reset password with invalid token
+    When I reset the password with token "00000000-0000-0000-0000-000000000000" and new password "NewPassword123!"
     Then the response status code should be 400
