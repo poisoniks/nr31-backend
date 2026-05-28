@@ -10,4 +10,5 @@ public interface AuthenticationService {
     void resendVerificationEmail(String email);
     void sendForgotPasswordEmail(String email);
     void resetUserPassword(String token, String newPassword);
+    void changePassword(String username, String currentPassword, String newPassword);
 }

@@ -37,4 +37,11 @@ public class AuthSteps extends CommonStepDefs {
         HttpResponse<String> response = makeApiCall("POST", "/api/v1/auth/logout", body);
         contextHelper.addValue("response", response);
     }
+
+    @When("I change the password with current password {string} and new password {string}")
+    public void i_change_the_password_with_current_password_and_new_password(String currentPassword, String newPassword) throws Exception {
+        String body = String.format("{\"currentPassword\":\"%s\",\"newPassword\":\"%s\"}", currentPassword, newPassword);
+        HttpResponse<String> response = makeApiCall("PUT", "/api/v1/auth/password", body);
+        contextHelper.addValue("response", response);
+    }
 }

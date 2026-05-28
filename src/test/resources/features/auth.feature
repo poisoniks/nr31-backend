@@ -122,3 +122,40 @@ Feature: Authentication and Token Management
     Then the response status code should be 429
     And the response body should contain "code" with value "TOO_MANY_REQUESTS"
     And the response body should contain "metadata.remainingSeconds"
+
+  Scenario: Successful authenticated password change
+    Given I log in with user "admin" and password "testpass"
+    When I change the password with current password "testpass" and new password "NewPassword123!"
+    Then the response status code should be 204
+    When I log in with user "admin" and password "testpass"
+    Then the response status code should be 401
+    When I log in with user "admin" and password "NewPassword123!"
+    Then the response status code should be 200
+
+  Scenario: Authenticated password change fails if current password is incorrect
+    Given I log in with user "admin" and password "testpass"
+    When I change the password with current password "wrongcurrentpass" and new password "NewPassword123!"
+    Then the response status code should be 401
+    When I log in with user "admin" and password "testpass"
+    Then the response status code should be 200
+
+  Scenario: Authenticated password change fails if new password is same as current password
+    Given I log in with user "admin" and password "testpass"
+    When I change the password with current password "testpass" and new password "testpass"
+    Then the response status code should be 409
+    And the response body should contain "code" with value "CONFLICT"
+
+  Scenario: Authenticated password change fails if new password validation fails
+    Given I log in with user "admin" and password "testpass"
+    When I change the password with current password "testpass" and new password "NewPassword123!"
+    Then the response status code should be 204
+    When I change the password with current password "NewPassword123!" and new password "NewPassword123!"
+    Then the response status code should be 409
+
+  Scenario: Authenticated password change invalidates all refresh tokens
+    Given I log in with user "admin" and password "testpass"
+    And I save the response field "refreshToken" as "adminRefreshToken"
+    When I change the password with current password "testpass" and new password "NewPassword123!"
+    Then the response status code should be 204
+    When I refresh the token with "{adminRefreshToken}"
+    Then the response status code should be 400

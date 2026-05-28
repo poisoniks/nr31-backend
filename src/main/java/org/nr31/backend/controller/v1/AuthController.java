@@ -14,14 +14,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.nr31.backend.dto.auth.ChangePasswordRequest;
 import org.nr31.backend.dto.auth.ForgotPasswordRequest;
 import org.nr31.backend.dto.auth.RefreshTokenRequest;
 import org.nr31.backend.dto.auth.RegisterRequest;
 import org.nr31.backend.dto.auth.ResendVerificationRequest;
 import org.nr31.backend.dto.auth.ResetPasswordRequest;
 import org.springframework.web.bind.annotation.RequestParam;
+import java.security.Principal;
 
 import org.nr31.backend.service.RefreshTokenService;
 import org.springframework.web.bind.annotation.RestController;
@@ -153,6 +156,26 @@ public class AuthController {
     @PostMapping(value = "/reset-password", produces = "application/json", consumes = "application/json")
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authenticationService.resetUserPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Change password (authenticated)", description = "Allows a logged-in user to change their password", security = @SecurityRequirement(name = "Bearer Authentication"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Password successfully changed"),
+            @ApiResponse(responseCode = "400", description = "Invalid request body",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid current password",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "New password cannot be the same as the current password",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PutMapping(value = "/password", produces = "application/json", consumes = "application/json")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request, Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        authenticationService.changePassword(principal.getName(), request.getCurrentPassword(), request.getNewPassword());
         return ResponseEntity.noContent().build();
     }
 }

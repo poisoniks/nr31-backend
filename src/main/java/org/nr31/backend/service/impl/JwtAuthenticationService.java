@@ -7,6 +7,7 @@ import org.nr31.backend.dto.auth.AuthCredentialsDTO;
 import org.nr31.backend.dto.auth.RegisterRequest;
 import org.nr31.backend.dto.common.ErrorCode;
 import org.nr31.backend.exception.ConflictException;
+import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.exception.KeyExpiredException;
 import org.nr31.backend.exception.RateLimitException;
 import org.nr31.backend.model.RefreshToken;
@@ -268,6 +269,26 @@ public class JwtAuthenticationService implements AuthenticationService {
         userRepository.saveAndFlush(user);
 
         passwordResetTokenRepository.deleteByTokenCustom(token);
+
+        refreshTokenService.deleteByUser(user);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(String username, String currentPassword, String newPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ElementNotFoundException("User not found: " + username, ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BadCredentialsException("Invalid current password");
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new ConflictException("New password cannot be the same as the current password", ErrorCode.CONFLICT);
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.saveAndFlush(user);
 
         refreshTokenService.deleteByUser(user);
     }
