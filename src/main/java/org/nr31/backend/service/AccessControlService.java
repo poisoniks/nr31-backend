@@ -35,4 +35,6 @@ public interface AccessControlService {
     Page<UserDTO> getAllUsers(Pageable pageable);
 
     Page<UserDTO> searchUsersByUsername(String username, Pageable pageable);
+
+    UserDTO getUserByUsername(String username);
 }

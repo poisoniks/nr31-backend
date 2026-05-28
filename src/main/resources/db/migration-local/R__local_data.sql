@@ -1,6 +1,6 @@
 -- Password: testpass
-INSERT INTO users (username, password_hash) VALUES ('admin', '$2a$12$llGEJmpM5l3xhCORCr/tX.RrkU/GiJeYSjIcLZxmjZwMhtKzMwGya') ON CONFLICT (username) DO NOTHING;
-INSERT INTO users (username, password_hash) VALUES ('user', '$2a$12$llGEJmpM5l3xhCORCr/tX.RrkU/GiJeYSjIcLZxmjZwMhtKzMwGya') ON CONFLICT (username) DO NOTHING;
+INSERT INTO users (username, password_hash, email, email_verified) VALUES ('admin', '$2a$12$llGEJmpM5l3xhCORCr/tX.RrkU/GiJeYSjIcLZxmjZwMhtKzMwGya', 'admin@example.com', TRUE) ON CONFLICT (username) DO NOTHING;
+INSERT INTO users (username, password_hash, email, email_verified) VALUES ('user', '$2a$12$llGEJmpM5l3xhCORCr/tX.RrkU/GiJeYSjIcLZxmjZwMhtKzMwGya', 'user@example.com', TRUE) ON CONFLICT (username) DO NOTHING;
 
 INSERT INTO user_roles (user_id, role_id) SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'admin' AND r.name = 'SUPER_ADMIN' ON CONFLICT (user_id, role_id) DO NOTHING;
 

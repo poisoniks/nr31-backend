@@ -186,6 +186,14 @@ public class AccessControlServiceImpl implements AccessControlService {
                 .map(this::convertToUserDTO);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public UserDTO getUserByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ElementNotFoundException("User not found: " + username, ErrorCode.USER_NOT_FOUND, Map.of("username", username)));
+        return convertToUserDTO(user);
+    }
+
     private RoleDTO convertToDTO(Role role) {
         return RoleDTO.builder()
                 .id(role.getId())
