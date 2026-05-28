@@ -1,7 +1,7 @@
 package org.nr31.backend.cucumber.stepdefs;
 
 import io.cucumber.java.Before;
-import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.SessionFactory;
 import org.nr31.backend.cucumber.DatabaseCleanupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
@@ -12,7 +12,7 @@ public class DatabaseHooks {
     private DatabaseCleanupService cleanupService;
 
     @Autowired
-    private EntityManagerFactory entityManagerFactory;
+    private SessionFactory sessionFactory;
 
     @Autowired
     private CacheManager cacheManager;
@@ -21,7 +21,7 @@ public class DatabaseHooks {
     public void resetDatabase() {
         cleanupService.createSnapshot();
         cleanupService.resetDatabase();
-        entityManagerFactory.getCache().evictAll();
+        sessionFactory.getCache().evictAllRegions();
         cacheManager.resetCaches();
     }
 }
