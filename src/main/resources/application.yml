@@ -101,5 +101,5 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,metrics,caches
+        include: health,metrics,caches,loggers
 
