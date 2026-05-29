@@ -91,6 +91,9 @@ app:
   frontend-url: ${APP_FRONTEND_URL}
   mail:
     from: ${APP_MAIL_FROM}
+  metrics-collector:
+    url: ${METRICS_COLLECTOR_URL:http://metrics-collector:9100}
+    timeout: ${METRICS_COLLECTOR_TIMEOUT:5000}
   auth:
     resend-limit-seconds: ${EMAIL_RATE_LIMIT_SECONDS}
 

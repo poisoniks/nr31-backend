@@ -51,6 +51,7 @@ public enum ErrorCode {
     KB_FOLDER_NOT_EMPTY("Knowledge Base folder cannot be deleted because it is not empty"),
     
     // Server errors
+    SERVICE_UNAVAILABLE("The metrics collector service is temporarily unavailable"),
     INTERNAL_SERVER_ERROR("An unexpected error occurred on the server");
 
     private final String description;

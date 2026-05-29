@@ -48,3 +48,5 @@ app:
     from: noreply@nr31.org
   auth:
     resend-limit-seconds: 120
+  metrics-collector:
+    url: ${METRICS_COLLECTOR_URL:http://localhost:9100}

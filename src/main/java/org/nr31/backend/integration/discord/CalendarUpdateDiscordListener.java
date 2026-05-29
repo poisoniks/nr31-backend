@@ -185,7 +185,7 @@ public class CalendarUpdateDiscordListener extends UpdatedListenerAdapter {
             if (configNode != null) {
                 JsonNode valueNode = configNode.get(GUILD_ID_PROPERTY_KEY);
                 if (valueNode != null && !valueNode.isNull()) {
-                    return valueNode.asText();
+                    return valueNode.asString();
                 }
             }
             return null;
