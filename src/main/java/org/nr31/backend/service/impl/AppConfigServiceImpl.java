@@ -20,6 +20,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.nr31.backend.event.AppConfigUpdatedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,7 @@ public class AppConfigServiceImpl implements AppConfigService {
 
     private final AppConfigRepository appConfigRepository;
     private final SchemaRegistry schemaRegistry;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(readOnly = true)
@@ -86,6 +89,7 @@ public class AppConfigServiceImpl implements AppConfigService {
         appConfig.setConfigSchema(schemaNode);
 
         AppConfig saved = appConfigRepository.save(appConfig);
+        eventPublisher.publishEvent(new AppConfigUpdatedEvent(this, saved));
         return toDto(saved);
     }
 

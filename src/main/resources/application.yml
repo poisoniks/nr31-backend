@@ -12,6 +12,7 @@ spring:
     open-in-view: false
     properties:
       hibernate:
+        generate_statistics: true
         cache:
           use_second_level_cache: true
           use_query_cache: true
@@ -23,7 +24,7 @@ spring:
   cache:
     type: caffeine
     caffeine:
-      spec: maximumSize=1000,expireAfterAccess=1h
+      spec: maximumSize=1000,expireAfterAccess=1h,recordStats
 
   servlet:
     multipart:
@@ -92,3 +93,10 @@ app:
     from: ${APP_MAIL_FROM}
   auth:
     resend-limit-seconds: ${EMAIL_RATE_LIMIT_SECONDS}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,caches
+
