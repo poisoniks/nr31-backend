@@ -1,0 +1,3 @@
+ALTER TABLE events ADD COLUMN source VARCHAR(32) DEFAULT 'SITE';
+ALTER TABLE events ADD COLUMN discord_id VARCHAR(64) UNIQUE;
+ALTER TABLE event_exceptions ADD COLUMN discord_exception_id VARCHAR(64) UNIQUE;

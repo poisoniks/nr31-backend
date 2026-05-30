@@ -1,0 +1,117 @@
+package org.nr31.backend.service.impl;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.nr31.backend.dto.common.ErrorCode;
+import org.nr31.backend.dto.media.MediaFolderDTO;
+import org.nr31.backend.dto.media.MediaFolderRequest;
+import org.nr31.backend.exception.ConflictException;
+import org.nr31.backend.exception.ElementNotFoundException;
+import org.nr31.backend.model.MediaFolder;
+import org.nr31.backend.repository.FileMetadataRepository;
+import org.nr31.backend.repository.MediaFolderRepository;
+import org.nr31.backend.service.MediaFolderService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class MediaFolderServiceImpl implements MediaFolderService {
+
+    private final MediaFolderRepository mediaFolderRepository;
+    private final FileMetadataRepository fileMetadataRepository;
+
+    @Override
+    @Transactional
+    public MediaFolderDTO createFolder(MediaFolderRequest request) {
+        MediaFolder parent = resolveParent(request.getParentId());
+
+        MediaFolder folder = MediaFolder.builder()
+                .id(UUID.randomUUID())
+                .name(request.getName())
+                .parent(parent)
+                .createdAt(Instant.now())
+                .build();
+
+        mediaFolderRepository.save(folder);
+        log.info("Created media folder '{}' (id={}, parentId={})",
+                folder.getName(), folder.getId(), request.getParentId());
+
+        return toDTO(folder);
+    }
+
+    @Override
+    @Transactional
+    public MediaFolderDTO updateFolder(UUID id, MediaFolderRequest request) {
+        MediaFolder folder = mediaFolderRepository.findByIdWithParent(id)
+                .orElseThrow(() -> new ElementNotFoundException("Folder not found", ErrorCode.FOLDER_NOT_FOUND, Map.of("id", id)));
+
+        MediaFolder parent = resolveParent(request.getParentId());
+
+        folder.setName(request.getName());
+        folder.setParent(parent);
+
+        mediaFolderRepository.save(folder);
+        log.info("Updated media folder '{}' (id={}, parentId={})",
+                folder.getName(), folder.getId(), request.getParentId());
+
+        return toDTO(folder);
+    }
+
+    @Override
+    @Transactional
+    public void deleteFolder(UUID id) {
+        MediaFolder folder = mediaFolderRepository.findById(id)
+                .orElseThrow(() -> new ElementNotFoundException("Folder not found", ErrorCode.FOLDER_NOT_FOUND, Map.of("id", id)));
+
+        if (mediaFolderRepository.existsByParentId(id)) {
+            throw new ConflictException("Cannot delete folder: it contains sub-folders", ErrorCode.FOLDER_NOT_EMPTY, Map.of("id", id));
+        }
+
+        if (fileMetadataRepository.existsByFolder(folder)) {
+            throw new ConflictException("Cannot delete folder: it contains files", ErrorCode.FOLDER_NOT_EMPTY, Map.of("id", id));
+        }
+
+        mediaFolderRepository.delete(folder);
+        log.info("Deleted media folder id={}", id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MediaFolderDTO> listFolders(UUID parentId) {
+        List<MediaFolder> folders;
+        if (parentId == null) {
+            folders = mediaFolderRepository.findTopLevelFolders();
+        } else {
+            folders = mediaFolderRepository.findChildrenByParentId(parentId);
+        }
+        return folders.stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    private MediaFolder resolveParent(UUID parentId) {
+        if (parentId == null) {
+            return null;
+        }
+
+        return mediaFolderRepository.findById(parentId)
+                .orElseThrow(() -> new ElementNotFoundException("Parent folder not found", ErrorCode.PARENT_FOLDER_NOT_FOUND, Map.of("parentId", parentId)));
+    }
+
+    private MediaFolderDTO toDTO(MediaFolder folder) {
+        return MediaFolderDTO.builder()
+                .id(folder.getId())
+                .name(folder.getName())
+                .parentId(folder.getParent() != null ? folder.getParent().getId() : null)
+                .createdAt(folder.getCreatedAt())
+                .build();
+    }
+}

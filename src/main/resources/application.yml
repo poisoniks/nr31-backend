@@ -12,6 +12,7 @@ spring:
     open-in-view: false
     properties:
       hibernate:
+        generate_statistics: true
         cache:
           use_second_level_cache: true
           use_query_cache: true
@@ -19,14 +20,33 @@ spring:
         javax:
           cache:
             provider: com.github.benmanes.caffeine.jcache.spi.CaffeineCachingProvider
+            missing_cache_strategy: create
   cache:
     type: caffeine
     caffeine:
-      spec: maximumSize=1000,expireAfterAccess=1h
+      spec: maximumSize=1000,expireAfterAccess=1h,recordStats
+
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+  mail:
+    host: ${SPRING_MAIL_HOST}
+    port: ${SPRING_MAIL_PORT}
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH}
+          starttls:
+            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE}
 
   flyway:
     enabled: true
     baseline-on-migrate: true
+    locations: classpath:db/migration
+    cleanDisabled: true
   security:
     user:
       name: user
@@ -36,9 +56,50 @@ logging:
   level:
     org.springframework.web: INFO
     org.nr31.backend: INFO
+  file:
+    name: /app/logs/application.log
+logback:
+  rollingpolicy:
+    file-name-pattern: /app/logs/application-%d{yyyy-MM-dd}.%i.log
+    max-history: 14
+    max-file-size: 10MB
+    total-size-cap: 1GB
 
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION}
   refresh:
     expiration: ${JWT_REFRESH_EXPIRATION}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+  writer-with-order-by-keys: true
+  openapi:
+    info:
+      title: Nr.31 FKR API
+      version: 1.0.0
+      description: This is the backend for Nr.31 FKR site.
+
+app:
+  uploads:
+    dir: ${APP_STORAGE_PATH}
+  discord:
+    bot-token: ${DISCORD_BOT_TOKEN}
+  frontend-url: ${APP_FRONTEND_URL}
+  mail:
+    from: ${APP_MAIL_FROM}
+  metrics-collector:
+    url: ${METRICS_COLLECTOR_URL:http://metrics-collector:9100}
+    timeout: ${METRICS_COLLECTOR_TIMEOUT:5000}
+  auth:
+    resend-limit-seconds: ${EMAIL_RATE_LIMIT_SECONDS}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,caches,loggers
+

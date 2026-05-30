@@ -26,18 +26,29 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine'
     implementation 'org.hibernate.orm:hibernate-jcache:7.2.4.Final'
+    implementation 'org.hibernate.orm:hibernate-micrometer'
     implementation 'com.github.ben-manes.caffeine:jcache'
     implementation 'com.typesafe:config'
     implementation 'org.flywaydb:flyway-core:10.20.0'
     implementation 'org.flywaydb:flyway-database-postgresql:10.20.0'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1'
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
+    implementation 'org.dmfs:lib-recur:0.17.1'
+    implementation 'com.networknt:json-schema-validator:3.0.2'
+    implementation 'com.github.victools:jsonschema-generator:5.0.0'
+    implementation 'com.github.victools:jsonschema-module-jackson:5.0.0'
+    implementation 'com.github.victools:jsonschema-module-jakarta-validation:5.0.0'
+    implementation 'commons-io:commons-io:2.21.0'
+    implementation 'com.github.slugify:slugify:3.0.7'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
+    implementation("net.dv8tion:JDA:6.3.1")
 
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
@@ -45,9 +56,41 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
-    testRuntimeOnly 'com.h2database:h2'
+    testImplementation 'org.testcontainers:testcontainers:2.0.3'
+    testImplementation 'org.testcontainers:postgresql:1.21.4'
+
+    testImplementation 'com.google.jimfs:jimfs:1.3.0'
+    testImplementation 'io.cucumber:cucumber-java:7.34.2'
+    testImplementation 'io.cucumber:cucumber-spring:7.34.2'
+    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.34.2'
+    testImplementation 'org.junit.platform:junit-platform-suite-engine:6.0.3'
+    testImplementation 'net.jqwik:jqwik:1.9.2'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+    filter {
+        excludeTestsMatching "org.nr31.backend.cucumber.CucumberTestRunner"
+    }
+}
+
+tasks.register('cucumber', Test) {
+    description = 'Runs Cucumber tests.'
+    group = 'verification'
+    outputs.upToDateWhen { false }
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    environment "DOCKER_HOST", "npipe:////./pipe/docker_engine"
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching "org.nr31.backend.cucumber.CucumberTestRunner"
+    }
+    
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        exceptionFormat "full"
+        showExceptions true
+        showCauses true
+        showStackTraces true
+    }
 }

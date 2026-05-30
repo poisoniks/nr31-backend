@@ -8,6 +8,22 @@ spring:
     properties:
       hibernate:
         generate_statistics: true
+  flyway:
+    locations: classpath:db/migration,classpath:db/migration-local
+  mail:
+    host: localhost
+    port: 1025
+    username: 
+    password: 
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+springdoc:
+  writer-with-default-pretty-printer: true
 
 logging:
   level:
@@ -21,3 +37,16 @@ jwt:
   expiration: 600000
   refresh:
     expiration: 604800000
+
+app:
+  uploads:
+    dir: ./uploads
+  discord:
+    bot-token:
+  frontend-url: http://localhost:80
+  mail:
+    from: noreply@nr31.org
+  auth:
+    resend-limit-seconds: 120
+  metrics-collector:
+    url: ${METRICS_COLLECTOR_URL:http://localhost:9100}

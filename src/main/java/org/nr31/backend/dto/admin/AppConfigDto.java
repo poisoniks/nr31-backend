@@ -1,0 +1,36 @@
+package org.nr31.backend.dto.admin;
+
+import tools.jackson.databind.JsonNode;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.nr31.backend.validation.ValidLocalizedString;
+
+import java.util.Map;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "DTO for application configuration")
+public class AppConfigDto {
+
+    @NotBlank
+    @Schema(description = "Name of the property", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String name;
+
+    @ValidLocalizedString
+    @Schema(description = "Description of the configuration (localized)", example = "{\"en\": \"description\", \"uk\": \"опис\"}")
+    private Map<String, String> description;
+
+    @NotNull(message = "Config value is required")
+    @Schema(description = "The actual configuration value as a JSON object, validated by schema", requiredMode = Schema.RequiredMode.REQUIRED)
+    private JsonNode configValue;
+
+    @Schema(description = "JSON schema used to validate the configValue")
+    private JsonNode configSchema;
+}

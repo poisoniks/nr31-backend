@@ -2,17 +2,49 @@ package org.nr31.backend.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.nr31.backend.dto.AuthCredentialsDTO;
+import org.nr31.backend.dto.admin.AppConfigDto;
+import org.nr31.backend.dto.auth.AuthCredentialsDTO;
+import org.nr31.backend.dto.auth.RegisterRequest;
+import org.nr31.backend.dto.common.ErrorCode;
+import org.nr31.backend.exception.ConflictException;
+import org.nr31.backend.exception.ElementNotFoundException;
+import org.nr31.backend.exception.KeyExpiredException;
+import org.nr31.backend.exception.RateLimitException;
 import org.nr31.backend.model.RefreshToken;
+import org.nr31.backend.model.User;
+import org.nr31.backend.model.EmailVerificationToken;
+import org.nr31.backend.model.PasswordResetToken;
+import org.nr31.backend.repository.UserRepository;
+import org.nr31.backend.repository.EmailVerificationTokenRepository;
+import org.nr31.backend.repository.PasswordResetTokenRepository;
 import org.nr31.backend.security.JwtUtil;
 import org.nr31.backend.service.AuthenticationService;
 import org.nr31.backend.service.RefreshTokenService;
+import org.nr31.backend.service.EmailSenderService;
+import org.nr31.backend.service.AppConfigService;
+import org.nr31.backend.model.AppConfigKey;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.i18n.LocaleContextHolder;
+import tools.jackson.databind.JsonNode;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -23,6 +55,19 @@ public class JwtAuthenticationService implements AuthenticationService {
     private final CustomUserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
+    
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailSenderService emailSenderService;
+    private final AppConfigService appConfigService;
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
+    @Value("${app.auth.resend-limit-seconds}")
+    private long resendLimitSeconds;
 
     @Override
     public AuthCredentialsDTO authenticate(String username, String password) {
@@ -37,10 +82,234 @@ public class JwtAuthenticationService implements AuthenticationService {
             throw new BadCredentialsException("No such user: " + username, e);
         }
 
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("No such user: " + username));
+
+        if (!user.isEmailVerified() && isBlockUnverifiedUsersEnabled()) {
+            log.debug("Authentication failed: email not verified for user: {}", username);
+            throw new DisabledException("Email is not verified");
+        }
+
         String jwt = jwtUtil.generateToken(userDetails);
 
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUsername());
 
         return new AuthCredentialsDTO(jwt, refreshToken.getToken());
+    }
+
+    @Override
+    @Transactional
+    public void register(RegisterRequest request) {
+        userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
+            Map<String, Object> metadata = null;
+            if (!existingUser.isEmailVerified() && isBlockUnverifiedUsersEnabled()) {
+                metadata = Map.of("resendVerificationEmail", true);
+            }
+            throw new ConflictException("Email is already registered", ErrorCode.EMAIL_ALREADY_EXISTS, metadata);
+        });
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new ConflictException("Username is already taken", ErrorCode.USERNAME_ALREADY_EXISTS);
+        }
+
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEmail(request.getEmail());
+        user.setEmailVerified(false);
+
+        User savedUser = userRepository.save(user);
+
+        String token = UUID.randomUUID().toString();
+        EmailVerificationToken verificationToken = EmailVerificationToken.builder()
+                .token(token)
+                .user(savedUser)
+                .expiryDate(Instant.now().plus(24, ChronoUnit.HOURS))
+                .createdAt(Instant.now())
+                .build();
+
+        emailVerificationTokenRepository.save(verificationToken);
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("username", savedUser.getUsername());
+        variables.put("verificationUrl", frontendUrl + "/verify-email?token=" + token + "&email=" + URLEncoder.encode(savedUser.getEmail(), StandardCharsets.UTF_8));
+
+        emailSenderService.sendHtmlEmail(
+                savedUser.getEmail(),
+                "email.verify.subject",
+                "email-verification",
+                variables,
+                LocaleContextHolder.getLocale()
+        );
+    }
+
+    @Override
+    @Transactional
+    public void verifyEmail(String token) {
+        EmailVerificationToken verificationToken = emailVerificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid email verification token"));
+
+        if (verificationToken.getExpiryDate().isBefore(Instant.now())) {
+            emailVerificationTokenRepository.deleteByTokenCustom(token);
+            throw new KeyExpiredException("Email verification token has expired", ErrorCode.TOKEN_EXPIRED);
+        }
+
+        User user = verificationToken.getUser();
+        user.setEmailVerified(true);
+        userRepository.saveAndFlush(user);
+
+        emailVerificationTokenRepository.deleteByTokenCustom(token);
+    }
+
+    @Override
+    @Transactional
+    public void resendVerificationEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User with this email not found"));
+
+        if (user.isEmailVerified()) {
+            throw new ConflictException("Email is already verified", ErrorCode.CONFLICT);
+        }
+
+        emailVerificationTokenRepository.findByUser(user).ifPresent(existingToken -> {
+            Instant nextAllowedSendTime = existingToken.getCreatedAt().plus(resendLimitSeconds, ChronoUnit.SECONDS);
+            Instant now = Instant.now();
+            if (nextAllowedSendTime.isAfter(now)) {
+                long remainingSeconds = Duration.between(now, nextAllowedSendTime).toSeconds();
+                throw new RateLimitException(
+                        "Please wait " + (resendLimitSeconds / 60) + " minutes before requesting another verification email",
+                        Map.of("remainingSeconds", remainingSeconds)
+                );
+            }
+        });
+
+        emailVerificationTokenRepository.deleteByUser(user);
+
+        String token = UUID.randomUUID().toString();
+        EmailVerificationToken verificationToken = EmailVerificationToken.builder()
+                .token(token)
+                .user(user)
+                .expiryDate(Instant.now().plus(24, ChronoUnit.HOURS))
+                .createdAt(Instant.now())
+                .build();
+
+        emailVerificationTokenRepository.save(verificationToken);
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("username", user.getUsername());
+        variables.put("verificationUrl", frontendUrl + "/verify-email?token=" + token + "&email=" + URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8));
+
+        emailSenderService.sendHtmlEmail(
+                user.getEmail(),
+                "email.verify.subject",
+                "email-verification",
+                variables,
+                LocaleContextHolder.getLocale()
+        );
+    }
+
+    @Override
+    @Transactional
+    public void sendForgotPasswordEmail(String email) {
+        log.debug("Password reset requested for email: {}", email);
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            log.debug("Password reset request: User with email {} not found. Returning silent success.", email);
+            return;
+        }
+
+        Optional<PasswordResetToken> existingTokenOpt = passwordResetTokenRepository.findByUser(user);
+        if (existingTokenOpt.isPresent()) {
+            PasswordResetToken existingToken = existingTokenOpt.get();
+            Instant nextAllowedSendTime = existingToken.getCreatedAt().plus(resendLimitSeconds, ChronoUnit.SECONDS);
+            if (nextAllowedSendTime.isAfter(Instant.now())) {
+                log.debug("Password reset request rate-limited for email: {}. Returning silent success.", email);
+                return;
+            }
+        }
+
+        passwordResetTokenRepository.deleteByUser(user);
+
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(token)
+                .user(user)
+                .expiryDate(Instant.now().plus(1, ChronoUnit.HOURS))
+                .createdAt(Instant.now())
+                .build();
+
+        passwordResetTokenRepository.save(resetToken);
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("username", user.getUsername());
+        variables.put("resetUrl", frontendUrl + "/reset-password?token=" + token);
+
+        emailSenderService.sendHtmlEmail(
+                user.getEmail(),
+                "email.reset.subject",
+                "password-reset",
+                variables,
+                LocaleContextHolder.getLocale()
+        );
+    }
+
+    @Override
+    @Transactional
+    public void resetUserPassword(String token, String newPassword) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid password reset token"));
+
+        if (resetToken.getExpiryDate().isBefore(Instant.now())) {
+            passwordResetTokenRepository.deleteByTokenCustom(token);
+            throw new KeyExpiredException("Password reset token has expired", ErrorCode.TOKEN_EXPIRED);
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.saveAndFlush(user);
+
+        passwordResetTokenRepository.deleteByTokenCustom(token);
+
+        refreshTokenService.deleteByUser(user);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(String username, String currentPassword, String newPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ElementNotFoundException("User not found: " + username, ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BadCredentialsException("Invalid current password");
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new ConflictException("New password cannot be the same as the current password", ErrorCode.CONFLICT);
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.saveAndFlush(user);
+
+        refreshTokenService.deleteByUser(user);
+    }
+
+    private boolean isBlockUnverifiedUsersEnabled() {
+        try {
+            AppConfigDto config = appConfigService.getConfig(AppConfigKey.FEATURE_SWITCHES);
+            JsonNode configNode = config.getConfigValue();
+            if (configNode != null && configNode.isArray()) {
+                for (JsonNode element : configNode) {
+                    if (element.has("name") && "block_unverified_users".equals(element.get("name").asString())) {
+                        JsonNode enabledNode = element.get("enabled");
+                        if (enabledNode != null) {
+                            return enabledNode.asBoolean();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to check block_unverified_users feature switch", e);
+        }
+        return false;
     }
 }
