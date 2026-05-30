@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DisabledException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ErrorResponse handleDisabledException(DisabledException e) {
-        log.debug("Account disabled: {}", e.getMessage());
+        log.debug("Account disabled: {}", e.getMessage(), e);
         return ErrorResponse.builder()
                 .message("Account is disabled")
                 .code(ErrorCode.ACCOUNT_DISABLED)
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(LockedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ErrorResponse handleLockedException(LockedException e) {
-        log.debug("Account locked: {}", e.getMessage());
+        log.debug("Account locked: {}", e.getMessage(), e);
         return ErrorResponse.builder()
                 .message("Account is locked")
                 .code(ErrorCode.ACCOUNT_LOCKED)
@@ -66,7 +66,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorResponse handleBadCredentialsException(BadCredentialsException e) {
-        log.debug("Bad credentials: {}", e.getMessage());
+        log.debug("Bad credentials: {}", e.getMessage(), e);
         return ErrorResponse.builder()
                 .message("Invalid username or password")
                 .code(ErrorCode.BAD_CREDENTIALS)
@@ -77,7 +77,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorResponse handleAuthenticationException(AuthenticationException e) {
-        log.debug("Authentication exception: {}", e.getMessage());
+        log.debug("Authentication exception: {}", e.getMessage(), e);
         return ErrorResponse.builder()
                 .message("Unable to authenticate")
                 .code(ErrorCode.UNAUTHORIZED)
@@ -88,7 +88,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthorizationDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ErrorResponse handleAuthorizationDeniedException(AuthorizationDeniedException e) {
-        log.debug("Access denied: {}", e.getMessage());
+        log.debug("Access denied: {}", e.getMessage(), e);
         return ErrorResponse.builder()
                 .message("Access denied")
                 .code(ErrorCode.FORBIDDEN)
@@ -99,7 +99,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ErrorResponse handleAccessDeniedException(AccessDeniedException e) {
-        log.debug("Access denied: {}", e.getMessage());
+        log.debug("Access denied: {}", e.getMessage(), e);
         return ErrorResponse.builder()
                 .message("Access denied")
                 .code(ErrorCode.FORBIDDEN)
@@ -225,7 +225,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CalendarException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleCalendarException(CalendarException e) {
-        log.debug("Calendar exception: {}", e.getMessage());
+        log.debug("Calendar exception: {}", e.getMessage(), e);
         return ErrorResponse.builder()
                 .message(e.getMessage())
                 .code(e.getErrorCode())
@@ -283,7 +283,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FeatureDisabledException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleFeatureDisabledException(FeatureDisabledException e) {
-        log.debug("Feature disabled: {}", e.getMessage());
+        log.debug("Feature disabled: {}", e.getMessage(), e);
         return ErrorResponse.builder()
                 .message("Requested endpoint is disabled")
                 .code(ErrorCode.FEATURE_DISABLED)
@@ -294,7 +294,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleConflictException(ConflictException e) {
-        log.debug("Conflict exception: {}", e.getMessage());
+        log.debug("Conflict exception: {}", e.getMessage(), e);
         return ErrorResponse.builder()
                 .message(e.getMessage())
                 .code(e.getErrorCode())
@@ -306,7 +306,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RateLimitException.class)
     @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
     public ErrorResponse handleRateLimitException(RateLimitException e) {
-        log.debug("Too many requests: {}", e.getMessage());
+        log.debug("Too many requests: {}", e.getMessage(), e);
         return ErrorResponse.builder()
                 .message(e.getMessage())
                 .code(e.getErrorCode())
@@ -330,7 +330,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FileStorageException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleFileStorageException(FileStorageException e) {
-        log.debug("File storage exception: {}", e.getMessage());
+        log.debug("File storage exception: {}", e.getMessage(), e);
         return ErrorResponse.builder()
                 .message(e.getMessage())
                 .code(e.getErrorCode())
@@ -342,7 +342,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     @ResponseStatus(HttpStatus.CONTENT_TOO_LARGE)
     public ErrorResponse handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
-        log.debug("File upload size exceeded: {}", e.getMessage());
+        log.debug("File upload size exceeded: {}", e.getMessage(), e);
         return ErrorResponse.builder()
                 .message("File size exceeds the maximum allowed limit of 5MB")
                 .code(ErrorCode.FILE_TOO_LARGE)
