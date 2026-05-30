@@ -21,6 +21,10 @@ spring:
           auth: false
           starttls:
             enable: false
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
 
 springdoc:
   writer-with-default-pretty-printer: true
