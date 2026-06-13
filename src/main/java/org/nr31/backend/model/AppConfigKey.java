@@ -10,7 +10,8 @@ public enum AppConfigKey {
     CMS_SLOT_RESTRICTIONS("cms_slot_restrictions"),
     KB_SEARCH_PRECISION("kb_search_precision"),
     FEATURE_SWITCHES("feature_switches"),
-    FETCH_SCHEDULED_DISCORD_EVENTS_GUILD_ID("fetch_scheduled_discord_events_guild_id");
+    FETCH_SCHEDULED_DISCORD_EVENTS_GUILD_ID("fetch_scheduled_discord_events_guild_id"),
+    ROSTER_EXPORT_TEMPLATE_FILE_ID("roster_export_template_file_id");
 
     private final String key;
 
