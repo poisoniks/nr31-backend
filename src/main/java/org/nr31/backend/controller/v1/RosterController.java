@@ -9,8 +9,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.dto.common.ErrorResponse;
-import org.nr31.backend.dto.calendar.EventTypeDTO;
-import org.nr31.backend.dto.calendar.EventTypeRequest;
 import org.nr31.backend.dto.roster.UnitTypeDTO;
 import org.nr31.backend.dto.roster.UnitTypeRequest;
 import org.nr31.backend.dto.common.ValidationErrorResponse;
@@ -102,65 +100,4 @@ public class RosterController {
                 return ResponseEntity.noContent().build();
         }
 
-        @Operation(summary = "Get all event types", description = "Retrieves all available event types")
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Successfully retrieved event types")
-        })
-        @GetMapping(value = "/event-types", produces = "application/json")
-        public ResponseEntity<Page<EventTypeDTO>> getAllEventTypes(@PageableDefault(size = 20) Pageable pageable) {
-                return ResponseEntity.ok(rosterService.getAllEventTypes(pageable));
-        }
-
-        @Operation(summary = "Get event type by ID", description = "Retrieves a specific event type by ID")
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Successfully retrieved event type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventTypeDTO.class))),
-                        @ApiResponse(responseCode = "404", description = "Event type not found",
-                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-        })
-        @GetMapping(value = "/event-types/{id}", produces = "application/json")
-        public ResponseEntity<EventTypeDTO> getEventTypeById(@PathVariable Long id) {
-                return rosterService.getEventTypeById(id)
-                                .map(ResponseEntity::ok)
-                                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-        }
-
-        @Operation(summary = "Create event type", description = "Creates a new event type", security = @SecurityRequirement(name = "Bearer Authentication"))
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "201", description = "Successfully created event type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventTypeDTO.class))),
-                        @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
-        })
-        @PostMapping(value = "/event-types", produces = "application/json", consumes = "application/json")
-        @PreAuthorize("hasAuthority('roster:write')")
-        public ResponseEntity<EventTypeDTO> createEventType(@Valid @RequestBody EventTypeRequest request) {
-                EventTypeDTO created = rosterService.createEventType(request);
-                return ResponseEntity.status(HttpStatus.CREATED).body(created);
-        }
-
-        @Operation(summary = "Update event type", description = "Updates an existing event type", security = @SecurityRequirement(name = "Bearer Authentication"))
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Successfully updated event type", content = @Content(mediaType = "application/json", schema = @Schema(implementation = EventTypeDTO.class))),
-                        @ApiResponse(responseCode = "404", description = "Event type not found",
-                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))),
-                        @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class)))
-        })
-        @PutMapping(value = "/event-types/{id}", produces = "application/json", consumes = "application/json")
-        @PreAuthorize("hasAuthority('roster:write')")
-        public ResponseEntity<EventTypeDTO> updateEventType(@PathVariable Long id,
-                        @Valid @RequestBody EventTypeRequest request) {
-                EventTypeDTO updated = rosterService.updateEventType(id, request);
-                return ResponseEntity.ok(updated);
-        }
-
-        @Operation(summary = "Delete event type", description = "Deletes an event type by ID", security = @SecurityRequirement(name = "Bearer Authentication"))
-        @ApiResponses(value = {
-                        @ApiResponse(responseCode = "204", description = "Successfully deleted event type"),
-                        @ApiResponse(responseCode = "404", description = "Event type not found",
-                                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-        })
-        @DeleteMapping(value = "/event-types/{id}", produces = "application/json")
-        @PreAuthorize("hasAuthority('roster:write')")
-        public ResponseEntity<Void> deleteEventType(@PathVariable Long id) {
-                rosterService.deleteEventType(id);
-                return ResponseEntity.noContent().build();
-        }
 }

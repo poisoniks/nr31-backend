@@ -1,7 +1,5 @@
 package org.nr31.backend.service;
 
-import org.nr31.backend.dto.calendar.EventTypeDTO;
-import org.nr31.backend.dto.calendar.EventTypeRequest;
 import org.nr31.backend.dto.roster.UnitTypeDTO;
 import org.nr31.backend.dto.roster.UnitTypeRequest;
 
@@ -21,14 +19,4 @@ public interface RosterService {
     UnitTypeDTO updateUnitType(Long id, UnitTypeRequest request);
 
     void deleteUnitType(Long id);
-
-    Page<EventTypeDTO> getAllEventTypes(Pageable pageable);
-
-    Optional<EventTypeDTO> getEventTypeById(Long id);
-
-    EventTypeDTO createEventType(EventTypeRequest request);
-
-    EventTypeDTO updateEventType(Long id, EventTypeRequest request);
-
-    void deleteEventType(Long id);
 }

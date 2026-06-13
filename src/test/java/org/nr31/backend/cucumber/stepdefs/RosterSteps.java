@@ -9,14 +9,14 @@ public class RosterSteps extends CommonStepDefs {
     @When("I create an event type with the following details:")
     public void i_create_an_event_type_with_the_following_details(DataTable dataTable) throws Exception {
         String body = dataTableToJson(dataTable);
-        HttpResponse<String> response = makeApiCall("POST", "/api/v1/roster/event-types", body);
+        HttpResponse<String> response = makeApiCall("POST", "/api/v1/calendar/event-types", body);
         contextHelper.addValue("response", response);
     }
 
     @When("I retrieve the event type {string}")
     public void i_retrieve_the_event_type(String idRef) throws Exception {
         String id = resolveVariables(idRef);
-        HttpResponse<String> response = makeApiCall("GET", "/api/v1/roster/event-types/" + id, null);
+        HttpResponse<String> response = makeApiCall("GET", "/api/v1/calendar/event-types/" + id, null);
         contextHelper.addValue("response", response);
     }
 
@@ -24,14 +24,14 @@ public class RosterSteps extends CommonStepDefs {
     public void i_update_the_event_type_with_the_following_details(String idRef, DataTable dataTable) throws Exception {
         String id = resolveVariables(idRef);
         String body = dataTableToJson(dataTable);
-        HttpResponse<String> response = makeApiCall("PUT", "/api/v1/roster/event-types/" + id, body);
+        HttpResponse<String> response = makeApiCall("PUT", "/api/v1/calendar/event-types/" + id, body);
         contextHelper.addValue("response", response);
     }
 
     @When("I delete the event type {string}")
     public void i_delete_the_event_type(String idRef) throws Exception {
         String id = resolveVariables(idRef);
-        HttpResponse<String> response = makeApiCall("DELETE", "/api/v1/roster/event-types/" + id, null);
+        HttpResponse<String> response = makeApiCall("DELETE", "/api/v1/calendar/event-types/" + id, null);
         contextHelper.addValue("response", response);
     }
 
