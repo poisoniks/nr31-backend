@@ -18,7 +18,7 @@ VALUES (
   'null',
   '{
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": ["integer", "null"],
+    "type": ["string", "null"],
     "description": "File metadata ID of the roster export template"
   }'
 )
@@ -122,3 +122,7 @@ CREATE INDEX idx_roster_members_mb_nickname ON roster_members(mb_nickname);
 CREATE INDEX idx_roster_members_unit_type ON roster_members(unit_type_id);
 CREATE INDEX idx_attendance_records_year_month ON attendance_records(year, month);
 CREATE INDEX idx_attendance_records_member ON attendance_records(member_id);
+
+UPDATE app_config
+SET config_value = '["image/png", "image/jpeg", "image/webp", "application/pdf", "application/zip", "text/plain", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"]'
+WHERE config_key = 'allowed_mime_types';

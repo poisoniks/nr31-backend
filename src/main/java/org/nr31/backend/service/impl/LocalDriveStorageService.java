@@ -62,7 +62,9 @@ public class LocalDriveStorageService implements FileStorageService {
             "image/webp",
             "application/pdf",
             "application/zip",
-            "text/plain");
+            "text/plain",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-excel");
 
     private static final String FILES_URL_PREFIX = "/api/v1/files/";
 

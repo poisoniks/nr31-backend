@@ -71,3 +71,27 @@ Feature: Roster Management
     When I delete the event type "99999"
     Then the response status code should be 404
 
+  Scenario: Import roster from Excel successfully
+    Given I log in with user "admin" and password "testpass"
+    When I import the roster file "roster.xlsx"
+    Then the response status code should be 200
+    And the roster member count should be greater than 0
+
+  Scenario: Export roster to Excel successfully using template
+    Given I log in with user "admin" and password "testpass"
+    When I upload the roster template "roster.xlsx"
+    Then the response status code should be 200
+    When I export the roster to Excel
+    Then the response status code should be 200
+
+  Scenario: Unauthorized users cannot import or export roster or upload template
+    Given I log out
+    When I import the roster file "roster.xlsx"
+    Then the response status code should be 403
+
+    When I export the roster to Excel
+    Then the response status code should be 403
+
+    When I upload the roster template "roster.xlsx"
+    Then the response status code should be 403
+

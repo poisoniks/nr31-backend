@@ -49,6 +49,7 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
     implementation("net.dv8tion:JDA:6.3.1")
+    implementation 'org.apache.poi:poi-ooxml:5.5.1'
 
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
@@ -81,6 +82,7 @@ tasks.register('cucumber', Test) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     environment "DOCKER_HOST", "npipe:////./pipe/docker_engine"
+    maxHeapSize = "2048m"
     useJUnitPlatform()
     filter {
         includeTestsMatching "org.nr31.backend.cucumber.CucumberTestRunner"
