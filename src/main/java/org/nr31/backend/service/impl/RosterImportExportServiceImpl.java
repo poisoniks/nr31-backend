@@ -75,8 +75,13 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
             throw new FileStorageException("Roster Excel file is empty");
         }
 
-        try (InputStream is = file.getInputStream();
-             Workbook workbook = new XSSFWorkbook(is)) {
+        try (InputStream is = file.getInputStream()) {
+            RosterExcelSaxReader reader = new RosterExcelSaxReader();
+            List<RosterExcelSaxReader.ParsedSheet> sheets = reader.read(is);
+
+            if (sheets.isEmpty()) {
+                throw new FileStorageException("Roster Excel file has no sheets");
+            }
 
             // Maps to hold parsed reference entities to be saved or resolved
             Map<String, Specialty> parsedSpecialties = new HashMap<>();
@@ -92,18 +97,18 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
             List<ParsedMonthlyEventCount> parsedMonthlyEvents = new ArrayList<>();
 
             // 1. PARSE SHEET 1: Реєстр
-            Sheet registrySheet = workbook.getSheetAt(0);
+            RosterExcelSaxReader.ParsedSheet registrySheet = sheets.get(0);
             parseRegistrySheet(registrySheet, parsedSpecialties, parsedRanks, parsedAwards, membersByNickname);
 
             // 2. PARSE SHEET 2: Відвідування
-            if (workbook.getNumberOfSheets() > 1) {
-                Sheet attendanceSheet = workbook.getSheetAt(1);
+            if (sheets.size() > 1) {
+                RosterExcelSaxReader.ParsedSheet attendanceSheet = sheets.get(1);
                 parseAttendanceSheet(attendanceSheet, membersByNickname, memberUnits, parsedAttendanceList, parsedMonthlyEvents);
             }
 
             // 3. PARSE SHEET 3: Підготовка
-            if (workbook.getNumberOfSheets() > 2) {
-                Sheet trainingSheet = workbook.getSheetAt(2);
+            if (sheets.size() > 2) {
+                RosterExcelSaxReader.ParsedSheet trainingSheet = sheets.get(2);
                 parseTrainingSheet(trainingSheet, membersByNickname, parsedDisciplines, parsedTrainingList);
             }
 
@@ -222,7 +227,8 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
 
             log.info("Successfully imported roster from Excel. Wiped and created {} members.", savedMembers.size());
 
-        } catch (IOException e) {
+        } catch (Exception e) {
+            log.error("Error parsing roster excel file", e);
             throw new FileStorageException("Failed to read roster Excel file", e);
         }
     }
@@ -306,10 +312,10 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
 
     // --- PARSING HELPERS ---
 
-    private void parseRegistrySheet(Sheet sheet, Map<String, Specialty> parsedSpecialties,
+    private void parseRegistrySheet(RosterExcelSaxReader.ParsedSheet sheet, Map<String, Specialty> parsedSpecialties,
                                     Map<String, Rank> parsedRanks, Map<String, Award> parsedAwards,
                                     Map<String, RosterMember> membersByNickname) {
-        Row headerRow = sheet.getRow(2); // Row 3 in Excel (0-indexed 2)
+        RosterExcelSaxReader.ParsedRow headerRow = sheet.getRow(2); // Row 3 in Excel (0-indexed 2)
         if (headerRow == null) {
             throw new FileStorageException("Invalid roster registry sheet structure: missing header row at row 3");
         }
@@ -317,8 +323,8 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
         // Map award columns
         Map<Integer, String> awardCols = new HashMap<>();
         for (int col = 12; col <= 20; col++) { // Columns M-U (index 12-20)
-            Cell cell = headerRow.getCell(col);
-            String val = getCellValueAsString(cell).trim();
+            RosterExcelSaxReader.CellValue cell = headerRow.getCell(col);
+            String val = cell.getAsString().trim();
             if (!val.isEmpty()) {
                 awardCols.put(col, val);
                 final int finalCol = col;
@@ -334,14 +340,14 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
         int specialtySortCounter = 0;
 
         for (int rowIdx = 3; rowIdx <= sheet.getLastRowNum(); rowIdx++) {
-            Row row = sheet.getRow(rowIdx);
-            if (row == null) continue;
+            RosterExcelSaxReader.ParsedRow row = sheet.getRow(rowIdx);
+            if (row == null || row.isEmpty()) continue;
 
-            String mbNickname = getCellValueAsString(row.getCell(2)).trim(); // Col C
+            String mbNickname = row.getCell(2).getAsString().trim(); // Col C
             if (mbNickname.isEmpty()) continue;
 
             Integer seqNum = null;
-            String seqStr = getCellValueAsString(row.getCell(1)).trim(); // Col B
+            String seqStr = row.getCell(1).getAsString().trim(); // Col B
             if (!seqStr.isEmpty()) {
                 try {
                     seqNum = Integer.parseInt(seqStr);
@@ -350,12 +356,12 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
                 }
             }
 
-            String nationality = getCellValueAsString(row.getCell(3)).trim(); // Col D
-            String discordNickname = getCellValueAsString(row.getCell(4)).trim(); // Col E
-            String discordId = getCellValueAsString(row.getCell(5)).trim(); // Col F
+            String nationality = row.getCell(3).getAsString().trim(); // Col D
+            String discordNickname = row.getCell(4).getAsString().trim(); // Col E
+            String discordId = row.getCell(5).getAsString().trim(); // Col F
 
             Specialty specialty = null;
-            String specName = getCellValueAsString(row.getCell(6)).trim(); // Col G
+            String specName = row.getCell(6).getAsString().trim(); // Col G
             if (!specName.isEmpty()) {
                 specialty = parsedSpecialties.get(specName);
                 if (specialty == null) {
@@ -368,25 +374,21 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
             }
 
             Rank rank = null;
-            String rankStr = getCellValueAsString(row.getCell(7)).trim(); // Col H
+            String rankStr = row.getCell(7).getAsString().trim(); // Col H
             if (!rankStr.isEmpty()) {
                 rank = parseRankString(rankStr, parsedRanks, specialty, rankSortCounter++);
             }
 
-            LocalDate joinDate = null;
-            Cell joinCell = row.getCell(9); // Col J
-            if (joinCell != null) {
-                joinDate = parseLocalDate(joinCell);
-            }
+            LocalDate joinDate = row.getCell(9).getDateValue(); // Col J
 
             BigDecimal penalties = BigDecimal.ZERO;
-            Cell penaltyCell = row.getCell(11); // Col L
-            if (penaltyCell != null) {
+            RosterExcelSaxReader.CellValue penaltyCell = row.getCell(11); // Col L
+            if (!penaltyCell.isBlank()) {
                 try {
-                    if (penaltyCell.getCellType() == CellType.NUMERIC) {
-                        penalties = BigDecimal.valueOf(penaltyCell.getNumericCellValue());
-                    } else if (penaltyCell.getCellType() == CellType.STRING) {
-                        String s = penaltyCell.getStringCellValue().trim();
+                    if (penaltyCell.getType() == RosterExcelSaxReader.CellType.NUMERIC) {
+                        penalties = BigDecimal.valueOf(penaltyCell.getNumericValue());
+                    } else if (penaltyCell.getType() == RosterExcelSaxReader.CellType.STRING) {
+                        String s = penaltyCell.getStringValue().trim();
                         if (!s.isEmpty()) penalties = new BigDecimal(s);
                     }
                 } catch (Exception e) {
@@ -412,9 +414,9 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
 
             // Read awards
             for (Map.Entry<Integer, String> awardEntry : awardCols.entrySet()) {
-                Cell awardCell = row.getCell(awardEntry.getKey());
-                if (awardCell != null && awardCell.getCellType() != CellType.BLANK) {
-                    LocalDate awardedDate = parseLocalDate(awardCell);
+                RosterExcelSaxReader.CellValue awardCell = row.getCell(awardEntry.getKey());
+                if (!awardCell.isBlank()) {
+                    LocalDate awardedDate = awardCell.getDateValue();
                     if (awardedDate == null) {
                         awardedDate = joinDate != null ? joinDate : LocalDate.now();
                     }
@@ -431,18 +433,20 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
         }
     }
 
-    private void parseAttendanceSheet(Sheet sheet, Map<String, RosterMember> membersByNickname,
+    private void parseAttendanceSheet(RosterExcelSaxReader.ParsedSheet sheet, Map<String, RosterMember> membersByNickname,
                                       Map<String, String> memberUnits, List<ParsedAttendance> parsedAttendanceList,
                                       List<ParsedMonthlyEventCount> parsedMonthlyEvents) {
-        Row monthHeaderRow = sheet.getRow(5); // Row 6 in Excel (0-indexed 5)
-        Row eventCountRow = sheet.getRow(2);  // Row 3 in Excel (0-indexed 2)
+        RosterExcelSaxReader.ParsedRow monthHeaderRow = sheet.getRow(5); // Row 6 in Excel (0-indexed 5)
+        RosterExcelSaxReader.ParsedRow eventCountRow = sheet.getRow(2);  // Row 3 in Excel (0-indexed 2)
         if (monthHeaderRow == null) return;
 
         Map<Integer, YearMonth> monthCols = new HashMap<>();
 
         // Parse month columns starting at Col D (index 3)
-        for (int col = 3; col < monthHeaderRow.getLastCellNum(); col++) {
-            Cell monthCell = monthHeaderRow.getCell(col);
+        for (Map.Entry<Integer, RosterExcelSaxReader.CellValue> entry : monthHeaderRow.getCells().entrySet()) {
+            int col = entry.getKey();
+            if (col < 3) continue;
+            RosterExcelSaxReader.CellValue monthCell = entry.getValue();
             YearMonth ym = parseYearMonth(monthCell);
             if (ym != null) {
                 monthCols.put(col, ym);
@@ -450,12 +454,12 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
                 // Read monthly event count if exists
                 int count = 0;
                 if (eventCountRow != null) {
-                    Cell ecCell = eventCountRow.getCell(col);
-                    if (ecCell != null && ecCell.getCellType() == CellType.NUMERIC) {
-                        count = (int) ecCell.getNumericCellValue();
-                    } else if (ecCell != null && ecCell.getCellType() == CellType.STRING) {
+                    RosterExcelSaxReader.CellValue ecCell = eventCountRow.getCell(col);
+                    if (!ecCell.isBlank() && ecCell.getType() == RosterExcelSaxReader.CellType.NUMERIC) {
+                        count = ecCell.getNumericValue().intValue();
+                    } else if (!ecCell.isBlank() && ecCell.getType() == RosterExcelSaxReader.CellType.STRING) {
                         try {
-                            count = Integer.parseInt(ecCell.getStringCellValue().trim());
+                            count = Integer.parseInt(ecCell.getStringValue().trim());
                         } catch (NumberFormatException e) {
                             // ignore
                         }
@@ -467,11 +471,11 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
 
         // Parse members starting from Row 6 (0-indexed)
         for (int rowIdx = 6; rowIdx <= sheet.getLastRowNum(); rowIdx++) {
-            Row row = sheet.getRow(rowIdx);
-            if (row == null) continue;
+            RosterExcelSaxReader.ParsedRow row = sheet.getRow(rowIdx);
+            if (row == null || row.isEmpty()) continue;
 
-            String unitName = getCellValueAsString(row.getCell(0)).trim(); // Col A
-            String mbNickname = getCellValueAsString(row.getCell(1)).trim(); // Col B
+            String unitName = row.getCell(0).getAsString().trim(); // Col A
+            String mbNickname = row.getCell(1).getAsString().trim(); // Col B
             if (mbNickname.isEmpty()) continue;
 
             if (!unitName.isEmpty()) {
@@ -479,16 +483,16 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
             }
 
             for (Map.Entry<Integer, YearMonth> entry : monthCols.entrySet()) {
-                Cell cell = row.getCell(entry.getKey());
-                if (cell == null || cell.getCellType() == CellType.BLANK) continue;
+                RosterExcelSaxReader.CellValue cell = row.getCell(entry.getKey());
+                if (cell.isBlank()) continue;
 
                 Integer attCount = null;
                 AttendanceStatus status = null;
 
-                if (cell.getCellType() == CellType.NUMERIC) {
-                    attCount = (int) cell.getNumericCellValue();
-                } else if (cell.getCellType() == CellType.STRING) {
-                    String val = cell.getStringCellValue().trim();
+                if (cell.getType() == RosterExcelSaxReader.CellType.NUMERIC) {
+                    attCount = cell.getNumericValue().intValue();
+                } else if (cell.getType() == RosterExcelSaxReader.CellType.STRING) {
+                    String val = cell.getStringValue().trim();
                     if (!val.isEmpty()) {
                         String upper = val.toUpperCase();
                         if (upper.startsWith("V")) {
@@ -515,16 +519,16 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
         }
     }
 
-    private void parseTrainingSheet(Sheet sheet, Map<String, RosterMember> membersByNickname,
+    private void parseTrainingSheet(RosterExcelSaxReader.ParsedSheet sheet, Map<String, RosterMember> membersByNickname,
                                     Map<String, TrainingDiscipline> parsedDisciplines, List<ParsedTraining> parsedTrainingList) {
-        Row headerRow = sheet.getRow(3); // Row 4 in Excel (index 3)
+        RosterExcelSaxReader.ParsedRow headerRow = sheet.getRow(3); // Row 4 in Excel (index 3)
         if (headerRow == null) return;
 
         Map<Integer, String> disciplineCols = new HashMap<>();
         // Disciplines are in Col B-G (indices 1-6)
         for (int col = 1; col <= 6; col++) {
-            Cell cell = headerRow.getCell(col);
-            String name = getCellValueAsString(cell).trim();
+            RosterExcelSaxReader.CellValue cell = headerRow.getCell(col);
+            String name = cell.getAsString().trim();
             if (!name.isEmpty()) {
                 disciplineCols.put(col, name);
                 boolean isMandatory = (col <= 3); // Cols B, C, D (indices 1, 2, 3) are mandatory
@@ -539,24 +543,24 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
 
         // Data starts at Row 4 (index 4)
         for (int rowIdx = 4; rowIdx <= sheet.getLastRowNum(); rowIdx++) {
-            Row row = sheet.getRow(rowIdx);
-            if (row == null) continue;
+            RosterExcelSaxReader.ParsedRow row = sheet.getRow(rowIdx);
+            if (row == null || row.isEmpty()) continue;
 
-            String mbNickname = getCellValueAsString(row.getCell(0)).trim(); // Col A
+            String mbNickname = row.getCell(0).getAsString().trim(); // Col A
             if (mbNickname.isEmpty()) continue;
 
             boolean isArchived = false;
-            Cell archCell = row.getCell(7); // Col H
-            if (archCell != null) {
-                if (archCell.getCellType() == CellType.BOOLEAN) {
-                    isArchived = archCell.getBooleanCellValue();
-                } else if (archCell.getCellType() == CellType.STRING) {
-                    String val = archCell.getStringCellValue().trim();
+            RosterExcelSaxReader.CellValue archCell = row.getCell(7); // Col H
+            if (!archCell.isBlank()) {
+                if (archCell.getType() == RosterExcelSaxReader.CellType.BOOLEAN) {
+                    isArchived = archCell.getBooleanValue();
+                } else if (archCell.getType() == RosterExcelSaxReader.CellType.STRING) {
+                    String val = archCell.getStringValue().trim();
                     isArchived = val.equalsIgnoreCase("true") || val.equalsIgnoreCase("так");
                 }
             }
 
-            String notes = getCellValueAsString(row.getCell(8)).trim(); // Col I
+            String notes = row.getCell(8).getAsString().trim(); // Col I
 
             RosterMember member = membersByNickname.get(mbNickname);
             if (member == null) {
@@ -579,15 +583,15 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
             }
 
             for (Map.Entry<Integer, String> entry : disciplineCols.entrySet()) {
-                Cell cell = row.getCell(entry.getKey());
-                if (cell != null && cell.getCellType() == CellType.NUMERIC) {
-                    int score = (int) cell.getNumericCellValue();
+                RosterExcelSaxReader.CellValue cell = row.getCell(entry.getKey());
+                if (!cell.isBlank() && cell.getType() == RosterExcelSaxReader.CellType.NUMERIC) {
+                    int score = cell.getNumericValue().intValue();
                     if (score >= 1 && score <= 5) {
                         parsedTrainingList.add(new ParsedTraining(mbNickname, entry.getValue(), score));
                     }
-                } else if (cell != null && cell.getCellType() == CellType.STRING) {
+                } else if (!cell.isBlank() && cell.getType() == RosterExcelSaxReader.CellType.STRING) {
                     try {
-                        int score = Integer.parseInt(cell.getStringCellValue().trim());
+                        int score = Integer.parseInt(cell.getStringValue().trim());
                         if (score >= 1 && score <= 5) {
                             parsedTrainingList.add(new ParsedTraining(mbNickname, entry.getValue(), score));
                         }
@@ -668,6 +672,35 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
             return YearMonth.of(date.getYear(), date.getMonthValue());
         } else {
             String val = getCellValueAsString(cell).trim();
+            if (!val.isEmpty()) {
+                // Try format MM.YYYY or MM/YYYY
+                Pattern p = Pattern.compile("^(\\d{2})[./-](\\d{4})$");
+                Matcher m = p.matcher(val);
+                if (m.matches()) {
+                    return YearMonth.of(Integer.parseInt(m.group(2)), Integer.parseInt(m.group(1)));
+                }
+
+                // Try Ukrainian month names e.g. "Січень 2026"
+                Pattern pUk = Pattern.compile("^([А-Яа-яІіЇїЄє]+)\\s+(\\d{4})$");
+                Matcher mUk = pUk.matcher(val);
+                if (mUk.matches()) {
+                    int month = mapUkrainianMonth(mUk.group(1));
+                    if (month > 0) {
+                        return YearMonth.of(Integer.parseInt(mUk.group(2)), month);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private YearMonth parseYearMonth(RosterExcelSaxReader.CellValue cell) {
+        if (cell == null || cell.isBlank()) return null;
+        if (cell.getType() == RosterExcelSaxReader.CellType.DATE) {
+            LocalDate date = cell.getDateValue();
+            return YearMonth.of(date.getYear(), date.getMonthValue());
+        } else {
+            String val = cell.getAsString().trim();
             if (!val.isEmpty()) {
                 // Try format MM.YYYY or MM/YYYY
                 Pattern p = Pattern.compile("^(\\d{2})[./-](\\d{4})$");
