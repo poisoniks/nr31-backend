@@ -42,7 +42,7 @@ public class ResponseAssertionSteps extends CommonStepDefs {
     @Then("the response status code should be {int}")
     public void the_response_status_code_should_be(Integer expectedStatusCode) {
         HttpResponse<String> response = contextHelper.getValue("response");
-        assertEquals(expectedStatusCode, response.statusCode(), "Body was: " + response.body());
+        assertEquals(expectedStatusCode, response.statusCode(), () -> "Body was: " + response.body());
     }
 
     @Then("the response body should contain {string}")

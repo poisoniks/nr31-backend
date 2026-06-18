@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.databind.ObjectMapper;
+
+import java.io.OutputStream;
 import java.time.YearMonth;
 
 import java.io.ByteArrayOutputStream;
@@ -235,7 +237,7 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
 
     @Override
     @Transactional(readOnly = true)
-    public byte[] exportToExcel() {
+    public void exportToExcel(OutputStream out) {
         AppConfigDto config = appConfigService.getConfig(AppConfigKey.ROSTER_EXPORT_TEMPLATE_FILE_ID);
         if (config == null || config.getConfigValue() == null || config.getConfigValue().isNull()) {
             throw new ElementNotFoundException("Roster export template file is not configured", ErrorCode.ELEMENT_NOT_FOUND);
@@ -256,37 +258,48 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
             throw new FileStorageException("Roster template physical file not found on disk");
         }
 
-        try (InputStream is = Files.newInputStream(filePath);
-             Workbook workbook = new XSSFWorkbook(is)) {
+        Path tempFile = null;
+        try {
+            tempFile = Files.createTempFile("roster_template", ".xlsx");
+            Files.copy(filePath, tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            
+            try (Workbook workbook = new XSSFWorkbook(tempFile.toFile())) {
 
-            List<RosterMember> members = rosterMemberRepository.findAll();
-            // Sort active members first (not archived) then by sequence number or mbNickname
-            members.sort(Comparator.comparing(RosterMember::isArchived)
-                    .thenComparing(m -> m.getSequenceNumber() != null ? m.getSequenceNumber() : Integer.MAX_VALUE)
-                    .thenComparing(RosterMember::getMbNickname));
+                List<RosterMember> members = rosterMemberRepository.findAll();
+                // Sort active members first (not archived) then by sequence number or mbNickname
+                members.sort(Comparator.comparing(RosterMember::isArchived)
+                        .thenComparing(m -> m.getSequenceNumber() != null ? m.getSequenceNumber() : Integer.MAX_VALUE)
+                        .thenComparing(RosterMember::getMbNickname));
 
-            // 1. POPULATE SHEET 1: Реєстр
-            Sheet registrySheet = workbook.getSheetAt(0);
-            populateRegistrySheet(registrySheet, members);
+                // 1. POPULATE SHEET 1: Реєстр
+                Sheet registrySheet = workbook.getSheetAt(0);
+                populateRegistrySheet(registrySheet, members);
 
-            // 2. POPULATE SHEET 2: Відвідування
-            if (workbook.getNumberOfSheets() > 1) {
-                Sheet attendanceSheet = workbook.getSheetAt(1);
-                populateAttendanceSheet(attendanceSheet, members);
+                // 2. POPULATE SHEET 2: Відвідування
+                if (workbook.getNumberOfSheets() > 1) {
+                    Sheet attendanceSheet = workbook.getSheetAt(1);
+                    populateAttendanceSheet(attendanceSheet, members);
+                }
+
+                // 3. POPULATE SHEET 3: Підготовка
+                if (workbook.getNumberOfSheets() > 2) {
+                    Sheet trainingSheet = workbook.getSheetAt(2);
+                    populateTrainingSheet(trainingSheet, members);
+                }
+
+                workbook.write(out);
+
             }
-
-            // 3. POPULATE SHEET 3: Підготовка
-            if (workbook.getNumberOfSheets() > 2) {
-                Sheet trainingSheet = workbook.getSheetAt(2);
-                populateTrainingSheet(trainingSheet, members);
-            }
-
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            workbook.write(bos);
-            return bos.toByteArray();
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new FileStorageException("Failed to generate export Excel file", e);
+        } finally {
+            if (tempFile != null) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException e) {
+                    log.error("Failed to delete temp roster template file: {}", tempFile, e);
+                }
+            }
         }
     }
 

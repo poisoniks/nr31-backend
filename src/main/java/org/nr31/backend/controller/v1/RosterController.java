@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -127,12 +128,11 @@ public class RosterController {
         })
         @GetMapping(value = "/export")
         @PreAuthorize("hasAuthority('roster:read')")
-        public ResponseEntity<byte[]> exportRoster() {
-                byte[] data = rosterImportExportService.exportToExcel();
+        public ResponseEntity<StreamingResponseBody> exportRoster() {
                 return ResponseEntity.ok()
                                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"roster.xlsx\"")
                                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                                .body(data);
+                                .body(rosterImportExportService::exportToExcel);
         }
 
         @Operation(summary = "Upload roster export template", description = "Uploads a new roster Excel template to be used for exporting.", security = @SecurityRequirement(name = "Bearer Authentication"))

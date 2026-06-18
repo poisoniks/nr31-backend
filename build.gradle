@@ -82,7 +82,6 @@ tasks.register('cucumber', Test) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     environment "DOCKER_HOST", "npipe:////./pipe/docker_engine"
-    maxHeapSize = "2048m"
     useJUnitPlatform()
     filter {
         includeTestsMatching "org.nr31.backend.cucumber.CucumberTestRunner"

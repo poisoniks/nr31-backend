@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -109,7 +110,7 @@ public class RosterSteps extends CommonStepDefs {
         }
         
         String boundary = UUID.randomUUID().toString();
-        byte[] body = buildMultipartBody(boundary, "file", fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", content);
+        HttpRequest.BodyPublisher body = buildMultipartBody(boundary, "file", fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", content);
         
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + port + "/api/v1/roster/import"))
@@ -120,7 +121,7 @@ public class RosterSteps extends CommonStepDefs {
             builder.header("Authorization", "Bearer " + token);
         }
         
-        builder.POST(HttpRequest.BodyPublishers.ofByteArray(body));
+        builder.POST(body);
         HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
         contextHelper.addValue("response", response);
     }
@@ -145,7 +146,7 @@ public class RosterSteps extends CommonStepDefs {
         }
         
         String boundary = UUID.randomUUID().toString();
-        byte[] body = buildMultipartBody(boundary, "file", fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", content);
+        HttpRequest.BodyPublisher body = buildMultipartBody(boundary, "file", fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", content);
         
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + port + "/api/v1/roster/template"))
@@ -156,7 +157,7 @@ public class RosterSteps extends CommonStepDefs {
             builder.header("Authorization", "Bearer " + token);
         }
         
-        builder.POST(HttpRequest.BodyPublishers.ofByteArray(body));
+        builder.POST(body);
         HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
         contextHelper.addValue("response", response);
     }
@@ -195,16 +196,16 @@ public class RosterSteps extends CommonStepDefs {
         assertTrue(count > expectedCount, "Expected count > " + expectedCount + " but got " + count);
     }
 
-    private byte[] buildMultipartBody(String boundary, String fieldName, String fileName, String contentType, byte[] content) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    private HttpRequest.BodyPublisher buildMultipartBody(String boundary, String fieldName, String fileName, String contentType, byte[] content) {
         String header = "--" + boundary + "\r\n" +
                 "Content-Disposition: form-data; name=\"" + fieldName + "\"; filename=\"" + fileName + "\"\r\n" +
                 "Content-Type: " + contentType + "\r\n\r\n";
         String footer = "\r\n--" + boundary + "--\r\n";
 
-        baos.write(header.getBytes(StandardCharsets.UTF_8));
-        baos.write(content);
-        baos.write(footer.getBytes(StandardCharsets.UTF_8));
-        return baos.toByteArray();
+        return HttpRequest.BodyPublishers.ofByteArrays(List.of(
+                header.getBytes(StandardCharsets.UTF_8),
+                content,
+                footer.getBytes(StandardCharsets.UTF_8)
+        ));
     }
 }
