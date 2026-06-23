@@ -146,65 +146,47 @@ public class LocalDriveStorageService implements FileStorageService {
             throw new FileStorageException("Failed to process uploaded file", e);
         }
 
-        if (scope == FileScope.ATTACHMENT) {
-            Optional<FileMetadata> existingMetadata = fileMetadataRepository
-                    .findByStoredNameAndUploaderIdAndScope(sha256Hash, uploader.getId(), scope);
-            if (existingMetadata.isPresent()) {
-                deleteTempFileSilently(tempFile);
-                FileMetadata metadata = existingMetadata.get();
-                metadata.setCreatedAt(Instant.now());
-                fileMetadataRepository.save(metadata);
-                log.info("Deduplicated file upload (hash: {}) for user {}. Reset GC clock.", sha256Hash, uploaderUsername);
-                return FileUploadResponse.builder()
-                        .id(metadata.getId())
-                        .originalName(metadata.getOriginalName())
-                        .url(FILES_URL_PREFIX + metadata.getId())
-                        .size(metadata.getSizeBytes())
-                        .build();
-            }
-        }
-
-        Path targetPath = uploadDir.resolve(sha256Hash).normalize();
-        if (!targetPath.startsWith(uploadDir)) {
-            deleteTempFileSilently(tempFile);
-            throw new FileStorageException("Cannot store file outside upload directory");
-        }
-
         try {
-            Files.move(tempFile, targetPath, StandardCopyOption.ATOMIC_MOVE);
-        } catch (FileAlreadyExistsException e) {
+            return finalizeStorage(sha256Hash, uploader, file.getOriginalFilename(), contentType, file.getSize(), scope, targetPath -> {
+                try {
+                    Files.move(tempFile, targetPath, StandardCopyOption.ATOMIC_MOVE);
+                } catch (FileAlreadyExistsException e) {
+                    log.debug("CAS dedup: file with hash {} already exists on disk (caught during move)", sha256Hash);
+                } catch (IOException e) {
+                    throw new FileStorageException("Failed to store file: " + sha256Hash, e);
+                }
+            });
+        } finally {
             deleteTempFileSilently(tempFile);
-            log.debug("CAS dedup: file with hash {} already exists on disk (caught during move)", sha256Hash);
-        } catch (IOException e) {
-            deleteTempFileSilently(tempFile);
-            throw new FileStorageException("Failed to store file: " + sha256Hash, e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public FileUploadResponse storeFile(byte[] bytes, String originalName, String contentType, String uploaderUsername, FileScope scope) {
+        if (bytes == null || bytes.length == 0) {
+            throw new FileStorageException("Cannot store an empty file", ErrorCode.EMPTY_FILE);
         }
 
-        String originalName = file.getOriginalFilename();
-        UUID fileId = UUID.randomUUID();
+        User uploader = userRepository.findByUsername(uploaderUsername)
+                .orElseThrow(() -> new ElementNotFoundException("User not found", ErrorCode.USER_NOT_FOUND, Map.of("username", uploaderUsername)));
 
-        FileMetadata metadata = FileMetadata.builder()
-                .id(fileId)
-                .originalName(originalName)
-                .storedName(sha256Hash)
-                .contentType(contentType)
-                .sizeBytes(file.getSize())
-                .uploader(uploader)
-                .createdAt(Instant.now())
-                .scope(scope)
-                .build();
+        String sha256Hash;
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(bytes);
+            sha256Hash = HexFormat.of().formatHex(hashBytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new FileStorageException("SHA-256 algorithm not available", e);
+        }
 
-        fileMetadataRepository.save(metadata);
-
-        log.info("File uploaded: {} -> {} (hash: {}) by user {} [scope={}]",
-                originalName, fileId, sha256Hash, uploaderUsername, scope);
-
-        return FileUploadResponse.builder()
-                .id(fileId)
-                .originalName(originalName)
-                .url(FILES_URL_PREFIX + fileId)
-                .size(file.getSize())
-                .build();
+        return finalizeStorage(sha256Hash, uploader, originalName, contentType, (long) bytes.length, scope, targetPath -> {
+            try {
+                Files.write(targetPath, bytes);
+            } catch (IOException e) {
+                throw new FileStorageException("Failed to store file: " + sha256Hash, e);
+            }
+        });
     }
 
     @Override
@@ -331,6 +313,58 @@ public class LocalDriveStorageService implements FileStorageService {
 
         log.info("Physical purge complete. {} unreferenced files deleted.", totalDeleted);
     }
+
+    private FileUploadResponse finalizeStorage(String sha256Hash, User uploader, String originalName, String contentType, long sizeBytes, FileScope scope, java.util.function.Consumer<Path> fileWriter) {
+        if (scope == FileScope.ATTACHMENT) {
+            Optional<FileMetadata> existingMetadata = fileMetadataRepository
+                    .findByStoredNameAndUploaderIdAndScope(sha256Hash, uploader.getId(), scope);
+            if (existingMetadata.isPresent()) {
+                FileMetadata metadata = existingMetadata.get();
+                metadata.setCreatedAt(Instant.now());
+                fileMetadataRepository.save(metadata);
+                log.info("Deduplicated file upload (hash: {}) for user {}. Reset GC clock.", sha256Hash, uploader.getUsername());
+                return FileUploadResponse.builder()
+                        .id(metadata.getId())
+                        .originalName(metadata.getOriginalName())
+                        .url(FILES_URL_PREFIX + metadata.getId())
+                        .size(metadata.getSizeBytes())
+                        .build();
+            }
+        }
+
+        Path targetPath = uploadDir.resolve(sha256Hash).normalize();
+        if (!targetPath.startsWith(uploadDir)) {
+            throw new FileStorageException("Cannot store file outside upload directory");
+        }
+
+        fileWriter.accept(targetPath);
+
+        UUID fileId = UUID.randomUUID();
+
+        FileMetadata metadata = FileMetadata.builder()
+                .id(fileId)
+                .originalName(originalName)
+                .storedName(sha256Hash)
+                .contentType(contentType)
+                .sizeBytes(sizeBytes)
+                .uploader(uploader)
+                .createdAt(Instant.now())
+                .scope(scope)
+                .build();
+
+        fileMetadataRepository.save(metadata);
+
+        log.info("File uploaded: {} -> {} (hash: {}) by user {} [scope={}]",
+                originalName, fileId, sha256Hash, uploader.getUsername(), scope);
+
+        return FileUploadResponse.builder()
+                .id(fileId)
+                .originalName(originalName)
+                .url(FILES_URL_PREFIX + fileId)
+                .size(sizeBytes)
+                .build();
+    }
+
 
     private int purgeBatch(List<Path> batch) {
         List<String> fileNames = batch.stream()

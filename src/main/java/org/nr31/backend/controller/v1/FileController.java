@@ -11,6 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -82,6 +85,15 @@ public class FileController {
             @PathVariable UUID id,
             @RequestParam(required = false) Integer w) {
         FileMetadata metadata = fileStorageService.resolveFile(id);
+
+        if (metadata.getScope() == FileScope.SYSTEM) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean hasPermission = auth != null && auth.getAuthorities().stream()
+                    .anyMatch(a -> "system-file:read".equals(a.getAuthority()));
+            if (!hasPermission) {
+                throw new AccessDeniedException("Insufficient permissions to access system file");
+            }
+        }
 
         String contentType = metadata.getContentType();
         String internalPath = "/internal-files/" + metadata.getStoredName();

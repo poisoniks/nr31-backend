@@ -31,4 +31,6 @@ public interface FileStorageService {
     void purgeOrphanedPhysicalFiles();
 
     Set<String> getAllowedMimeTypes();
+
+    FileUploadResponse storeFile(byte[] bytes, String originalName, String contentType, String uploaderUsername, FileScope scope);
 }

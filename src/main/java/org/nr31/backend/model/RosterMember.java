@@ -45,8 +45,9 @@ public class RosterMember {
     @Column(name = "mb_nickname", nullable = false)
     private String mbNickname;
 
-    @Column
-    private String nationality;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nationality_flag_id")
+    private NationalityFlag nationalityFlag;
 
     @Column(name = "discord_nickname")
     private String discordNickname;

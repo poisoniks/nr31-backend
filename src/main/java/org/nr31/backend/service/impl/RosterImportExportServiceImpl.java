@@ -30,8 +30,8 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
 
     @Override
     @Transactional
-    public void importFromExcel(MultipartFile file) {
-        rosterExcelImporter.importFromExcel(file);
+    public void importFromExcel(MultipartFile file, String uploaderUsername) {
+        rosterExcelImporter.importFromExcel(file, uploaderUsername);
     }
 
     @Override
@@ -42,21 +42,40 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
 
     @Override
     @Transactional
-    public void uploadTemplate(MultipartFile file) {
+    public void uploadTemplate(MultipartFile file, String uploaderUsername) {
         if (file.isEmpty()) {
             throw new FileStorageException("Template file cannot be empty");
         }
 
-        // Store file with ATTACHMENT scope so it is kept in system uploads
-        FileUploadResponse response = fileStorageService.storeFile(file, "admin", FileScope.ATTACHMENT);
-        UUID fileId = response.getId();
+        UUID oldFileId = null;
+        try {
+            AppConfigDto currentConfig = appConfigService.getConfig(AppConfigKey.ROSTER_EXPORT_TEMPLATE_FILE_ID);
+            if (currentConfig.getConfigValue() != null && !currentConfig.getConfigValue().isNull()) {
+                oldFileId = UUID.fromString(currentConfig.getConfigValue().asText());
+            }
+        } catch (Exception e) {
+            log.debug("No existing roster template config found, skipping old file cleanup");
+        }
+
+        FileUploadResponse response = fileStorageService.storeFile(file, uploaderUsername, FileScope.SYSTEM);
+        UUID newFileId = response.getId();
 
         AppConfigDto configDto = AppConfigDto.builder()
                 .name(AppConfigKey.ROSTER_EXPORT_TEMPLATE_FILE_ID.getKey())
-                .configValue(new ObjectMapper().valueToTree(fileId.toString()))
+                .configValue(new ObjectMapper().valueToTree(newFileId.toString()))
                 .build();
 
         appConfigService.updateConfig(AppConfigKey.ROSTER_EXPORT_TEMPLATE_FILE_ID.getKey(), configDto);
-        log.info("Roster export template uploaded successfully with file metadata ID: {}", fileId);
+
+        if (oldFileId != null) {
+            try {
+                fileStorageService.deleteFile(oldFileId);
+                log.info("Deleted previous roster template file: {}", oldFileId);
+            } catch (Exception e) {
+                log.warn("Failed to delete previous roster template file {}: {}", oldFileId, e.getMessage());
+            }
+        }
+
+        log.info("Roster export template uploaded successfully with file metadata ID: {}", newFileId);
     }
 }

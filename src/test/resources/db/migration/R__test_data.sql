@@ -7,7 +7,7 @@ INSERT INTO roles (name) VALUES ('ROLE_ADMIN') ON CONFLICT (name) DO NOTHING;
 INSERT INTO roles (name) VALUES ('ROLE_USER') ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO role_permissions (role_id, permission_id) 
-SELECT r.id, p.id FROM roles r, permissions p WHERE r.name = 'ROLE_ADMIN' AND p.name IN ('event:write', 'config:read', 'config:write', 'roster:read', 'roster:write', 'file:manage_quota', 'access:manage', 'file:upload:public', 'file:upload:attachment', 'file:delete', 'cms:write')
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name = 'ROLE_ADMIN' AND p.name IN ('event:write', 'config:read', 'config:write', 'roster:read', 'roster:write', 'file:manage_quota', 'access:manage', 'file:upload:public', 'file:upload:attachment', 'file:delete', 'cms:write', 'system-file:read')
 ON CONFLICT (role_id, permission_id) DO NOTHING;
 
 UPDATE roles SET files_upload_quota_bytes = 104857600 WHERE name = 'ROLE_ADMIN';
@@ -47,7 +47,8 @@ VALUES ('disabled_endpoints', CAST('{"en": "Disabled endpoints"}' AS JSON), CAST
 
 -- Default File Metadata for Tests
 INSERT INTO files_metadata (id, original_name, stored_name, content_type, size_bytes, scope, uploader_id, created_at)
-VALUES ('550e8400-e29b-41d4-a716-446655440000'::uuid, 'test-background.jpg', 'test-background.jpg', 'image/jpeg', 1024, 'LIBRARY', 1, CURRENT_TIMESTAMP)
+VALUES ('550e8400-e29b-41d4-a716-446655440000'::uuid, 'test-background.jpg', 'test-background.jpg', 'image/jpeg', 1024, 'LIBRARY', 1, CURRENT_TIMESTAMP),
+       ('550e8400-e29b-41d4-a716-446655440001'::uuid, 'system-file.txt', 'system-file.txt', 'text/plain', 1024, 'SYSTEM', 1, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO NOTHING;
 
 -- CMS Pages for Cucumber tests

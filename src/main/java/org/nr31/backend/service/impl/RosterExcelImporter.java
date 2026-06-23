@@ -3,6 +3,7 @@ package org.nr31.backend.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.nr31.backend.exception.FileStorageException;
+import org.nr31.backend.dto.media.FileUploadResponse;
 import org.nr31.backend.model.*;
 import org.nr31.backend.repository.*;
 import org.nr31.backend.service.FileStorageService;
@@ -39,7 +40,7 @@ public class RosterExcelImporter {
     private final FileStorageService fileStorageService;
 
     @Transactional
-    public void importFromExcel(MultipartFile file) {
+    public void importFromExcel(MultipartFile file, String uploaderUsername) {
         if (file.isEmpty()) {
             throw new FileStorageException("Roster Excel file is empty");
         }
@@ -138,7 +139,8 @@ public class RosterExcelImporter {
                             flag = existingFlag.get();
                         } else {
                             String originalName = "flag_" + sha256Hash.substring(0, 8) + ".png";
-                            FileMetadata fileMeta = fileStorageService.storeSystemFile(flagBytes, originalName, "image/png");
+                            FileUploadResponse response = fileStorageService.storeFile(flagBytes, originalName, "image/png", uploaderUsername, FileScope.LIBRARY);
+                            FileMetadata fileMeta = FileMetadata.builder().id(response.getId()).build(); // Stub for FK
                             flag = NationalityFlag.builder()
                                     .flagFile(fileMeta)
                                     .countryCode(null)

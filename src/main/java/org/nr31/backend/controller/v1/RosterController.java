@@ -1,5 +1,5 @@
 package org.nr31.backend.controller.v1;
-
+import java.security.Principal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -115,8 +115,8 @@ public class RosterController {
         })
         @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @PreAuthorize("hasAuthority('roster:write')")
-        public ResponseEntity<Void> importRoster(@RequestParam("file") MultipartFile file) {
-                rosterImportExportService.importFromExcel(file);
+        public ResponseEntity<Void> importRoster(@RequestParam("file") MultipartFile file, Principal principal) {
+                rosterImportExportService.importFromExcel(file, principal.getName());
                 return ResponseEntity.ok().build();
         }
 
@@ -143,8 +143,8 @@ public class RosterController {
         })
         @PostMapping(value = "/template", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @PreAuthorize("hasAuthority('roster:write')")
-        public ResponseEntity<Void> uploadTemplate(@RequestParam("file") MultipartFile file) {
-                rosterImportExportService.uploadTemplate(file);
+        public ResponseEntity<Void> uploadTemplate(@RequestParam("file") MultipartFile file, Principal principal) {
+                rosterImportExportService.uploadTemplate(file, principal.getName());
                 return ResponseEntity.ok().build();
         }
 
