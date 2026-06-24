@@ -47,4 +47,9 @@ public class EventType {
     @JoinColumn(name = "custom_icon_id")
     @Schema(description = "Custom icon file associated with this event type")
     private FileMetadata customIcon;
+
+    @Builder.Default
+    @Column(name = "attendance_weight", nullable = false)
+    @Schema(description = "Weight of the event type for attendance calculation", example = "1")
+    private int attendanceWeight = 1;
 }

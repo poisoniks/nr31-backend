@@ -34,6 +34,6 @@ public class MonthlyEventCount {
     @Column(nullable = false)
     private int month;
 
-    @Column(name = "event_count", nullable = false)
-    private int eventCount;
+    @Column(name = "manual_event_count", nullable = false)
+    private int manualEventCount;
 }

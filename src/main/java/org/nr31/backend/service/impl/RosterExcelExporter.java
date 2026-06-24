@@ -266,7 +266,7 @@ public class RosterExcelExporter {
                         entry.getKey().getYear(), entry.getKey().getMonthValue());
 
                 if (mecOpt.isPresent()) {
-                    ecCell.setCellValue(mecOpt.get().getEventCount());
+                    ecCell.setCellValue(mecOpt.get().getManualEventCount());
                 }
             }
         }
@@ -315,8 +315,8 @@ public class RosterExcelExporter {
 
                 if (arOpt.isPresent()) {
                     AttendanceRecord ar = arOpt.get();
-                    if (ar.getAttendanceCount() != null) {
-                        attCell.setCellValue(ar.getAttendanceCount());
+                    if (ar.getManualAttendanceCount() != null) {
+                        attCell.setCellValue(ar.getManualAttendanceCount());
                     } else if (ar.getStatus() != null) {
                         switch (ar.getStatus()) {
                             case VACATION -> attCell.setCellValue("V");

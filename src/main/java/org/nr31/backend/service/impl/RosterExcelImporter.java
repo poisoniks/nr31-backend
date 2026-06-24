@@ -191,7 +191,7 @@ public class RosterExcelImporter {
                 MonthlyEventCount mec = MonthlyEventCount.builder()
                         .year(pme.year)
                         .month(pme.month)
-                        .eventCount(pme.eventCount)
+                        .manualEventCount(pme.eventCount)
                         .build();
                 savedMonthlyEvents.put(pme.year + "-" + pme.month, monthlyEventCountRepository.save(mec));
             }
@@ -204,7 +204,7 @@ public class RosterExcelImporter {
                             .member(savedMember)
                             .year(pa.year)
                             .month(pa.month)
-                            .attendanceCount(pa.attendanceCount)
+                            .manualAttendanceCount(pa.attendanceCount)
                             .status(pa.status)
                             .build();
                     attendanceRecordRepository.save(ar);
