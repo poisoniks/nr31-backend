@@ -22,4 +22,7 @@ public class EventTypeRequest {
     @Schema(description = "UUID of the custom icon file to associate with this event type", example = "550e8400-e29b-41d4-a716-446655440000")
     private UUID customIcon;
 
+    @Schema(description = "Weight of the event type for attendance calculation", example = "1")
+    private Integer attendanceWeight;
+
 }

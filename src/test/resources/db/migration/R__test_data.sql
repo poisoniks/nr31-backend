@@ -7,7 +7,7 @@ INSERT INTO roles (name) VALUES ('ROLE_ADMIN') ON CONFLICT (name) DO NOTHING;
 INSERT INTO roles (name) VALUES ('ROLE_USER') ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO role_permissions (role_id, permission_id) 
-SELECT r.id, p.id FROM roles r, permissions p WHERE r.name = 'ROLE_ADMIN' AND p.name IN ('event:write', 'config:read', 'config:write', 'roster:read', 'roster:write', 'file:manage_quota', 'access:manage', 'file:upload:public', 'file:upload:attachment', 'file:delete', 'cms:write', 'system-file:read')
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name = 'ROLE_ADMIN' AND p.name IN ('event:write', 'config:read', 'config:write', 'roster:read', 'roster:write', 'file:manage_quota', 'access:manage', 'file:upload:public', 'file:upload:attachment', 'file:delete', 'cms:write', 'system-file:read', 'attendance:write')
 ON CONFLICT (role_id, permission_id) DO NOTHING;
 
 UPDATE roles SET files_upload_quota_bytes = 104857600 WHERE name = 'ROLE_ADMIN';
@@ -26,7 +26,7 @@ INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'user' AND r.name = 'ROLE_USER'
 ON CONFLICT (user_id, role_id) DO NOTHING;
 
-INSERT INTO event_types (name) SELECT CAST('{"en": "Type 1"}' AS JSONB) WHERE NOT EXISTS (SELECT 1 FROM event_types WHERE name->>'en' = 'Type 1');
+INSERT INTO event_types (name, attendance_weight) SELECT CAST('{"en": "Type 1"}' AS JSONB), 1 WHERE NOT EXISTS (SELECT 1 FROM event_types WHERE name->>'en' = 'Type 1');
 INSERT INTO event_types (name) SELECT CAST('{"en": "Type 2"}' AS JSONB) WHERE NOT EXISTS (SELECT 1 FROM event_types WHERE name->>'en' = 'Type 2');
 
 INSERT INTO unit_types (name, description) SELECT CAST('{"en": "Alpha"}' AS JSONB), CAST('{"en": "First Squad"}' AS JSONB) WHERE NOT EXISTS (SELECT 1 FROM unit_types WHERE name->>'en' = 'Alpha');
@@ -166,3 +166,14 @@ VALUES (
     CURRENT_TIMESTAMP
 ) ON CONFLICT (id) DO NOTHING;
 
+
+
+-- Event Attendance Test Data
+INSERT INTO roster_members (id, mb_nickname, nationality_flag_id, is_archived, created_at, updated_at)
+VALUES (1000, 'TestMember', NULL, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO events (id, title, start_time, end_time, rrule, type_id, source)
+VALUES (1000, '{"en": "Test Event"}', '2026-06-01 10:00:00+00', '2026-06-01 12:00:00+00', '', 
+        (SELECT id FROM event_types WHERE name->>'en' = 'Type 1'), 'SITE')
+ON CONFLICT (id) DO NOTHING;

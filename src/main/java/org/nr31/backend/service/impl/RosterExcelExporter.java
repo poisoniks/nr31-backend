@@ -5,12 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.nr31.backend.dto.admin.AppConfigDto;
+import org.nr31.backend.dto.attendance.MemberMonthlyAttendanceDTO;
 import org.nr31.backend.dto.common.ErrorCode;
 import org.nr31.backend.exception.ElementNotFoundException;
 import org.nr31.backend.exception.FileStorageException;
 import org.nr31.backend.model.*;
 import org.nr31.backend.repository.*;
 import org.nr31.backend.service.AppConfigService;
+import org.nr31.backend.service.EventAttendanceService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -38,8 +40,8 @@ public class RosterExcelExporter {
     private final FileMetadataRepository fileMetadataRepository;
     private final RosterMemberRepository rosterMemberRepository;
     private final MonthlyEventCountRepository monthlyEventCountRepository;
-    private final AttendanceRecordRepository attendanceRecordRepository;
     private final ObjectProvider<FileSystem> fileSystemProvider;
+    private final EventAttendanceService eventAttendanceService;
 
     @Value("${app.uploads.dir:/app/uploads}")
     private String uploadDirStr;
@@ -79,22 +81,18 @@ public class RosterExcelExporter {
             try (Workbook workbook = new XSSFWorkbook(tempFile.toFile())) {
 
                 List<RosterMember> members = rosterMemberRepository.findAll();
-                // Sort active members first (not archived) then by sequence number or mbNickname
                 members.sort(Comparator.comparing(RosterMember::isArchived)
                         .thenComparing(m -> m.getSequenceNumber() != null ? m.getSequenceNumber() : Integer.MAX_VALUE)
                         .thenComparing(RosterMember::getMbNickname));
 
-                // 1. POPULATE SHEET 1: Реєстр
                 Sheet registrySheet = workbook.getSheetAt(0);
                 populateRegistrySheet(registrySheet, members);
 
-                // 2. POPULATE SHEET 2: Відвідування
                 if (workbook.getNumberOfSheets() > 1) {
                     Sheet attendanceSheet = workbook.getSheetAt(1);
                     populateAttendanceSheet(attendanceSheet, members);
                 }
 
-                // 3. POPULATE SHEET 3: Підготовка
                 if (workbook.getNumberOfSheets() > 2) {
                     Sheet trainingSheet = workbook.getSheetAt(2);
                     populateTrainingSheet(trainingSheet, members);
@@ -123,7 +121,6 @@ public class RosterExcelExporter {
             return;
         }
 
-        // Collect award columns map from headers
         Row headerRow = sheet.getRow(2);
         Map<String, Integer> awardAbbrToCol = new HashMap<>();
         if (headerRow != null) {
@@ -139,11 +136,9 @@ public class RosterExcelExporter {
         int writeRowIdx = 3;
         int rowCounter = 1;
 
-        // Workbook and Styles
         Workbook wb = sheet.getWorkbook();
         CreationHelper createHelper = wb.getCreationHelper();
         CellStyle dateStyle = wb.createCellStyle();
-        // Try to locate prototype cell style for dates, else format
         Cell prototypeDateCell = prototypeRow.getCell(9); // Col J
         if (prototypeDateCell != null) {
             dateStyle.cloneStyleFrom(prototypeDateCell.getCellStyle());
@@ -151,7 +146,6 @@ public class RosterExcelExporter {
             dateStyle.setDataFormat(createHelper.createDataFormat().getFormat("dd.mm.yyyy"));
         }
 
-        // Fill members
         for (RosterMember member : members) {
             if (member.isArchived()) {
                 continue; // Sheets 1 and 2 only contain active members
@@ -310,22 +304,17 @@ public class RosterExcelExporter {
                 Cell attCell = row.getCell(col);
                 if (attCell == null) attCell = row.createCell(col);
 
-                Optional<AttendanceRecord> arOpt = attendanceRecordRepository.findByMemberIdAndYearAndMonth(
+                MemberMonthlyAttendanceDTO monthlyDto = eventAttendanceService.getMemberMonthlyAttendance(
                         member.getId(), entry.getKey().getYear(), entry.getKey().getMonthValue());
 
-                if (arOpt.isPresent()) {
-                    AttendanceRecord ar = arOpt.get();
-                    if (ar.getManualAttendanceCount() != null) {
-                        attCell.setCellValue(ar.getManualAttendanceCount());
-                    } else if (ar.getStatus() != null) {
-                        switch (ar.getStatus()) {
-                            case VACATION -> attCell.setCellValue("V");
-                            case MILITARY_SERVICE -> attCell.setCellValue("M");
-                            case EXCUSED -> attCell.setCellValue("P");
-                            case NOT_IN_REGIMENT -> attCell.setCellValue("/");
-                        }
-                    } else {
-                        attCell.setCellValue("");
+                if (monthlyDto.getTotalScore() > 0 || monthlyDto.getManualAttendanceCount() > 0) {
+                    attCell.setCellValue(monthlyDto.getTotalScore());
+                } else if (monthlyDto.getStatus() != null) {
+                    switch (monthlyDto.getStatus()) {
+                        case VACATION -> attCell.setCellValue("V");
+                        case MILITARY_SERVICE -> attCell.setCellValue("M");
+                        case EXCUSED -> attCell.setCellValue("P");
+                        case NOT_IN_REGIMENT -> attCell.setCellValue("/");
                     }
                 } else {
                     attCell.setCellValue("");

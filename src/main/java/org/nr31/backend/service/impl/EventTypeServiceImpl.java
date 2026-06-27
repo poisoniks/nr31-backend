@@ -51,6 +51,7 @@ public class EventTypeServiceImpl implements EventTypeService {
         EventType eventType = EventType.builder()
                 .name(request.getName())
                 .customIcon(icon)
+                .attendanceWeight(request.getAttendanceWeight() != null ? request.getAttendanceWeight() : 1)
                 .build();
         eventType = eventTypeRepository.save(eventType);
         return mapToEventTypeDTO(eventType);
@@ -65,6 +66,9 @@ public class EventTypeServiceImpl implements EventTypeService {
 
         eventType.setName(request.getName());
         eventType.setCustomIcon(resolveIcon(request.getCustomIcon()));
+        if (request.getAttendanceWeight() != null) {
+            eventType.setAttendanceWeight(request.getAttendanceWeight());
+        }
         eventType = eventTypeRepository.save(eventType);
 
         return mapToEventTypeDTO(eventType);

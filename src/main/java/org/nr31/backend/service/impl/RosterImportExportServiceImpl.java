@@ -51,7 +51,7 @@ public class RosterImportExportServiceImpl implements RosterImportExportService 
         try {
             AppConfigDto currentConfig = appConfigService.getConfig(AppConfigKey.ROSTER_EXPORT_TEMPLATE_FILE_ID);
             if (currentConfig.getConfigValue() != null && !currentConfig.getConfigValue().isNull()) {
-                oldFileId = UUID.fromString(currentConfig.getConfigValue().asText());
+                oldFileId = UUID.fromString(currentConfig.getConfigValue().asString());
             }
         } catch (Exception e) {
             log.debug("No existing roster template config found, skipping old file cleanup");

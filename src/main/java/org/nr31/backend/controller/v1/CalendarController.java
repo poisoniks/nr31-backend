@@ -3,6 +3,8 @@ package org.nr31.backend.controller.v1;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.nr31.backend.annotation.FeatureSwitch;
+import org.nr31.backend.dto.attendance.EventAttendanceDTO;
+import org.nr31.backend.dto.attendance.RecordAttendanceRequest;
 import org.nr31.backend.dto.calendar.CalendarActionMode;
 import org.nr31.backend.dto.calendar.CalendarEventDTO;
 import org.nr31.backend.dto.calendar.CreateEventRequest;
@@ -11,6 +13,7 @@ import org.nr31.backend.dto.calendar.UpdateEventRequest;
 import org.nr31.backend.dto.common.ValidationErrorResponse;
 import org.nr31.backend.exception.CalendarException;
 import org.nr31.backend.service.CalendarService;
+import org.nr31.backend.service.EventAttendanceService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +52,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class CalendarController {
 
     private final CalendarService calendarService;
+    private final EventAttendanceService eventAttendanceService;
 
     @FeatureSwitch("calendar_feature")
     @Operation(summary = "Get calendar events", description = "Retrieves a list of calendar events for a specific date range")
@@ -141,5 +145,37 @@ public class CalendarController {
             @RequestParam(required = false) Instant exceptionDate) {
         calendarService.deleteEvent(id, mode, exceptionDate);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Record event attendance", description = "Records attendance for a specific event occurrence", security = @SecurityRequirement(name = "Bearer Authentication"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Successfully recorded attendance"),
+            @ApiResponse(responseCode = "400", description = "Invalid request body or parameters",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ValidationErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Event or occurrence not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PostMapping(value = "/{eventId}/attendance", consumes = "application/json", produces = "application/json")
+    @PreAuthorize("hasAuthority('attendance:write')")
+    public ResponseEntity<Void> recordAttendance(
+            @PathVariable Long eventId,
+            @Valid @RequestBody RecordAttendanceRequest request) {
+        eventAttendanceService.recordAttendance(eventId, request.getOccurrenceDate(), request.getMemberIds());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Get event attendance", description = "Retrieves attendance for a specific event occurrence", security = @SecurityRequirement(name = "Bearer Authentication"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved attendance", content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = org.nr31.backend.dto.attendance.EventAttendanceDTO.class)))),
+            @ApiResponse(responseCode = "404", description = "Event or occurrence not found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @GetMapping(value = "/{eventId}/attendance", produces = "application/json")
+    @PreAuthorize("hasAuthority('roster:read')")
+    public ResponseEntity<List<EventAttendanceDTO>> getAttendance(
+            @PathVariable Long eventId,
+            @RequestParam Instant occurrenceDate) {
+        List<EventAttendanceDTO> attendance = eventAttendanceService.getAttendanceForOccurrence(eventId, occurrenceDate);
+        return ResponseEntity.ok(attendance);
     }
 }

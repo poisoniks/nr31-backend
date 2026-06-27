@@ -8,10 +8,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.nr31.backend.dto.attendance.MemberMonthlyAttendanceDTO;
 import org.nr31.backend.dto.common.ErrorResponse;
 import org.nr31.backend.dto.roster.UnitTypeDTO;
 import org.nr31.backend.dto.roster.UnitTypeRequest;
 import org.nr31.backend.dto.common.ValidationErrorResponse;
+import org.nr31.backend.service.EventAttendanceService;
 import org.nr31.backend.service.RosterService;
 import org.nr31.backend.service.RosterImportExportService;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -44,6 +46,7 @@ public class RosterController {
 
         private final RosterService rosterService;
         private final RosterImportExportService rosterImportExportService;
+        private final EventAttendanceService eventAttendanceService;
 
         @Operation(summary = "Get all unit types", description = "Retrieves all available unit types")
         @ApiResponses(value = {
@@ -148,4 +151,19 @@ public class RosterController {
                 return ResponseEntity.ok().build();
         }
 
+        @Operation(summary = "Get monthly attendance for member", description = "Retrieves the monthly attendance summary for a roster member, including per-event breakdown", security = @SecurityRequirement(name = "Bearer Authentication"))
+        @ApiResponses(value = {
+                @ApiResponse(responseCode = "200", description = "Successfully retrieved attendance", content = @Content(mediaType = "application/json", schema = @Schema(implementation = org.nr31.backend.dto.attendance.MemberMonthlyAttendanceDTO.class))),
+                @ApiResponse(responseCode = "404", description = "Member not found",
+                        content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+        })
+        @GetMapping(value = "/members/{memberId}/attendance", produces = "application/json")
+        @PreAuthorize("hasAuthority('roster:read')")
+        public ResponseEntity<MemberMonthlyAttendanceDTO> getMemberMonthlyAttendance(
+                @PathVariable Long memberId,
+                @RequestParam int year,
+                @RequestParam int month) {
+                MemberMonthlyAttendanceDTO attendance = eventAttendanceService.getMemberMonthlyAttendance(memberId, year, month);
+                return ResponseEntity.ok(attendance);
+        }
 }
